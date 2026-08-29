@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cancha Directa - Alumnos</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-container": "#a05e00",
+                      "surface-bright": "#f9f9f9",
+                      "on-tertiary-fixed": "#2c1600",
+                      "surface-container-highest": "#e2e2e2",
+                      "background": "#f9f9f9",
+                      "primary-container": "#2e7d32",
+                      "error": "#ba1a1a",
+                      "on-tertiary-container": "#ffeee2",
+                      "primary-fixed-dim": "#88d982",
+                      "surface-tint": "#1b6d24",
+                      "tertiary": "#7e4900",
+                      "tertiary-fixed-dim": "#ffb870",
+                      "on-tertiary-fixed-variant": "#693c00",
+                      "on-primary": "#ffffff",
+                      "on-surface-variant": "#40493d",
+                      "tertiary-fixed": "#ffdcbe",
+                      "inverse-surface": "#2f3131",
+                      "on-secondary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#f1f1f1",
+                      "surface-container-high": "#e8e8e8",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-primary-container": "#cbffc2",
+                      "surface-container-low": "#f3f3f3",
+                      "on-secondary-fixed-variant": "#474646",
+                      "secondary-fixed": "#e5e2e1",
+                      "outline": "#707a6c",
+                      "on-background": "#1a1c1c",
+                      "primary-fixed": "#a3f69c",
+                      "inverse-primary": "#88d982",
+                      "outline-variant": "#bfcaba",
+                      "surface-dim": "#dadada",
+                      "secondary": "#5f5e5e",
+                      "primary": "#0d631b",
+                      "error-container": "#ffdad6",
+                      "surface-variant": "#e2e2e2",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-container": "#656464",
+                      "secondary-container": "#e5e2e1",
+                      "surface-container": "#eeeeee",
+                      "surface": "#f9f9f9",
+                      "on-secondary-fixed": "#1c1b1b",
+                      "on-surface": "#1a1c1c",
+                      "on-primary-fixed": "#002204",
+                      "on-primary-fixed-variant": "#005312",
+                      "on-error": "#ffffff",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "md": "16px",
+                      "xl": "32px",
+                      "grid-margin": "16px",
+                      "grid-gutter": "12px",
+                      "touch-target-min": "48px",
+                      "base": "4px",
+                      "xs": "8px",
+                      "lg": "24px",
+                      "sm": "12px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "data-display": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "data-display": ["22px", {"lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "800"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface pb-[80px]">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-on-background shadow-sm z-40 transition-colors duration-200">
+<div class="flex justify-between items-center px-grid-margin h-touch-target-min w-full">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">groups</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Alumnos</h1>
+</div>
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:bg-surface-container-low transition-colors active:opacity-70">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-surface-container-low transition-colors active:opacity-70 bg-primary-container text-on-primary-container" onclick="alert('Abrir formulario de nuevo alumno')">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_add</span>
+</button>
+</div>
+</div>
+</header>
+<main class="px-grid-margin py-md space-y-lg">
+<!-- Resumen -->
+<div>
+<p class="font-body-md text-body-md text-secondary">84 alumnos registrados</p>
+</div>
+<!-- Buscador y Filtros -->
+<div class="space-y-sm">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-secondary">search</span>
+<input class="w-full h-touch-target-min pl-10 pr-sm rounded-lg border border-outline bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md outline-none transition-colors" placeholder="Buscar alumno..." type="text"/>
+</div>
+<div class="flex overflow-x-auto gap-xs pb-xs no-scrollbar"><button class="whitespace-nowrap px-sm h-8 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm flex items-center shrink-0">Todos</button><button class="whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0">2011-2013</button><button class="whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0">2014-2015</button><button class="whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0">2016-2018</button></div>
+</div>
+<!-- Lista de Alumnos (Grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-grid-gutter">
+<!-- Alumno 1 (Al día) -->
+<div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)] cursor-pointer" onclick="window.location.href='{{DATA:SCREEN:SCREEN_10}}'"><div class="flex items-center gap-sm"><img class="w-12 h-12 rounded-full object-cover bg-surface-variant" data-alt="A close up portrait of a young boy soccer player looking determined, wearing a green sports jersey, bright daylight field background, clean white light mode style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAOKQjTmMKz8oiU4op_6pDq7caGefv2NIhpH-gvXE48M38EjebidUJNmWKmz-p8h1Soli9k3EyGpHl3iZSP6MVPozTBHb_VgeCmFgRGB6SuDsaMQITo8I62ffoe5l-x8jU02FXWutag7NVXX1kgd7TftLGVbah5gsUTmC6rHACiRBAcRRx1KF9PNc5XTl0ME2Ct8DQO0eKL_zOY7VK6ZlN0d-7rBJ1BG9tRgtzoQpyaybA22mwjy20lA"/><div><h3 class="font-headline-md text-body-lg font-bold">Santiago Pérez</h3><p class="font-body-md text-body-md text-secondary">Sub-10 • 11 2345-6789</p><div class="flex gap-1 mt-1"><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="text-[10px] text-secondary self-center ml-1">Uniformes</span></div></div></div><div class="flex flex-col items-end gap-2"><div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary"></span><span class="font-label-sm text-label-sm text-secondary">Pagado</span></div><div class="flex gap-2"><button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined">receipt_long</span></button><button class="w-10 h-10 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" onclick="event.stopPropagation(); window.open('https://wa.me/541123456789', '_blank')"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span></button></div></div></div>
+<!-- Alumno 2 (Pendiente) -->
+<div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)] cursor-pointer" onclick="window.location.href='{{DATA:SCREEN:SCREEN_10}}'"><div class="flex items-center gap-sm"><img class="w-12 h-12 rounded-full object-cover bg-surface-variant" data-alt="A portrait of a young teen soccer player smiling, wearing a generic training kit, shallow depth of field with a soccer net blurred in the background, bright lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDENEV39JhsR6-SubI8d2oNsQUkjVeKRNJmybVBP04Io-TIRcWT9TVWbqy8KwNyRbyU9wD8i5c2OeCzyEO2yjRS9aQRo3cbcBqn0B1Hljkjm04soAO4RZiyeTDQmJBRwMJpgcWvHqq7gn1K0fkdfN7VBP6XamPrMNd7yGwVpJWZfdMja5g4OHn2akmepAXNQnjl8VwfxS6A5mnsQ166B-UFlrz3xuVV2I9APUNZHW5Tabqe9uYOrQOdyA"/><div><h3 class="font-headline-md text-body-lg font-bold">Mateo González</h3><p class="font-body-md text-body-md text-secondary">Sub-14 • 11 9876-5432</p><div class="flex gap-1 mt-1"><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="material-symbols-outlined text-[16px] text-outline">radio_button_unchecked</span><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="text-[10px] text-secondary self-center ml-1">Uniformes</span></div></div></div><div class="flex flex-col items-end gap-2"><div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-error"></span><span class="font-label-sm text-label-sm text-error">Pendiente</span></div><div class="flex gap-2"><button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined">receipt_long</span></button><button class="w-10 h-10 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" onclick="event.stopPropagation(); window.open('https://wa.me/541198765432', '_blank')"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span></button></div></div></div>
+<!-- Alumno 3 (Parcial) -->
+<div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)] cursor-pointer" onclick="window.location.href='{{DATA:SCREEN:SCREEN_10}}'"><div class="flex items-center gap-sm"><img class="w-12 h-12 rounded-full object-cover bg-surface-variant" data-alt="A young girl soccer player in athletic gear, confident expression, standing on green turf under bright sunny sky, crisp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPUMzVuuIFOoY8hwIoIOYZKpR0ZVe7xHHE5TOz4CCxaPfKrTpburgJPGsCNYKV6YozWwGTT-IrCPvzYhRJqh7SKitOpo4_Z_-Nv9WJ1yB1exgZrrsifID8K4PwhaOXybC8nsRfdLAuKpkDEeU9pA3-byKcrGi08QZ_2VAZtQcLKA9U2kMOudSI9Tfc0jeVJiiYpc_rreeFC6nD2jk533Prl8o9aYPwzdrpCmxRUanCXzTuTnlw1sZsFA"/><div><h3 class="font-headline-md text-body-lg font-bold">Valentina Silva</h3><p class="font-body-md text-body-md text-secondary">Sub-12 • 11 5555-4444</p><div class="flex gap-1 mt-1"><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="material-symbols-outlined text-[16px] text-primary">check_circle</span><span class="material-symbols-outlined text-[16px] text-outline">radio_button_unchecked</span><span class="text-[10px] text-secondary self-center ml-1">Uniformes</span></div></div></div><div class="flex flex-col items-end gap-2"><div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-error"></span><span class="font-label-sm text-label-sm text-error">Pendiente</span></div><div class="flex gap-2"><button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined">receipt_long</span></button><button class="w-10 h-10 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" onclick="event.stopPropagation(); window.open('https://wa.me/541155554444', '_blank')"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span></button></div></div></div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-xs py-sm bg-surface dark:bg-on-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 md:hidden pb-safe">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest scale-95 transition-transform duration-150 rounded-xl" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-[10px] mt-1">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-sm text-[10px] mt-1 font-bold">Alumnos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest scale-95 transition-transform duration-150 rounded-xl" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-[10px] mt-1">Cobros</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest scale-95 transition-transform duration-150 rounded-xl" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-sm text-[10px] mt-1">Calendario</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest scale-95 transition-transform duration-150 rounded-xl" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-sm text-[10px] mt-1">Más</span>
+</a>
+</nav>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Handle safe area for bottom nav on newer phones */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+    </style>
+</body></html>

@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Míster App — Cancha Directa</title>
+    <meta name="description" content="Aplicación de gestión para la escuela de fútbol Cancha Directa. Controla alumnos, cobros, calendario de partidos e inventario de uniformes."/>
+    <meta name="theme-color" content="#2e7d32"/>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d631b",
+                        "primary-container": "#2e7d32",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#cbffc2",
+                        "on-primary-fixed": "#002204",
+                        "on-primary-fixed-variant": "#005312",
+                        "primary-fixed": "#a3f69c",
+                        "primary-fixed-dim": "#88d982",
+                        "inverse-primary": "#88d982",
+                        "secondary": "#5f5e5e",
+                        "secondary-container": "#e5e2e1",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#656464",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-secondary-fixed-variant": "#474646",
+                        "secondary-fixed": "#e5e2e1",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "tertiary": "#7e4900",
+                        "tertiary-container": "#a05e00",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ffeee2",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "tertiary-fixed": "#ffdcbe",
+                        "tertiary-fixed-dim": "#ffb870",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface": "#f9f9f9",
+                        "surface-dim": "#dadada",
+                        "surface-bright": "#f9f9f9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f3f3f3",
+                        "surface-container": "#eeeeee",
+                        "surface-container-high": "#e8e8e8",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface-variant": "#e2e2e2",
+                        "surface-tint": "#1b6d24",
+                        "on-surface": "#1a1c1c",
+                        "on-surface-variant": "#40493d",
+                        "on-background": "#1a1c1c",
+                        "background": "#f9f9f9",
+                        "outline": "#707a6c",
+                        "outline-variant": "#bfcaba",
+                        "inverse-surface": "#2f3131",
+                        "inverse-on-surface": "#f1f1f1"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "base": "4px",
+                        "xs": "8px",
+                        "sm": "12px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "touch-target-min": "48px",
+                        "grid-margin": "16px",
+                        "grid-gutter": "12px"
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "system-ui", "sans-serif"],
+                        "data-display": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    fontSize: {
+                        "data-display": ["22px", { "lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "800" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; min-height: 100dvh; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .view { display: none; }
+        .view.active { display: flex; flex-direction: column; }
+        .nav-btn.active-nav { background-color: #2e7d32; color: #cbffc2; border-radius: 0.75rem; }
+        .nav-btn.active-nav .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+        /* Page transitions */
+        .view { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        /* Receipt zigzag */
+        .zigzag-bottom { position: relative; }
+        .zigzag-bottom::after {
+            content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 12px;
+            background: radial-gradient(circle at 6px 0px, transparent 0, transparent 6px, #ffffff 6px) repeat-x;
+            background-size: 12px 12px; transform: rotate(180deg);
+        }
+        /* Modal */
+        .modal-overlay { backdrop-filter: blur(4px); }
+        .modal-content { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        /* Pulse for notifications */
+        @keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+        .pulse-dot { animation: pulse-dot 2s infinite; }
+        /* Floating Action Button */
+        .fab { box-shadow: 0 4px 12px rgba(13, 99, 27, 0.3); }
+        .fab:active { transform: scale(0.92); }
+        /* Category chip active */
+        .chip-active { background-color: #2e7d32 !important; color: #cbffc2 !important; border-color: transparent !important; }
+        /* Status bar indicator */
+        .status-paid { border-left: 3px solid #0d631b; }
+        .status-pending { border-left: 3px solid #ba1a1a; }
+        /* Safe area */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased">
+
+<!-- ===== APP SHELL ===== -->
+<div id="app" class="max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
+
+    <!-- ===== VIEW 1: INICIO (Dashboard) ===== -->
+    <div id="view-inicio" class="view active pb-[88px]">
+        <!-- TopAppBar -->
+        <header class="w-full top-0 sticky bg-surface z-40 flex justify-between items-center px-grid-margin py-xs h-[72px]">
+            <div class="flex items-center gap-sm">
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-on-primary-container text-xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="font-headline-md text-headline-md font-bold text-primary leading-tight" id="greeting-text">Buenos días, Míster</h1>
+                    <span class="font-body-md text-body-md text-on-surface-variant" id="date-text"></span>
+                </div>
+            </div>
+            <button aria-label="Notificaciones" class="w-[48px] h-[48px] flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-95 duration-100 flex-shrink-0 relative">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+                <div class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-error pulse-dot"></div>
+            </button>
+        </header>
+
+        <main class="px-grid-margin py-md flex flex-col gap-lg">
+            <!-- Summary Cards (Horizontal Scroll) -->
+            <section class="flex overflow-x-auto no-scrollbar -mx-grid-margin px-grid-margin snap-x pb-2 gap-md">
+                <!-- Card 1: Cobrado -->
+                <article class="w-[calc(50%-6px)] min-w-[170px] bg-surface-container-lowest rounded-xl p-md flex flex-col gap-xs snap-center shadow-sm border border-surface-variant shrink-0">
+                    <h2 class="font-body-md text-body-md text-on-surface-variant">Cobrado este mes</h2>
+                    <div class="font-data-display text-data-display text-primary" id="stat-cobrado">$2.450.000</div>
+                    <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+                        <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+                        de $3.200.000 total
+                    </div>
+                </article>
+                <!-- Card 2: Pendientes -->
+                <article class="w-[calc(50%-6px)] min-w-[170px] bg-surface-container-lowest rounded-xl p-md flex flex-col gap-xs snap-center shadow-sm border border-surface-variant shrink-0">
+                    <h2 class="font-body-md text-body-md text-on-surface-variant">Pendientes</h2>
+                    <div class="font-data-display text-data-display text-error" id="stat-pendientes">12</div>
+                    <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+                        <span class="material-symbols-outlined text-[16px] text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+                        alumnos deben mensualidad
+                    </div>
+                </article>
+                <!-- Card 3: Próximo partido -->
+                <article class="w-[calc(50%-6px)] min-w-[170px] bg-surface-container-lowest rounded-xl p-md flex flex-col gap-xs snap-center shadow-sm border border-surface-variant shrink-0">
+                    <h2 class="font-body-md text-body-md text-on-surface-variant">Próximo partido</h2>
+                    <div class="font-headline-lg text-headline-lg text-on-surface" id="stat-partido">Sáb 31 Ago</div>
+                    <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+                        <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+                        2011-2013 vs Club Tiburón
+                    </div>
+                </article>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="flex flex-col gap-sm">
+                <h3 class="font-headline-md text-headline-md text-on-background mb-xs">Acciones rápidas</h3>
+                <div class="grid grid-cols-2 gap-sm">
+                    <button onclick="navigateTo('cobros')" class="bg-surface-container-lowest shadow-sm rounded-xl p-md flex flex-col items-center justify-center gap-sm aspect-square active:scale-95 transition-transform border border-surface-variant hover:bg-surface-container-low">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1">
+                            <span class="material-symbols-outlined text-2xl">payments</span>
+                        </div>
+                        <span class="font-label-sm text-label-sm text-on-surface text-center">Registrar<br/>pago</span>
+                    </button>
+                    <button onclick="navigateTo('alumnos'); setTimeout(()=>document.getElementById('modal-nuevo-alumno')?.classList.remove('hidden'),300)" class="bg-surface-container-lowest shadow-sm rounded-xl p-md flex flex-col items-center justify-center gap-sm aspect-square active:scale-95 transition-transform border border-surface-variant hover:bg-surface-container-low">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1">
+                            <span class="material-symbols-outlined text-2xl">person_add</span>
+                        </div>
+                        <span class="font-label-sm text-label-sm text-on-surface text-center">Nuevo<br/>alumno</span>
+                    </button>
+                    <button onclick="sendReminders()" class="bg-surface-container-lowest shadow-sm rounded-xl p-md flex flex-col items-center justify-center gap-sm aspect-square active:scale-95 transition-transform border border-surface-variant hover:bg-surface-container-low">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1">
+                            <span class="material-symbols-outlined text-2xl">notifications_active</span>
+                        </div>
+                        <span class="font-label-sm text-label-sm text-on-surface text-center">Enviar<br/>recordatorios</span>
+                    </button>
+                    <button onclick="navigateTo('calendario')" class="bg-surface-container-lowest shadow-sm rounded-xl p-md flex flex-col items-center justify-center gap-sm aspect-square active:scale-95 transition-transform border border-surface-variant hover:bg-surface-container-low">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1">
+                            <span class="material-symbols-outlined text-2xl">edit_calendar</span>
+                        </div>
+                        <span class="font-label-sm text-label-sm text-on-surface text-center">Agregar<br/>partido</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="flex flex-col gap-sm">
+                <div class="flex justify-between items-center mb-xs">
+                    <h3 class="font-headline-md text-headline-md text-on-background">Actividad reciente</h3>
+                    <button class="font-label-sm text-label-sm text-primary uppercase tracking-wider">Ver todo</button>
+                </div>
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+                    <ul id="activity-list" class="flex flex-col divide-y divide-surface-variant">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ===== VIEW 2: ALUMNOS ===== -->
+    <div id="view-alumnos" class="view pb-[88px]">
+        <header class="w-full top-0 sticky bg-surface z-40 shadow-sm">
+            <div class="flex justify-between items-center px-grid-margin h-touch-target-min w-full">
+                <div class="flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">groups</span>
+                    <h1 class="font-headline-md text-headline-md font-bold text-primary">Alumnos</h1>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <button id="btn-search-toggle" onclick="toggleSearch()" class="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:bg-surface-container-low transition-colors active:opacity-70">
+                        <span class="material-symbols-outlined">search</span>
+                    </button>
+                    <button onclick="document.getElementById('modal-nuevo-alumno').classList.remove('hidden')" class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-container text-on-primary-container hover:bg-surface-container-low transition-colors active:opacity-70">
+                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_add</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        <main class="px-grid-margin py-md flex flex-col gap-md">
+            <!-- Resumen -->
+            <p class="font-body-md text-body-md text-secondary"><span id="total-alumnos">0</span> alumnos registrados</p>
+            <!-- Buscador -->
+            <div id="search-box" class="hidden">
+                <div class="relative w-full">
+                    <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-secondary">search</span>
+                    <input id="search-input" oninput="filterAlumnos()" class="w-full h-touch-target-min pl-10 pr-sm rounded-lg border border-outline bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md outline-none transition-colors" placeholder="Buscar alumno..." type="text"/>
+                </div>
+            </div>
+            <!-- Category Filters -->
+            <div class="flex overflow-x-auto gap-xs pb-xs no-scrollbar">
+                <button onclick="filterByCategory('todos')" class="cat-chip chip-active whitespace-nowrap px-sm h-8 rounded-full font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="todos">Todos</button>
+                <button onclick="filterByCategory('2011-2013')" class="cat-chip whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="2011-2013">2011-2013</button>
+                <button onclick="filterByCategory('2014-2015')" class="cat-chip whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="2014-2015">2014-2015</button>
+                <button onclick="filterByCategory('2016-2018')" class="cat-chip whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="2016-2018">2016-2018</button>
+            </div>
+            <!-- Lista de alumnos -->
+            <div id="alumnos-list" class="flex flex-col gap-grid-gutter">
+                <!-- Populated by JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== VIEW 3: COBROS ===== -->
+    <div id="view-cobros" class="view pb-[88px]">
+        <header class="w-full top-0 sticky z-40 bg-surface flex items-center justify-between px-md h-touch-target-min">
+            <div class="flex items-center gap-sm">
+                <span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity">menu</span>
+                <h1 class="font-headline-md text-headline-md font-bold text-primary">Gestión de Cobros</h1>
+            </div>
+            <div class="flex items-center gap-sm">
+                <span class="material-symbols-outlined text-primary cursor-pointer hover:bg-surface-container-high transition-colors p-xs rounded-full">filter_list</span>
+            </div>
+        </header>
+        <main class="flex-1 pb-32 overflow-y-auto">
+            <!-- Month Selector -->
+            <section class="px-grid-margin py-sm bg-surface-container-lowest flex items-center justify-between">
+                <button onclick="changeMonth(-1)" class="h-touch-target-min w-touch-target-min flex items-center justify-center text-on-surface-variant active:opacity-80">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <div class="text-center">
+                    <h2 class="font-headline-lg text-headline-lg text-primary" id="month-display"></h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Corte: 15 de <span id="month-name-corte"></span></p>
+                </div>
+                <button onclick="changeMonth(1)" class="h-touch-target-min w-touch-target-min flex items-center justify-center text-on-surface-variant active:opacity-80">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </section>
+            <!-- Summary Strip -->
+            <section class="px-grid-margin py-sm">
+                <div class="bg-primary/10 rounded-lg p-sm flex items-center justify-between">
+                    <div class="flex flex-col items-center">
+                        <span class="font-label-sm text-label-sm text-primary">Pagados</span>
+                        <span class="font-headline-md text-headline-md text-primary" id="cobros-pagados">0</span>
+                    </div>
+                    <div class="w-px h-8 bg-outline-variant"></div>
+                    <div class="flex flex-col items-center">
+                        <span class="font-label-sm text-label-sm text-error">Pendientes</span>
+                        <span class="font-headline-md text-headline-md text-error" id="cobros-pendientes">0</span>
+                    </div>
+                    <div class="w-px h-8 bg-outline-variant"></div>
+                    <div class="flex flex-col items-end">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">Total</span>
+                        <span class="font-headline-md text-headline-md text-on-surface font-bold" id="cobros-total">$0</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Tabs -->
+            <nav class="px-grid-margin border-b border-surface-variant flex gap-lg mb-sm">
+                <button class="pb-xs border-b-2 border-primary font-label-sm text-label-sm text-primary font-bold tracking-wide">Mensualidades</button>
+                <button class="pb-xs border-b-2 border-transparent font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface">Cobros eventuales</button>
+            </nav>
+            <!-- Payment List -->
+            <section id="cobros-list" class="px-grid-margin flex flex-col gap-grid-gutter">
+                <!-- Populated by JS -->
+            </section>
+        </main>
+        <!-- Sticky WhatsApp reminder button -->
+        <div class="fixed bottom-[88px] w-full max-w-[430px] px-grid-margin z-40 bg-surface/80 backdrop-blur-sm pb-sm pt-xs left-1/2 -translate-x-1/2">
+            <button onclick="sendReminders()" class="w-full bg-primary text-on-primary h-touch-target-min rounded-xl flex items-center justify-center gap-sm font-label-sm text-label-sm shadow-lg active:scale-95 transition-transform">
+                <span class="material-symbols-outlined">forum</span>
+                Enviar recordatorio a <span id="reminder-count">0</span> pendientes
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== VIEW 4: CALENDARIO ===== -->
+    <div id="view-calendario" class="view pb-[88px]">
+        <header class="flex justify-between items-center px-grid-margin h-touch-target-min w-full bg-surface z-10 sticky top-0">
+            <div class="flex items-center gap-xs">
+                <h1 class="font-headline-md text-headline-md font-bold text-primary">Calendario</h1>
+            </div>
+            <div>
+                <button onclick="document.getElementById('modal-nuevo-partido').classList.remove('hidden')" class="bg-primary-container text-on-primary-container font-label-sm text-label-sm px-4 py-2 rounded-full flex items-center gap-1 active:scale-95 transition-transform hover:opacity-80">
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">add</span>
+                    Agregar
+                </button>
+            </div>
+        </header>
+        <main class="flex-1 flex flex-col px-grid-margin gap-lg pt-4">
+            <!-- Navegación de mes -->
+            <div class="flex justify-between items-center bg-surface-container-lowest rounded-xl p-2 shadow-sm border border-outline-variant/30">
+                <button class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container-high rounded-full active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <h2 class="font-headline-md text-headline-md text-on-surface" id="cal-month-display"></h2>
+                <button class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container-high rounded-full active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+            <!-- Category Chips -->
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-grid-margin px-grid-margin">
+                <button class="h-[32px] px-4 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform">Todas</button>
+                <button class="h-[32px] px-4 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/50 font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform hover:bg-surface-container-high">2011-2013</button>
+                <button class="h-[32px] px-4 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/50 font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform hover:bg-surface-container-high">2014-2015</button>
+                <button class="h-[32px] px-4 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/50 font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform hover:bg-surface-container-high">2016-2018</button>
+            </div>
+            <!-- Mini Calendar -->
+            <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30">
+                <div id="mini-calendar" class="grid grid-cols-7 gap-1 text-center">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <!-- Match List -->
+            <div class="flex flex-col gap-sm pb-lg">
+                <h3 class="font-headline-md text-headline-md text-on-surface font-bold">Próximos partidos</h3>
+                <div id="partidos-list" class="flex flex-col gap-sm">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== VIEW 5: MÁS ===== -->
+    <div id="view-mas" class="view pb-[88px]">
+        <header class="w-full top-0 sticky bg-surface z-40 border-b border-surface-variant flex justify-between items-center px-grid-margin py-xs">
+            <div class="flex items-center gap-sm">
+                <h1 class="font-headline-md text-headline-md font-bold text-primary">Más</h1>
+            </div>
+            <button class="w-[48px] h-[48px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full active:scale-95 duration-100">
+                <span class="material-symbols-outlined">notifications</span>
+            </button>
+        </header>
+        <main class="px-grid-margin py-md flex flex-col gap-lg">
+            <!-- School Info -->
+            <section class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-surface-variant flex items-center gap-md">
+                <div class="w-[48px] h-[48px] rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-on-primary-container text-2xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+                </div>
+                <div class="flex-1">
+                    <h2 class="font-body-lg text-body-lg font-bold text-on-surface">Cancha Directa</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Barranquilla, Colombia</p>
+                </div>
+                <button class="w-[48px] h-[48px] flex items-center justify-center text-primary rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined">edit</span>
+                </button>
+            </section>
+
+            <!-- Herramientas -->
+            <section class="flex flex-col gap-base">
+                <h3 class="font-label-sm text-label-sm text-on-surface-variant px-sm uppercase tracking-wider">Herramientas</h3>
+                <div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
+                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-primary">chat</span>
+                            <span class="font-body-md text-body-md">Kit de respuestas rápidas</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-primary">notifications_active</span>
+                            <span class="font-body-md text-body-md">Configurar recordatorios</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                    <button onclick="navigateTo('mas'); document.getElementById('inventario-section').scrollIntoView({behavior:'smooth'})" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-primary">checkroom</span>
+                            <span class="font-body-md text-body-md">Inventario de uniformes</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Configuración -->
+            <section class="flex flex-col gap-base">
+                <h3 class="font-label-sm text-label-sm text-on-surface-variant px-sm uppercase tracking-wider">Configuración</h3>
+                <div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
+                    <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-on-surface-variant">attach_money</span>
+                            <span class="font-body-md text-body-md">Valor de mensualidad</span>
+                        </div>
+                        <span class="font-body-md text-body-md font-semibold">$80.000</span>
+                    </div>
+                    <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-on-surface-variant">event</span>
+                            <span class="font-body-md text-body-md">Fecha de corte</span>
+                        </div>
+                        <span class="font-body-md text-body-md font-semibold">Día 15</span>
+                    </div>
+                    <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-on-surface-variant">sell</span>
+                            <span class="font-body-md text-body-md">Categorías</span>
+                        </div>
+                        <span class="font-body-md text-body-md text-on-surface-variant">3 categorías</span>
+                    </div>
+                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-on-surface-variant">person</span>
+                            <span class="font-body-md text-body-md">Mi cuenta</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Inventario de Uniformes -->
+            <section id="inventario-section" class="flex flex-col gap-sm">
+                <div class="flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-primary text-2xl">inventory_2</span>
+                    <h2 class="font-headline-md text-headline-md text-on-surface">Inventario de Uniformes</h2>
+                </div>
+                <!-- Legend -->
+                <div class="flex gap-4 font-label-sm text-label-sm">
+                    <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-primary"></div><span>Regular</span></div>
+                    <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-tertiary"></div><span>Kit Torneo</span></div>
+                </div>
+                <!-- Inventory by Category -->
+                <div id="inventario-cards" class="flex flex-col gap-sm">
+                    <!-- Populated by JS -->
+                </div>
+                <!-- Action Button -->
+                <button class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
+                    <span class="material-symbols-outlined">update</span>
+                    Actualizar Stock / Entregas
+                </button>
+            </section>
+
+            <!-- Kit de Respuestas Rápidas -->
+            <section class="flex flex-col gap-grid-gutter mt-sm">
+                <h3 class="font-headline-md text-headline-md text-on-surface">Kit de respuestas rápidas</h3>
+                <div id="respuestas-list" class="flex flex-col gap-sm">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="flex justify-center mt-sm">
+                    <button class="text-primary font-body-md text-body-md font-semibold hover:underline h-[48px] px-md">Editar plantillas</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ===== MODAL: Nuevo Alumno ===== -->
+    <div id="modal-nuevo-alumno" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-lg">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Nuevo Alumno</h2>
+                <button onclick="this.closest('#modal-nuevo-alumno').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-nuevo-alumno" onsubmit="addAlumno(event)" class="flex flex-col gap-md">
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre completo</label>
+                    <input required id="inp-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Santiago Pérez"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono acudiente (WhatsApp)</label>
+                    <input required id="inp-telefono" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="tel" placeholder="Ej: 311 234 5678"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="cursor-pointer"><input type="radio" name="categoria" value="2011-2013" class="sr-only peer" checked/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2011-2013</span></label>
+                        <label class="cursor-pointer"><input type="radio" name="categoria" value="2014-2015" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2014-2015</span></label>
+                        <label class="cursor-pointer"><input type="radio" name="categoria" value="2016-2018" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2016-2018</span></label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Talla de uniforme</label>
+                    <select id="inp-talla" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md">
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M" selected>M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
+                    <span class="material-symbols-outlined">person_add</span>
+                    Inscribir alumno
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Comprobante de Pago ===== -->
+    <div id="modal-recibo" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-md">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="modal-content relative bg-background rounded-xl w-full max-w-[380px] max-h-[90vh] overflow-y-auto z-10 p-md">
+            <!-- Receipt Card -->
+            <div class="bg-surface-container-lowest rounded-xl shadow-lg w-full overflow-hidden">
+                <!-- Receipt Header -->
+                <div class="bg-surface p-md border-b border-surface-variant flex flex-col items-center text-center zigzag-bottom">
+                    <div class="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center mb-sm shadow-sm border-2 border-white">
+                        <span class="material-symbols-outlined text-on-primary-container text-[28px]" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+                    </div>
+                    <h2 class="font-headline-md text-headline-md text-primary tracking-tight font-bold">Cancha Directa</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant mt-xs">Escuela de Fútbol</p>
+                </div>
+                <!-- Receipt Body -->
+                <div class="p-lg pt-xl flex flex-col gap-sm relative">
+                    <div class="absolute top-3 right-3 rotate-12 opacity-90">
+                        <div class="border-3 border-primary text-primary px-2 py-1 rounded-lg flex items-center gap-1 font-label-sm text-label-sm uppercase tracking-widest bg-surface-container-lowest/80">
+                            <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            PAGADO
+                        </div>
+                    </div>
+                    <div class="text-center mb-xs">
+                        <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-[10px]">Recibo de Pago No.</p>
+                        <p class="font-data-display text-data-display text-on-surface" id="recibo-numero">#0001</p>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Fecha</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-fecha"></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Alumno</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-alumno"></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Categoría</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-categoria"></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Concepto</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px] text-right" id="recibo-concepto"></span>
+                    </div>
+                    <div class="flex justify-between items-center pt-sm">
+                        <span class="font-headline-md text-headline-md text-on-surface">Total</span>
+                        <span class="font-data-display text-data-display text-primary">$80.000</span>
+                    </div>
+                </div>
+                <!-- Receipt Footer -->
+                <div class="bg-surface p-md text-center border-t border-dashed border-surface-variant">
+                    <p class="font-body-md text-body-md text-on-surface-variant italic text-[12px]">¡Gracias por confiar en nuestra escuela!</p>
+                </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex flex-col gap-sm mt-md">
+                <button onclick="shareWhatsApp()" class="w-full h-touch-target-min bg-[#25D366] hover:bg-[#128C7E] active:scale-95 transition-all text-white rounded-xl flex items-center justify-center gap-sm font-label-sm text-label-sm shadow-md">
+                    <span class="material-symbols-outlined">forum</span>
+                    Enviar por WhatsApp
+                </button>
+                <button onclick="document.getElementById('modal-recibo').classList.add('hidden')" class="w-full h-touch-target-min bg-surface-variant hover:bg-surface-container-high active:scale-95 transition-all text-on-surface rounded-xl flex items-center justify-center gap-sm font-body-md text-body-md">
+                    <span class="material-symbols-outlined">close</span>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Nuevo Partido ===== -->
+    <div id="modal-nuevo-partido" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-lg">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Nuevo Partido</h2>
+                <button onclick="this.closest('#modal-nuevo-partido').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form onsubmit="addPartido(event)" class="flex flex-col gap-md">
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Rival</label>
+                    <input required id="inp-rival" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Club Tiburón"/>
+                </div>
+                <div class="grid grid-cols-2 gap-sm">
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Fecha</label>
+                        <input required id="inp-fecha-partido" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="date"/>
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Hora</label>
+                        <input required id="inp-hora-partido" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="time" value="08:00"/>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Cancha / Lugar</label>
+                    <input required id="inp-cancha" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Cancha La Castellana"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="cursor-pointer"><input type="radio" name="cat-partido" value="2011-2013" class="sr-only peer" checked/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2011-2013</span></label>
+                        <label class="cursor-pointer"><input type="radio" name="cat-partido" value="2014-2015" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2014-2015</span></label>
+                        <label class="cursor-pointer"><input type="radio" name="cat-partido" value="2016-2018" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2016-2018</span></label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Costo arbitraje</label>
+                    <input id="inp-arbitraje" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="number" placeholder="120000" value="120000"/>
+                </div>
+                <button type="submit" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
+                    <span class="material-symbols-outlined">add_circle</span>
+                    Crear partido
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== TOAST NOTIFICATION ===== -->
+    <div id="toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-inverse-surface text-inverse-on-surface px-lg py-sm rounded-xl shadow-lg font-body-md text-body-md flex items-center gap-sm max-w-[350px]" style="animation: fadeIn 0.3s ease-out;">
+        <span class="material-symbols-outlined text-inverse-primary" id="toast-icon">check_circle</span>
+        <span id="toast-text"></span>
+    </div>
+
+    <!-- ===== BOTTOM NAVIGATION BAR ===== -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 flex justify-around items-center px-2 py-2 h-[76px] bg-surface shadow-[0_-4px_16px_rgba(0,0,0,0.08)] pb-safe">
+        <button onclick="navigateTo('inicio')" class="nav-btn active-nav flex flex-col items-center justify-center px-4 py-1 min-w-[64px] min-h-[48px] transition-all duration-200 rounded-xl" data-view="inicio">
+            <span class="material-symbols-outlined text-2xl mb-0.5">home</span>
+            <span class="font-label-sm text-label-sm text-[10px]">Inicio</span>
+        </button>
+        <button onclick="navigateTo('alumnos')" class="nav-btn flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 min-w-[64px] min-h-[48px] hover:bg-surface-container transition-all duration-200 rounded-xl active:scale-90" data-view="alumnos">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' 0;">group</span>
+            <span class="font-label-sm text-label-sm text-[10px]">Alumnos</span>
+        </button>
+        <button onclick="navigateTo('cobros')" class="nav-btn flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 min-w-[64px] min-h-[48px] hover:bg-surface-container transition-all duration-200 rounded-xl active:scale-90" data-view="cobros">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' 0;">payments</span>
+            <span class="font-label-sm text-label-sm text-[10px]">Cobros</span>
+        </button>
+        <button onclick="navigateTo('calendario')" class="nav-btn flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 min-w-[64px] min-h-[48px] hover:bg-surface-container transition-all duration-200 rounded-xl active:scale-90" data-view="calendario">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' 0;">calendar_today</span>
+            <span class="font-label-sm text-label-sm text-[10px]">Calendario</span>
+        </button>
+        <button onclick="navigateTo('mas')" class="nav-btn flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 min-w-[64px] min-h-[48px] hover:bg-surface-container transition-all duration-200 rounded-xl active:scale-90" data-view="mas">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' 0;">more_horiz</span>
+            <span class="font-label-sm text-label-sm text-[10px]">Más</span>
+        </button>
+    </nav>
+
+</div>
+
+<script>
+// ===========================
+// DATA STORE (simulated DB)
+// ===========================
+const MENSUALIDAD = 80000;
+const FECHA_CORTE = 15;
+const CATEGORIAS = ['2011-2013', '2014-2015', '2016-2018'];
+const TALLAS = ['XS', 'S', 'M', 'L', 'XL'];
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
+const DIAS_NOMBRES = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let activeCategory = 'todos';
+let receiptCounter = 1000;
+
+// Sample students data
+let alumnos = [
+    { id: 1, nombre: 'Santiago Pérez', telefono: '311 234 5678', categoria: '2011-2013', talla: 'M', pagado: true, fechaPago: '12 Ago', uniformes: [true, true, true] },
+    { id: 2, nombre: 'Mateo García', telefono: '311 987 6543', categoria: '2011-2013', talla: 'L', pagado: false, fechaPago: null, uniformes: [true, false, true] },
+    { id: 3, nombre: 'Isabella Martínez', telefono: '312 456 7890', categoria: '2016-2018', talla: 'S', pagado: false, fechaPago: null, uniformes: [true, true, false] },
+    { id: 4, nombre: 'Luciana Torres', telefono: '313 789 0123', categoria: '2014-2015', talla: 'M', pagado: false, fechaPago: null, uniformes: [true, true, true] },
+    { id: 5, nombre: 'Valentina Rojas', telefono: '314 321 6540', categoria: '2016-2018', talla: 'XS', pagado: true, fechaPago: '10 Ago', uniformes: [true, true, false] },
+    { id: 6, nombre: 'Samuel Díaz', telefono: '315 654 3210', categoria: '2014-2015', talla: 'L', pagado: true, fechaPago: '8 Ago', uniformes: [true, false, true] },
+    { id: 7, nombre: 'Camila Herrera', telefono: '316 147 2583', categoria: '2011-2013', talla: 'M', pagado: true, fechaPago: '5 Ago', uniformes: [true, true, true] },
+    { id: 8, nombre: 'Daniel Vargas', telefono: '317 258 3694', categoria: '2014-2015', talla: 'S', pagado: false, fechaPago: null, uniformes: [false, true, true] },
+    { id: 9, nombre: 'Sofía Morales', telefono: '318 369 4705', categoria: '2016-2018', talla: 'XS', pagado: true, fechaPago: '14 Ago', uniformes: [true, true, true] },
+    { id: 10, nombre: 'Andrés López', telefono: '319 470 5816', categoria: '2011-2013', talla: 'L', pagado: false, fechaPago: null, uniformes: [true, true, false] },
+    { id: 11, nombre: 'Mariana Castro', telefono: '320 581 6927', categoria: '2016-2018', talla: 'S', pagado: false, fechaPago: null, uniformes: [true, false, true] },
+    { id: 12, nombre: 'Tomás Restrepo', telefono: '310 692 7038', categoria: '2014-2015', talla: 'M', pagado: true, fechaPago: '3 Ago', uniformes: [true, true, true] },
+];
+
+let partidos = [
+    { id: 1, rival: 'Club Tiburón', fecha: '2026-08-31', hora: '08:00', cancha: 'Cancha La Castellana', categoria: '2011-2013', arbitraje: 120000, convocados: 14, completado: false },
+    { id: 2, rival: 'Academia Norte', fecha: '2026-08-31', hora: '10:00', cancha: 'Cancha Municipal', categoria: '2014-2015', arbitraje: 150000, convocados: 10, completado: false },
+    { id: 3, rival: 'Delfines FC', fecha: '2026-08-24', hora: '09:00', cancha: 'Cancha Norte', categoria: '2016-2018', arbitraje: 100000, convocados: 12, completado: true },
+];
+
+let inventario = {
+    '2011-2013': { local: { total: 50, entregados: 45 }, visitante: { total: 50, entregados: 20 }, torneo: { total: 30, entregados: 15 } },
+    '2014-2015': { local: { total: 40, entregados: 35 }, visitante: { total: 40, entregados: 28 }, torneo: { total: 25, entregados: 10 } },
+    '2016-2018': { local: { total: 45, entregados: 40 }, visitante: { total: 45, entregados: 32 }, torneo: { total: 20, entregados: 8 } },
+};
+
+const respuestasRapidas = [
+    { titulo: 'Información general', texto: '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.' },
+    { titulo: 'Costos y mensualidad', texto: 'La mensualidad es de $80.000 con fecha de corte el 15 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.' },
+    { titulo: 'Horarios de entrenamiento', texto: 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM' },
+    { titulo: 'Requisitos de inscripción', texto: 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.' },
+];
+
+const activityLog = [
+    { icon: 'check_circle', title: 'Pago registrado — Santiago Pérez', subtitle: '(2011-2013)', time: 'Hace 2 horas' },
+    { icon: 'forward_to_inbox', title: 'Recordatorio enviado — 8 padres', subtitle: 'Pendientes de pago', time: 'Ayer, 6:00 PM' },
+    { icon: 'sports_soccer', title: 'Partido creado — 2014-2015', subtitle: 'vs Academia Norte', time: 'Lun 19 Ago' },
+];
+
+// ===========================
+// NAVIGATION
+// ===========================
+function navigateTo(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active-nav');
+        btn.classList.add('text-on-surface-variant');
+        btn.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 0";
+    });
+    const activeBtn = document.querySelector(`.nav-btn[data-view="${view}"]`);
+    activeBtn.classList.add('active-nav');
+    activeBtn.classList.remove('text-on-surface-variant');
+    activeBtn.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
+
+    // Refresh view data
+    if (view === 'cobros') renderCobros();
+    if (view === 'alumnos') renderAlumnos();
+    if (view === 'calendario') renderCalendar();
+    if (view === 'mas') renderMas();
+
+    window.scrollTo(0, 0);
+}
+
+// ===========================
+// UTILITIES
+// ===========================
+function formatMoney(n) {
+    return '$' + n.toLocaleString('es-CO');
+}
+
+function getInitials(name) {
+    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+}
+
+function showToast(text, icon = 'check_circle') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-text').textContent = text;
+    document.getElementById('toast-icon').textContent = icon;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+function getGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return 'Buenos días, Míster';
+    if (h < 18) return 'Buenas tardes, Míster';
+    return 'Buenas noches, Míster';
+}
+
+function formatDate() {
+    const d = new Date();
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    return `${dias[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()}`;
+}
+
+// ===========================
+// INICIO (Dashboard)
+// ===========================
+function renderInicio() {
+    document.getElementById('greeting-text').textContent = getGreeting();
+    document.getElementById('date-text').textContent = formatDate();
+
+    const pagados = alumnos.filter(a => a.pagado);
+    const pendientes = alumnos.filter(a => !a.pagado);
+    document.getElementById('stat-cobrado').textContent = formatMoney(pagados.length * MENSUALIDAD);
+    document.getElementById('stat-pendientes').textContent = pendientes.length;
+
+    // Activity
+    const list = document.getElementById('activity-list');
+    list.innerHTML = activityLog.map(a => `
+        <li class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px]">
+            <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 mt-1">
+                <span class="material-symbols-outlined text-on-surface-variant text-xl">${a.icon}</span>
+            </div>
+            <div class="flex flex-col gap-0.5 flex-1">
+                <p class="font-body-md text-body-md text-on-surface font-semibold">${a.title}</p>
+                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.subtitle}</p>
+                <span class="font-label-sm text-label-sm text-outline mt-1">${a.time}</span>
+            </div>
+        </li>
+    `).join('');
+}
+
+// ===========================
+// ALUMNOS
+// ===========================
+function renderAlumnos() {
+    const filtered = getFilteredAlumnos();
+    document.getElementById('total-alumnos').textContent = alumnos.length;
+    const container = document.getElementById('alumnos-list');
+    container.innerHTML = filtered.map(a => `
+        <div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
+            <div class="flex items-center gap-sm">
+                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.nombre)}</div>
+                <div>
+                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface">${a.nombre}</h3>
+                    <p class="font-body-md text-body-md text-secondary">${a.categoria} • ${a.telefono}</p>
+                    <div class="flex gap-1 mt-1">
+                        ${a.uniformes.map((u, i) => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
+                        <span class="text-[10px] text-secondary self-center ml-1">Uniformes</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full ${a.pagado ? 'bg-primary' : 'bg-error'}"></span>
+                    <span class="font-label-sm text-label-sm ${a.pagado ? 'text-primary' : 'text-error'}">${a.pagado ? 'Pagado' : 'Pendiente'}</span>
+                </div>
+                <div class="flex gap-2">
+                    ${!a.pagado ? `<button onclick="registrarPago(${a.id})" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Cobrar"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
+                    <button onclick="showRecibo(${a.id})" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
+                    <button onclick="sendWhatsApp('${a.telefono}', '${a.nombre}')" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="WhatsApp"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getFilteredAlumnos() {
+    let filtered = [...alumnos];
+    if (activeCategory !== 'todos') {
+        filtered = filtered.filter(a => a.categoria === activeCategory);
+    }
+    const searchTerm = document.getElementById('search-input')?.value?.toLowerCase() || '';
+    if (searchTerm) {
+        filtered = filtered.filter(a => a.nombre.toLowerCase().includes(searchTerm));
+    }
+    return filtered;
+}
+
+function filterByCategory(cat) {
+    activeCategory = cat;
+    document.querySelectorAll('.cat-chip').forEach(c => {
+        c.classList.remove('chip-active');
+        c.classList.add('bg-surface-container', 'border', 'border-outline-variant', 'text-on-surface');
+    });
+    document.querySelector(`.cat-chip[data-cat="${cat}"]`).classList.add('chip-active');
+    renderAlumnos();
+}
+
+function filterAlumnos() {
+    renderAlumnos();
+}
+
+function toggleSearch() {
+    const box = document.getElementById('search-box');
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) {
+        document.getElementById('search-input').focus();
+    }
+}
+
+function addAlumno(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('inp-nombre').value;
+    const telefono = document.getElementById('inp-telefono').value;
+    const categoria = document.querySelector('input[name="categoria"]:checked').value;
+    const talla = document.getElementById('inp-talla').value;
+
+    alumnos.push({
+        id: alumnos.length + 1,
+        nombre, telefono, categoria, talla,
+        pagado: false, fechaPago: null,
+        uniformes: [false, false, false]
+    });
+
+    document.getElementById('form-nuevo-alumno').reset();
+    document.getElementById('modal-nuevo-alumno').classList.add('hidden');
+    showToast(`${nombre} inscrito exitosamente`);
+    renderAlumnos();
+    renderInicio();
+}
+
+// ===========================
+// COBROS
+// ===========================
+function renderCobros() {
+    const monthStr = `${MESES[currentMonth]} ${currentYear}`;
+    document.getElementById('month-display').textContent = monthStr;
+    document.getElementById('month-name-corte').textContent = MESES[currentMonth].toLowerCase();
+
+    const pagados = alumnos.filter(a => a.pagado);
+    const pendientes = alumnos.filter(a => !a.pagado);
+    document.getElementById('cobros-pagados').textContent = pagados.length;
+    document.getElementById('cobros-pendientes').textContent = pendientes.length;
+    document.getElementById('cobros-total').textContent = formatMoney(alumnos.length * MENSUALIDAD);
+    document.getElementById('reminder-count').textContent = pendientes.length;
+
+    const container = document.getElementById('cobros-list');
+    // Sort: pendientes first
+    const sorted = [...pendientes, ...pagados];
+    container.innerHTML = sorted.map(a => `
+        <div class="bg-surface-container-lowest ${a.pagado ? '' : 'shadow-[0_2px_4px_rgba(0,0,0,0.08)]'} rounded-lg p-sm flex items-center justify-between relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${a.pagado ? 'bg-primary' : 'bg-error'}"></div>
+            <div class="flex items-center gap-sm pl-xs">
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(a.nombre)}</div>
+                <div>
+                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${a.nombre}</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">${a.categoria}</p>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-xs">
+                <span class="font-body-lg text-body-lg text-on-surface font-bold">${formatMoney(MENSUALIDAD)}</span>
+                <div class="flex items-center gap-xs">
+                    ${a.pagado
+                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${a.fechaPago}</span>`
+                        : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Pendiente</span>
+                           <button onclick="registrarPago(${a.id})" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Cobrar</button>`
+                    }
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCobros();
+}
+
+function registrarPago(id) {
+    const alumno = alumnos.find(a => a.id === id);
+    if (alumno) {
+        alumno.pagado = true;
+        const d = new Date();
+        alumno.fechaPago = `${d.getDate()} ${MESES[d.getMonth()].substring(0, 3)}`;
+        receiptCounter++;
+
+        activityLog.unshift({
+            icon: 'check_circle',
+            title: `Pago registrado — ${alumno.nombre}`,
+            subtitle: `(${alumno.categoria})`,
+            time: 'Ahora mismo'
+        });
+
+        showToast(`Pago de ${alumno.nombre} registrado ✓`);
+        renderCobros();
+        renderAlumnos();
+        renderInicio();
+
+        // Auto-show receipt
+        setTimeout(() => showRecibo(id), 500);
+    }
+}
+
+function showRecibo(id) {
+    const alumno = alumnos.find(a => a.id === id);
+    if (!alumno) return;
+
+    const d = new Date();
+    document.getElementById('recibo-numero').textContent = `#${(receiptCounter).toString().padStart(4, '0')}`;
+    document.getElementById('recibo-fecha').textContent = `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+    document.getElementById('recibo-alumno').textContent = alumno.nombre;
+    document.getElementById('recibo-categoria').textContent = `${alumno.categoria}`;
+    document.getElementById('recibo-concepto').textContent = `Mensualidad ${MESES[currentMonth]} ${currentYear}`;
+    document.getElementById('modal-recibo').classList.remove('hidden');
+}
+
+function shareWhatsApp() {
+    const alumno = document.getElementById('recibo-alumno').textContent;
+    const concepto = document.getElementById('recibo-concepto').textContent;
+    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recibo de Pago*\n\n✅ Alumno: ${alumno}\n💰 Total: ${formatMoney(MENSUALIDAD)}\n📋 Concepto: ${concepto}\n📅 Fecha: ${new Date().toLocaleDateString('es-CO')}\n\n¡Gracias por confiar en nuestra escuela!`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    document.getElementById('modal-recibo').classList.add('hidden');
+}
+
+function sendWhatsApp(tel, nombre) {
+    const phone = tel.replace(/\s/g, '');
+    const msg = encodeURIComponent(`Hola, este es un mensaje de la escuela de fútbol Cancha Directa sobre ${nombre}.`);
+    window.open(`https://wa.me/57${phone}?text=${msg}`, '_blank');
+}
+
+function sendReminders() {
+    const pendientes = alumnos.filter(a => !a.pagado);
+    if (pendientes.length === 0) {
+        showToast('¡Todos los alumnos están al día! 🎉', 'celebration');
+        return;
+    }
+    const nombres = pendientes.map(a => a.nombre).join(', ');
+    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recordatorio de Pago*\n\n📢 Estimado padre de familia, le recordamos que la mensualidad de ${MESES[currentMonth]} (${formatMoney(MENSUALIDAD)}) tiene fecha de corte el día ${FECHA_CORTE}.\n\n💳 Favor realizar el pago a la brevedad.\n\n¡Gracias por ser parte de nuestra escuela!`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    showToast(`Recordatorio enviado a ${pendientes.length} familias`, 'send');
+}
+
+// ===========================
+// CALENDARIO
+// ===========================
+function renderCalendar() {
+    const d = new Date();
+    document.getElementById('cal-month-display').textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+
+    // Mini calendar
+    const cal = document.getElementById('mini-calendar');
+    const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const prevDays = new Date(d.getFullYear(), d.getMonth(), 0).getDate();
+
+    // Match dates
+    const matchDates = partidos.filter(p => {
+        const pd = new Date(p.fecha);
+        return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+    }).map(p => new Date(p.fecha).getDate());
+
+    let html = DIAS_SEMANA.map(dia => `<div class="font-label-sm text-label-sm text-secondary py-1">${dia}</div>`).join('');
+
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${prevDays - i}</div>`;
+    }
+
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = day === d.getDate();
+        const hasMatch = matchDates.includes(day);
+        let classes = 'p-1 font-body-md text-body-md';
+        if (isToday) classes += ' bg-primary text-on-primary rounded-full font-bold';
+        if (hasMatch && !isToday) classes += ' relative flex flex-col items-center';
+
+        html += `<div class="${classes}">${hasMatch && !isToday ? `<span>${day}</span><div class="w-1.5 h-1.5 rounded-full bg-primary mt-0.5"></div>` : day}</div>`;
+    }
+
+    // Next month days
+    const remaining = 42 - (firstDay + daysInMonth);
+    for (let i = 1; i <= remaining; i++) {
+        html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${i}</div>`;
+    }
+
+    cal.innerHTML = html;
+
+    // Match list
+    const list = document.getElementById('partidos-list');
+    const sortedPartidos = [...partidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    list.innerHTML = sortedPartidos.map(p => {
+        const pd = new Date(p.fecha + 'T12:00:00');
+        const costPerKid = p.convocados > 0 ? Math.round(p.arbitraje / p.convocados) : 0;
+        return `
+        <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30 flex gap-4 ${p.completado ? 'opacity-60' : ''}">
+            <div class="flex flex-col items-center justify-center ${p.completado ? 'bg-surface-container-highest' : 'bg-primary'} rounded-lg p-2 min-w-[60px] h-fit">
+                <span class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-primary'}">${DIAS_NOMBRES[pd.getDay()]}</span>
+                <span class="font-headline-md text-headline-md font-bold ${p.completado ? 'text-secondary' : 'text-on-primary'} leading-none mt-1">${pd.getDate()}</span>
+            </div>
+            <div class="flex flex-col flex-1 gap-1">
+                <h4 class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-surface'} font-bold">${p.categoria} vs ${p.rival}</h4>
+                ${p.completado
+                    ? `<div class="flex items-center gap-1 mt-1 text-primary"><span class="material-symbols-outlined text-[16px]">check_circle</span><span class="font-body-md text-body-md text-[13px]">Completado</span></div>`
+                    : `<p class="font-body-md text-body-md text-on-surface-variant text-[13px]">${p.cancha}, ${p.hora}</p>
+                       <div class="bg-surface-container-low rounded-md p-2 mt-1">
+                           <p class="font-body-md text-body-md text-on-surface-variant text-[11px] leading-tight">
+                               Arbitraje: ${formatMoney(p.arbitraje)} · ${p.convocados} convocados · ${formatMoney(costPerKid)}/niño
+                           </p>
+                       </div>
+                       <button class="mt-2 bg-surface-container-high text-on-surface font-label-sm text-label-sm px-3 py-1.5 rounded-md self-start active:scale-95 transition-transform hover:bg-surface-variant">Ver convocados</button>`
+                }
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function addPartido(e) {
+    e.preventDefault();
+    const rival = document.getElementById('inp-rival').value;
+    const fecha = document.getElementById('inp-fecha-partido').value;
+    const hora = document.getElementById('inp-hora-partido').value;
+    const cancha = document.getElementById('inp-cancha').value;
+    const categoria = document.querySelector('input[name="cat-partido"]:checked').value;
+    const arbitraje = parseInt(document.getElementById('inp-arbitraje').value) || 0;
+
+    partidos.push({
+        id: partidos.length + 1,
+        rival, fecha, hora, cancha, categoria, arbitraje,
+        convocados: 0, completado: false
+    });
+
+    document.getElementById('modal-nuevo-partido').classList.add('hidden');
+    showToast(`Partido vs ${rival} creado ⚽`);
+    renderCalendar();
+    renderInicio();
+}
+
+// ===========================
+// MÁS (Settings & Inventory)
+// ===========================
+function renderMas() {
+    // Inventory cards
+    const container = document.getElementById('inventario-cards');
+    container.innerHTML = CATEGORIAS.map(cat => {
+        const inv = inventario[cat];
+        return `
+        <div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)] p-md border border-surface-container-highest">
+            <h3 class="font-headline-md text-headline-md text-on-surface mb-3 border-b border-surface-variant pb-2 text-[16px]">Categoría ${cat}</h3>
+            <div class="space-y-3">
+                ${renderInvBar('Local (Verde)', inv.local, 'bg-primary', 'text-primary')}
+                ${renderInvBar('Visitante (Blanca)', inv.visitante, 'bg-secondary', 'text-secondary')}
+                ${renderInvBar('Kit Torneo (Ed. Esp.)', inv.torneo, 'bg-tertiary', 'text-tertiary')}
+            </div>
+        </div>`;
+    }).join('');
+
+    // Quick responses
+    const respContainer = document.getElementById('respuestas-list');
+    respContainer.innerHTML = respuestasRapidas.map(r => `
+        <div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+            <h4 class="font-body-lg text-body-lg font-bold">${r.titulo}</h4>
+            <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"${r.texto}"</p>
+            <div class="flex justify-end mt-xs">
+                <button onclick="copyText('${r.texto.replace(/'/g, "\\'")}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-[20px]">content_copy</span>
+                    <span class="font-label-sm text-label-sm">Copiar</span>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderInvBar(label, data, barColor, textColor) {
+    const pct = Math.round((data.entregados / data.total) * 100);
+    const isLow = pct < 30;
+    return `
+    <div>
+        <div class="flex justify-between items-center mb-1">
+            <span class="font-body-md text-body-md text-on-surface-variant flex items-center gap-2 text-[13px]">
+                <span class="material-symbols-outlined text-sm">checkroom</span> ${label}
+            </span>
+            <span class="font-label-sm text-label-sm ${textColor} font-bold">${data.entregados}/${data.total}</span>
+        </div>
+        <div class="w-full bg-surface-variant rounded-full h-2">
+            <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+        </div>
+    </div>`;
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Texto copiado al portapapeles', 'content_copy');
+    }).catch(() => {
+        showToast('No se pudo copiar', 'error');
+    });
+}
+
+// ===========================
+// INIT
+// ===========================
+function init() {
+    renderInicio();
+    renderAlumnos();
+    renderCobros();
+    renderCalendar();
+    renderMas();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

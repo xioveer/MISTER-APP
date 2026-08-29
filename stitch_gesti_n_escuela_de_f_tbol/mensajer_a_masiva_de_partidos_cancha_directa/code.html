@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agregar Partido</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error-container": "#ffdad6", "on-surface-variant": "#40493d", "secondary-fixed": "#e5e2e1",
+                        "inverse-on-surface": "#f1f1f1", "on-secondary-fixed-variant": "#474646", "secondary-container": "#e5e2e1",
+                        "outline-variant": "#bfcaba", "inverse-primary": "#88d982", "on-secondary-container": "#656464",
+                        "inverse-surface": "#2f3131", "primary-fixed": "#a3f69c", "on-primary": "#ffffff",
+                        "surface-dim": "#dadada", "surface-tint": "#1b6d24", "on-tertiary-fixed": "#2c1600",
+                        "on-primary-fixed-variant": "#005312", "on-primary-fixed": "#002204", "on-tertiary-fixed-variant": "#693c00",
+                        "surface-bright": "#f9f9f9", "tertiary-fixed": "#ffdcbe", "primary-container": "#2e7d32",
+                        "secondary": "#5f5e5e", "primary-fixed-dim": "#88d982", "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff", "surface-container": "#eeeeee", "tertiary-container": "#a05e00",
+                        "on-error": "#ffffff", "on-primary-container": "#cbffc2", "secondary-fixed-dim": "#c8c6c5",
+                        "on-secondary-fixed": "#1c1b1b", "outline": "#707a6c", "on-tertiary-container": "#ffeee2",
+                        "surface": "#f9f9f9", "tertiary-fixed-dim": "#ffb870", "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e8e8e8", "surface-container-highest": "#e2e2e2", "primary": "#0d631b",
+                        "tertiary": "#7e4900", "on-surface": "#1a1c1c", "on-secondary": "#ffffff", "surface-variant": "#e2e2e2",
+                        "error": "#ba1a1a", "background": "#f9f9f9", "surface-container-low": "#f3f3f3", "on-background": "#1a1c1c"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+                    },
+                    spacing: {
+                        "sm": "12px", "lg": "24px", "xs": "8px", "md": "16px", "grid-margin": "16px",
+                        "base": "4px", "touch-target-min": "48px", "grid-gutter": "12px", "xl": "32px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter"], "data-display": ["Inter"], "body-lg": ["Inter"],
+                        "label-sm": ["Inter"], "headline-lg": ["Inter"], "headline-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "data-display": ["22px", { lineHeight: "28px", letterSpacing: "0.01em", fontWeight: "800" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-sm": ["12px", { lineHeight: "16px", fontWeight: "600" }],
+                        "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .level-2-shadow {
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-[80px]">
+<!-- Custom Header for "Nuevo Partido" -->
+<header class="bg-surface sticky top-0 w-full z-40 flex items-center px-grid-margin py-sm">
+<button class="w-[48px] h-[48px] flex items-center justify-center -ml-3 text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-on-surface ml-2">Nuevo Partido</h1>
+</header>
+<main class="px-grid-margin py-lg space-y-xl max-w-lg mx-auto">
+<!-- Form Section -->
+<section class="bg-surface-container-lowest rounded-xl level-2-shadow p-md space-y-lg">
+<!-- Category Selector -->
+<div class="space-y-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">Categoría</label>
+<div class="flex flex-wrap gap-sm">
+<button class="h-[32px] px-md rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm border border-primary-container transition-colors">
+                        2011-2013
+                    </button>
+<button class="h-[32px] px-md rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-surface-variant transition-colors">
+                        2014-2015
+                    </button>
+<button class="h-[32px] px-md rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-surface-variant transition-colors">
+                        2016-2018
+                    </button>
+</div>
+</div>
+<!-- Message Field -->
+<div class="space-y-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide" for="message">Mensaje para padres</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-md font-body-md text-on-surface focus:border-2 focus:border-primary focus:outline-none resize-none transition-all" id="message" placeholder="Escribe los detalles del partido, hora de llegada y uniforme..." rows="5"></textarea>
+</div>
+<!-- Action Button -->
+<button class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl flex items-center justify-center gap-sm active:scale-95 transition-transform level-2-shadow"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">chat</span><span class="font-body-lg text-body-lg font-semibold">Enviar mensaje masivo a categoría</span></button><p class="text-label-sm font-label-sm text-on-surface-variant text-center mt-2">* El sistema obtendrá automáticamente los números de contacto de la categoría seleccionada.</p>
+</section>
+<!-- Match List Section -->
+<section class="space-y-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Partidos Programados</h2>
+<div class="space-y-grid-gutter">
+<!-- Match Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl level-2-shadow p-md flex items-center gap-md">
+<div class="w-3 h-3 rounded-full bg-primary flex-shrink-0"></div>
+<div class="flex-grow space-y-1">
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface"><span class="text-primary font-semibold">[2011-2013]</span> Escuela vs. Academia FC</h3>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 10:00 AM
+                            <span class="text-outline-variant mx-1">|</span>
+<span class="material-symbols-outlined text-[16px]">location_on</span> Cancha Principal
+                        </div>
+</div>
+</div>
+<!-- Match Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl level-2-shadow p-md flex items-center gap-md">
+<div class="w-3 h-3 rounded-full bg-tertiary-container flex-shrink-0"></div>
+<div class="flex-grow space-y-1">
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface"><span class="text-tertiary font-semibold">[2014-2015]</span> Escuela vs. Los Pumas</h3>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 12:30 PM
+                            <span class="text-outline-variant mx-1">|</span>
+<span class="material-symbols-outlined text-[16px]">location_on</span> Cancha Auxiliar
+                        </div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Shared Component JSON execution with Calendario Active) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 h-[72px] bg-surface dark:bg-surface-container-low border-t border-outline-variant shadow-lg dark:shadow-none md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm mt-1">Inicio</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-sm text-label-sm mt-1">Alumnos</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-label-sm mt-1">Cobros</span>
+</button>
+<!-- Active Tab: Calendario -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-on-primary-fixed-variant text-on-primary-container dark:text-primary-fixed rounded-xl px-4 py-1 active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-sm text-label-sm mt-1">Calendario</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-sm text-label-sm mt-1">Más</span>
+</button>
+</nav>
+</body></html>

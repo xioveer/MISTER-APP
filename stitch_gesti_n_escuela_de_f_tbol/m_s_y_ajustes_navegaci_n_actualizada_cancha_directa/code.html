@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Más - Cancha Directa</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "on-surface": "#1a1c1c",
+                            "on-background": "#1a1c1c",
+                            "on-primary-container": "#cbffc2",
+                            "surface-dim": "#dadada",
+                            "primary-container": "#2e7d32",
+                            "inverse-surface": "#2f3131",
+                            "primary-fixed": "#a3f69c",
+                            "on-primary": "#ffffff",
+                            "on-tertiary-fixed": "#2c1600",
+                            "secondary-fixed-dim": "#c8c6c5",
+                            "surface-variant": "#e2e2e2",
+                            "on-tertiary-fixed-variant": "#693c00",
+                            "tertiary-fixed-dim": "#ffb870",
+                            "background": "#f9f9f9",
+                            "on-tertiary": "#ffffff",
+                            "secondary-fixed": "#e5e2e1",
+                            "surface-bright": "#f9f9f9",
+                            "on-primary-fixed-variant": "#005312",
+                            "primary": "#0d631b",
+                            "error-container": "#ffdad6",
+                            "surface-container-low": "#f3f3f3",
+                            "secondary": "#5f5e5e",
+                            "on-tertiary-container": "#ffeee2",
+                            "outline-variant": "#bfcaba",
+                            "tertiary": "#7e4900",
+                            "surface": "#f9f9f9",
+                            "primary-fixed-dim": "#88d982",
+                            "tertiary-container": "#a05e00",
+                            "on-error": "#ffffff",
+                            "on-secondary-container": "#656464",
+                            "surface-container-highest": "#e2e2e2",
+                            "on-secondary": "#ffffff",
+                            "on-secondary-fixed-variant": "#474646",
+                            "on-surface-variant": "#40493d",
+                            "surface-container-lowest": "#ffffff",
+                            "surface-container-high": "#e8e8e8",
+                            "error": "#ba1a1a",
+                            "outline": "#707a6c",
+                            "tertiary-fixed": "#ffdcbe",
+                            "on-primary-fixed": "#002204",
+                            "on-secondary-fixed": "#1c1b1b",
+                            "secondary-container": "#e5e2e1",
+                            "on-error-container": "#93000a",
+                            "inverse-on-surface": "#f1f1f1",
+                            "inverse-primary": "#88d982",
+                            "surface-container": "#eeeeee",
+                            "surface-tint": "#1b6d24"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "base": "4px",
+                            "lg": "24px",
+                            "grid-margin": "16px",
+                            "grid-gutter": "12px",
+                            "md": "16px",
+                            "xs": "8px",
+                            "touch-target-min": "48px",
+                            "sm": "12px",
+                            "xl": "32px"
+                    },
+                    "fontFamily": {
+                            "body-md": ["Inter"],
+                            "headline-md": ["Inter"],
+                            "body-lg": ["Inter"],
+                            "label-sm": ["Inter"],
+                            "headline-lg": ["Inter"],
+                            "data-display": ["Inter"]
+                    },
+                    "fontSize": {
+                            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                            "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                            "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                            "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "data-display": ["22px", {"lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md pb-[80px]">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-background z-40 flat no shadows border-b border-surface-variant flex justify-between items-center px-grid-margin py-xs max-w-full">
+<div class="flex items-center gap-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Más</h1>
+</div>
+<div class="flex items-center">
+<button class="w-[48px] h-[48px] flex items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors rounded-full active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="px-grid-margin py-md flex flex-col gap-lg">
+<!-- School Info Card -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-surface-variant flex items-center gap-md">
+<img class="w-[48px] h-[48px] rounded-full object-cover" data-alt="A modern minimalist vector style logo for a soccer school named Cancha Directa, featuring a stylized green soccer ball and shield on a clean white background, corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgK1Y7plNZ3WDiAlKzdUy04BwHR05Ll4zyo70I9johbbyJFI81NuuUE46VVTBIG9ixtTnTAZHpzOC5dsT9WLtqK2DmmygqYlZo8O0idoBd_eqLlrmsyVncVBAiEsOHzhbz7yD0DW7GIVW84lo1CDkZs_uhs_A2DYKaDrOqxPap5S9IBduXwPQiw449dDw-8pJe5cWyyGyq12CKuM7P9VvDnVSFKxqHA2RS4Jf3MJQe2ttQQHGLzjMhjg"/>
+<div class="flex-1">
+<h2 class="font-body-lg text-body-lg font-bold text-on-surface">Cancha Directa</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Barranquilla, Colombia</p>
+</div>
+<button class="w-[48px] h-[48px] flex items-center justify-center text-primary rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</section>
+<!-- Herramientas -->
+<section class="flex flex-col gap-base">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant px-sm uppercase tracking-wider">Herramientas</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
+<a class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant" href="#kit-respuestas">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary" data-icon="chat">chat</span>
+<span class="font-body-md text-body-md">Kit de respuestas rápidas</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</a>
+<button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary" data-icon="notifications_active">notifications_active</span>
+<span class="font-body-md text-body-md">Configurar recordatorios</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</button>
+<a class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors" href="{{DATA:SCREEN:SCREEN_6}}">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary" data-icon="styler">styler</span>
+<span class="font-body-md text-body-md">Inventario de uniformes</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+</section>
+<!-- Configuración -->
+<section class="flex flex-col gap-base">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant px-sm uppercase tracking-wider">Configuración</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
+<div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="attach_money">attach_money</span>
+<span class="font-body-md text-body-md">Valor de mensualidad</span>
+</div>
+<span class="font-body-md text-body-md font-semibold">$80.000</span>
+</div>
+<div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="sell">sell</span>
+<span class="font-body-md text-body-md">Categorías</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant">5 categorías</span>
+</div>
+<button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Mi cuenta</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Kit de respuestas rápidas -->
+<section class="flex flex-col gap-grid-gutter mt-sm" id="kit-respuestas">
+<h3 class="font-headline-md text-headline-md text-on-surface">Kit de respuestas rápidas</h3>
+<div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+<h4 class="font-body-lg text-body-lg font-bold">Información general</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"¡Hola! Gracias por tu interés en Cancha Directa. Aquí va la info..."</p>
+<div class="flex justify-end mt-xs">
+<button class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[48px]" onclick="const text = this.closest('div.bg-surface-container-lowest').querySelector('p').innerText; navigator.clipboard.writeText(text); alert('Copiado al portapapeles');">
+<span class="material-symbols-outlined text-[20px]" data-icon="content_copy">content_copy</span>
+<span class="font-label-sm text-label-sm">Copiar</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+<h4 class="font-body-lg text-body-lg font-bold">Costos y mensualidad</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"La mensualidad es de $80.000 con fecha de corte el 15 de cada mes..."</p>
+<div class="flex justify-end mt-xs">
+<button class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[48px]" onclick="const text = this.closest('div.bg-surface-container-lowest').querySelector('p').innerText; navigator.clipboard.writeText(text); alert('Copiado al portapapeles');">
+<span class="material-symbols-outlined text-[20px]" data-icon="content_copy">content_copy</span>
+<span class="font-label-sm text-label-sm">Copiar</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+<h4 class="font-body-lg text-body-lg font-bold">Horarios de entrenamiento</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Los horarios de entrenamiento por categoría son..."</p>
+<div class="flex justify-end mt-xs">
+<button class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[48px]" onclick="const text = this.closest('div.bg-surface-container-lowest').querySelector('p').innerText; navigator.clipboard.writeText(text); alert('Copiado al portapapeles');">
+<span class="material-symbols-outlined text-[20px]" data-icon="content_copy">content_copy</span>
+<span class="font-label-sm text-label-sm">Copiar</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+<h4 class="font-body-lg text-body-lg font-bold">Requisitos de inscripción</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Para inscribir a tu hijo necesitas: documento de identidad..."</p>
+<div class="flex justify-end mt-xs">
+<button class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[48px]" onclick="const text = this.closest('div.bg-surface-container-lowest').querySelector('p').innerText; navigator.clipboard.writeText(text); alert('Copiado al portapapeles');">
+<span class="material-symbols-outlined text-[20px]" data-icon="content_copy">content_copy</span>
+<span class="font-label-sm text-label-sm">Copiar</span>
+</button>
+</div>
+</div>
+<div class="flex justify-center mt-sm">
+<button class="text-primary font-body-md text-body-md font-semibold hover:underline h-[48px] px-md">
+                    Editar plantillas
+                </button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 h-[72px] bg-surface dark:bg-surface-container-low shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:shadow-none pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150 min-w-[64px] min-h-[48px] rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150 min-w-[64px] min-h-[48px] rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="group">group</span>
+<span class="font-label-sm text-label-sm">Alumnos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150 min-w-[64px] min-h-[48px] rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="payments">payments</span>
+<span class="font-label-sm text-label-sm">Cobros</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150 min-w-[64px] min-h-[48px] rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-sm text-label-sm">Calendario</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-on-primary-fixed-variant text-on-primary-container dark:text-primary-fixed rounded-xl px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-150 min-w-[64px] min-h-[48px]" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-sm text-label-sm">Más</span>
+</a>
+</nav>
+</body></html>

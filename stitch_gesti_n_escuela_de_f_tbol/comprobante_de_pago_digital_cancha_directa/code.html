@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Comprobante de Pago Digital</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#e2e2e2",
+                      "primary": "#0d631b",
+                      "on-secondary-fixed": "#1c1b1b",
+                      "outline-variant": "#bfcaba",
+                      "on-tertiary-fixed": "#2c1600",
+                      "outline": "#707a6c",
+                      "primary-fixed-dim": "#88d982",
+                      "background": "#f9f9f9",
+                      "on-primary-fixed-variant": "#005312",
+                      "on-surface-variant": "#40493d",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "tertiary-fixed": "#ffdcbe",
+                      "on-secondary-fixed-variant": "#474646",
+                      "surface-container-highest": "#e2e2e2",
+                      "secondary": "#5f5e5e",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-dim": "#dadada",
+                      "error": "#ba1a1a",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed-variant": "#693c00",
+                      "secondary-fixed": "#e5e2e1",
+                      "on-tertiary-container": "#ffeee2",
+                      "inverse-primary": "#88d982",
+                      "surface-tint": "#1b6d24",
+                      "surface-container-high": "#e8e8e8",
+                      "surface": "#f9f9f9",
+                      "error-container": "#ffdad6",
+                      "on-tertiary": "#ffffff",
+                      "surface-container": "#eeeeee",
+                      "inverse-surface": "#2f3131",
+                      "secondary-container": "#e5e2e1",
+                      "on-primary": "#ffffff",
+                      "primary-fixed": "#a3f69c",
+                      "on-surface": "#1a1c1c",
+                      "on-background": "#1a1c1c",
+                      "tertiary": "#7e4900",
+                      "tertiary-container": "#a05e00",
+                      "on-secondary-container": "#656464",
+                      "on-error-container": "#93000a",
+                      "primary-container": "#2e7d32",
+                      "on-primary-container": "#cbffc2",
+                      "inverse-on-surface": "#f1f1f1",
+                      "surface-bright": "#f9f9f9",
+                      "on-primary-fixed": "#002204",
+                      "tertiary-fixed-dim": "#ffb870",
+                      "on-secondary": "#ffffff",
+                      "surface-container-low": "#f3f3f3"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "8px",
+                      "grid-gutter": "12px",
+                      "touch-target-min": "48px",
+                      "lg": "24px",
+                      "grid-margin": "16px",
+                      "sm": "12px",
+                      "xl": "32px",
+                      "base": "4px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "data-display": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md-mobile": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm-mobile": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md-mobile": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "data-display-mobile": [
+                              "20px",
+                              {
+                                      "lineHeight": "26px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-lg-mobile": [
+                              "15px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "data-display": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen flex flex-col antialiased">
+<!-- App Bar -->
+<header class="bg-surface shadow-sm w-full top-0 sticky z-40">
+<div class="flex justify-between items-center h-touch-target-min px-grid-margin w-full">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back" data-weight="fill">arrow_back</span>
+<h1 class="font-headline-md-mobile text-headline-md-mobile text-on-surface">Detalle de Pago</h1>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-surface-variant">
+<img alt="Director Profile" class="object-cover w-full h-full" data-alt="A small, professional profile picture of a soccer coach or school administrator. Modern, well-lit, corporate headshot against a neutral gray background. High quality photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACOJgyVXND6NhvRnwhIPQFpmk5bibTbKJdlM4JcyHn8qgxhCHqL1sAOUn6FVPVaGnRv9ZWzw57ZfsjA3LYfy-3knhT3G0lBIzxyX_KHm3IOSOaJ0PYBU65AUUe_vvBnh-Az4xGMvvlq2u_3hijnGhMBEC0ld93xuf2hsJPJ2MKI6C5N3o9LYqRXNVo738BBj3PRGFrArNPjAWQdk8aTwXrxWZp8TyepcirRhg_DiVBPlIzc44BHTlvJw"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-grid-margin py-lg flex flex-col items-center pb-24 max-w-md mx-auto w-full">
+<!-- Digital Receipt Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-lg w-full overflow-hidden relative mb-lg" id="receipt-card">
+<!-- Receipt Header -->
+<div class="bg-surface p-md border-b border-surface-variant flex flex-col items-center justify-center text-center relative">
+<!-- Branding Placeholder -->
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center mb-sm shadow-sm border-2 border-surface-container-lowest relative z-10">
+<span class="material-symbols-outlined text-on-primary-container text-[32px]" data-icon="sports_soccer">sports_soccer</span>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">Cancha Directa</h2>
+<p class="font-body-md-mobile text-body-md-mobile text-on-surface-variant mt-xs">Escuela de Fútbol</p>
+<!-- Decorative zig-zag bottom edge -->
+<div class="absolute -bottom-[6px] left-0 right-0 h-3" style="background: radial-gradient(circle at 6px 0px, transparent 0, transparent 6px, #ffffff 6px) repeat-x; background-size: 12px 12px; transform: rotate(180deg);"></div>
+</div>
+<!-- Receipt Body -->
+<div class="p-lg pt-xl flex flex-col gap-md relative bg-surface-container-lowest">
+<!-- Status Badge -->
+<div class="absolute top-4 right-4 rotate-12 opacity-90">
+<div class="border-4 border-primary text-primary px-sm py-xs rounded-lg flex items-center gap-xs font-data-display-mobile text-data-display-mobile uppercase tracking-widest shadow-sm bg-surface-container-lowest/80 backdrop-blur-sm">
+<span class="material-symbols-outlined" data-icon="check_circle" data-weight="fill">check_circle</span>
+                        PAGADO
+                    </div>
+</div>
+<div class="text-center mb-sm">
+<p class="font-label-sm-mobile text-label-sm-mobile text-on-surface-variant uppercase tracking-wider">Recibo de Pago No.</p>
+<p class="font-data-display-mobile text-data-display-mobile text-on-surface">#1234</p>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-sm">
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface-variant">Fecha y Hora</span>
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface font-semibold">15 Sep 2024, 10:30 AM</span>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-sm">
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface-variant">Alumno</span>
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface font-semibold">Santiago Pérez</span>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-sm">
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface-variant">Categoría</span>
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface font-semibold">2011-2013 (Sub-10)</span>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-sm">
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface-variant">Concepto</span>
+<span class="font-body-md-mobile text-body-md-mobile text-on-surface font-semibold text-right">Mensualidad Septiembre 2024</span>
+</div>
+<div class="flex justify-between items-center pt-sm mt-sm">
+<span class="font-headline-md-mobile text-headline-md-mobile text-on-surface">Total</span>
+<span class="font-data-display-mobile text-data-display-mobile text-primary">$120.000</span>
+</div>
+</div>
+<!-- Receipt Footer -->
+<div class="bg-surface p-md text-center border-t border-surface-variant border-dashed">
+<p class="font-body-md-mobile text-body-md-mobile text-on-surface-variant italic">¡Gracias por confiar en nuestra escuela!</p>
+</div>
+</div>
+<!-- Action Area -->
+<div class="w-full mt-auto flex flex-col gap-sm">
+<button class="w-full h-touch-target-min bg-[#25D366] hover:bg-[#128C7E] active:scale-95 duration-150 transition-all text-on-primary rounded-xl flex items-center justify-center gap-sm font-headline-md-mobile text-headline-md-mobile shadow-md">
+<!-- Using chat icon as a fallback for whatsapp icon -->
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+                Enviar por WhatsApp
+            </button>
+<button class="w-full h-touch-target-min bg-surface-variant hover:bg-surface-container-high active:scale-95 duration-150 transition-all text-on-surface rounded-xl flex items-center justify-center gap-sm font-body-lg-mobile text-body-lg-mobile">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                Descargar PDF
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mandatory Shell - Supressed on this specific task-focused screen as it's a detail/transaction view, but requested to demonstrate component structure) -->
+<!-- Note: Following semantic rules, this screen is a linear/task-focused detail view, so nav is technically suppressed for UX, but provided here as requested by component generation instructions for demonstration -->
+<!-- Usually this would be hidden on a detail screen, but showing for adherence to JSON request -->
+<nav class="bg-surface-container-lowest shadow-[0_-2px_4px_rgba(0,0,0,0.08)] fixed bottom-0 w-full z-50 flex justify-around items-center px-xs py-base">
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-1 hover:bg-surface-variant/50 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-1 hover:bg-surface-variant/50 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="group">group</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Alumnos</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 hover:bg-surface-variant/50 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="payments" data-weight="fill">payments</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Pagos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-1 hover:bg-surface-variant/50 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="sports_soccer">sports_soccer</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Partidos</span>
+</a>
+</nav>
+</body></html>

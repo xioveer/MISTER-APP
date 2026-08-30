@@ -10,7 +10,6 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -142,41 +141,19 @@
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         }
+        /* Gold "convocado" highlight */
+        .convocado-gold { border: 2px solid #fbbf24 !important; box-shadow: 0 0 0 1px #fbbf24, 0 0 10px 0 rgba(251,191,36,0.35); }
+        /* Notification panel */
+        #notif-panel { animation: notifDrop 0.22s ease-out; transform-origin: top right; }
+        @keyframes notifDrop { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .notif-unread { background-color: rgba(13, 99, 27, 0.06); }
+        .notif-badge { min-width: 16px; height: 16px; font-size: 10px; line-height: 16px; }
     </style>
 </head>
 <body class="bg-background text-on-background antialiased">
 
-<!-- ===== AUTH LOADING SPLASH ===== -->
-<div id="auth-loading" class="fixed inset-0 z-[100] bg-surface flex items-center justify-center">
-    <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-</div>
-
-<!-- ===== LOGIN SCREEN ===== -->
-<div id="login-screen" class="hidden fixed inset-0 z-[90] bg-surface flex items-center justify-center px-lg">
-    <div class="w-full max-w-[380px] flex flex-col items-center gap-lg">
-        <div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
-            <span class="material-symbols-outlined text-on-primary-container text-3xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
-        </div>
-        <div class="text-center">
-            <h1 class="font-headline-lg text-headline-lg font-bold text-primary">Cancha Directa</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant mt-1">Míster App — Barranquilla</p>
-        </div>
-        <form id="form-login" onsubmit="enviarMagicLink(event)" class="w-full flex flex-col gap-md">
-            <div>
-                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Correo electrónico</label>
-                <input required id="login-email" type="email" autocomplete="email" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" placeholder="tu@correo.com"/>
-            </div>
-            <button type="submit" id="btn-login" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
-                <span class="material-symbols-outlined">mail</span>
-                Enviar enlace mágico
-            </button>
-        </form>
-        <p id="login-message" class="hidden font-body-md text-body-md text-center rounded-lg p-md w-full"></p>
-    </div>
-</div>
-
 <!-- ===== APP SHELL ===== -->
-<div id="app" class="hidden max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
+<div id="app" class="max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
 
     <!-- ===== VIEW 1: INICIO (Dashboard) ===== -->
     <div id="view-inicio" class="view active pb-[88px]">
@@ -191,9 +168,9 @@
                     <span class="font-body-md text-body-md text-on-surface-variant" id="date-text"></span>
                 </div>
             </div>
-            <button aria-label="Notificaciones" class="w-[48px] h-[48px] flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-95 duration-100 flex-shrink-0 relative">
+            <button onclick="toggleNotifPanel()" aria-label="Notificaciones" class="notif-bell w-[48px] h-[48px] flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-95 duration-100 flex-shrink-0 relative">
                 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
-                <div class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-error pulse-dot"></div>
+                <div class="notif-badge absolute top-1.5 right-1.5 rounded-full bg-error text-white font-bold px-1 pulse-dot hidden">0</div>
             </button>
         </header>
 
@@ -206,7 +183,7 @@
                     <div class="font-data-display text-data-display text-primary" id="stat-cobrado">$2.450.000</div>
                     <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
                         <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
-                        de $3.200.000 total
+                        de <span id="stat-total-esperado">$0</span> esperado
                     </div>
                 </article>
                 <!-- Card 2: Pendientes -->
@@ -224,7 +201,7 @@
                     <div class="font-headline-lg text-headline-lg text-on-surface" id="stat-partido">Sáb 31 Ago</div>
                     <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
                         <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
-                        <span id="stat-partido-sub">Sin partidos próximos</span>
+                        2015 vs Club Tiburón
                     </div>
                 </article>
             </section>
@@ -264,7 +241,7 @@
             <section class="flex flex-col gap-sm">
                 <div class="flex justify-between items-center mb-xs">
                     <h3 class="font-headline-md text-headline-md text-on-background">Actividad reciente</h3>
-                    <button class="font-label-sm text-label-sm text-primary uppercase tracking-wider">Ver todo</button>
+                    <button onclick="openActivityModal()" class="font-label-sm text-label-sm text-primary uppercase tracking-wider min-h-[48px] px-xs">Ver todo</button>
                 </div>
                 <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant overflow-hidden">
                     <ul id="activity-list" class="flex flex-col divide-y divide-surface-variant">
@@ -304,11 +281,8 @@
                 </div>
             </div>
             <!-- Category Filters -->
-            <div class="flex overflow-x-auto gap-xs pb-xs no-scrollbar">
-                <button onclick="filterByCategory('todos')" class="cat-chip chip-active whitespace-nowrap px-sm h-8 rounded-full font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="todos">Todos</button>
-                <button onclick="filterByCategory('2011-2013')" class="cat-chip whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="2011-2013">2011-2013</button>
-                <button onclick="filterByCategory('2014-2015')" class="cat-chip whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="2014-2015">2014-2015</button>
-                <button onclick="filterByCategory('2016-2018')" class="cat-chip whitespace-nowrap px-sm h-8 rounded-full bg-surface-container border border-outline-variant text-on-surface font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="2016-2018">2016-2018</button>
+            <div id="alumnos-cat-filters" class="flex overflow-x-auto gap-xs pb-xs no-scrollbar">
+                <!-- Populated by JS (renderCategoryChips) -->
             </div>
             <!-- Lista de alumnos -->
             <div id="alumnos-list" class="flex flex-col gap-grid-gutter">
@@ -336,7 +310,7 @@
                 </button>
                 <div class="text-center">
                     <h2 class="font-headline-lg text-headline-lg text-primary" id="month-display"></h2>
-                    <p class="font-body-md text-body-md text-on-surface-variant">Corte: 15 de <span id="month-name-corte"></span></p>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Corte: <span id="fecha-corte-dia"></span> de <span id="month-name-corte"></span></p>
                 </div>
                 <button onclick="changeMonth(1)" class="h-touch-target-min w-touch-target-min flex items-center justify-center text-on-surface-variant active:opacity-80">
                     <span class="material-symbols-outlined">chevron_right</span>
@@ -405,11 +379,8 @@
                 </button>
             </div>
             <!-- Category Chips -->
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-grid-margin px-grid-margin">
-                <button class="h-[32px] px-4 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform">Todas</button>
-                <button class="h-[32px] px-4 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/50 font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform hover:bg-surface-container-high">2011-2013</button>
-                <button class="h-[32px] px-4 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/50 font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform hover:bg-surface-container-high">2014-2015</button>
-                <button class="h-[32px] px-4 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/50 font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform hover:bg-surface-container-high">2016-2018</button>
+            <div id="calendario-cat-filters" class="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-grid-margin px-grid-margin">
+                <!-- Populated by JS (renderCategoryChips) -->
             </div>
             <!-- Mini Calendar -->
             <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30">
@@ -433,8 +404,9 @@
             <div class="flex items-center gap-sm">
                 <h1 class="font-headline-md text-headline-md font-bold text-primary">Más</h1>
             </div>
-            <button class="w-[48px] h-[48px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full active:scale-95 duration-100">
+            <button onclick="toggleNotifPanel()" aria-label="Notificaciones" class="notif-bell w-[48px] h-[48px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full active:scale-95 duration-100 relative">
                 <span class="material-symbols-outlined">notifications</span>
+                <div class="notif-badge absolute top-1.5 right-1.5 rounded-full bg-error text-white font-bold px-1 pulse-dot hidden">0</div>
             </button>
         </header>
         <main class="px-grid-margin py-md flex flex-col gap-lg">
@@ -463,7 +435,7 @@
                         </div>
                         <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
                     </button>
-                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
+                    <button onclick="openAutomationModal()" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
                         <div class="flex items-center gap-md">
                             <span class="material-symbols-outlined text-primary">notifications_active</span>
                             <span class="font-body-md text-body-md">Configurar recordatorios</span>
@@ -496,27 +468,21 @@
                             <span class="material-symbols-outlined text-on-surface-variant">event</span>
                             <span class="font-body-md text-body-md">Fecha de corte</span>
                         </div>
-                        <span class="font-body-md text-body-md font-semibold">Día 15</span>
+                        <span class="font-body-md text-body-md font-semibold">Día 30</span>
                     </div>
                     <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
                         <div class="flex items-center gap-md">
                             <span class="material-symbols-outlined text-on-surface-variant">sell</span>
                             <span class="font-body-md text-body-md">Categorías</span>
                         </div>
-                        <span class="font-body-md text-body-md text-on-surface-variant">3 categorías</span>
+                        <span class="font-body-md text-body-md text-on-surface-variant" id="config-num-categorias"></span>
                     </div>
-                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
+                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
                         <div class="flex items-center gap-md">
                             <span class="material-symbols-outlined text-on-surface-variant">person</span>
-                            <span class="font-body-md text-body-md" id="mi-cuenta-email">Mi cuenta</span>
+                            <span class="font-body-md text-body-md">Mi cuenta</span>
                         </div>
                         <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
-                    </button>
-                    <button onclick="cerrarSesion()" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
-                        <div class="flex items-center gap-md">
-                            <span class="material-symbols-outlined text-error">logout</span>
-                            <span class="font-body-md text-body-md text-error font-semibold">Cerrar sesión</span>
-                        </div>
                     </button>
                 </div>
             </section>
@@ -540,6 +506,52 @@
                 <button class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
                     <span class="material-symbols-outlined">update</span>
                     Actualizar Stock / Entregas
+                </button>
+            </section>
+
+            <!-- Catálogo de Cobros (Conceptos, artículos y torneos dinámicos) -->
+            <section class="flex flex-col gap-sm">
+                <div class="flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-primary text-2xl">sell</span>
+                    <h2 class="font-headline-md text-headline-md text-on-surface">Catálogo de Cobros</h2>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant">Artículos, inscripciones y torneos que se pueden combinar con la mensualidad al registrar un pago.</p>
+                <div id="conceptos-list" class="flex flex-col gap-sm">
+                    <!-- Populated by JS -->
+                </div>
+                <form id="form-concepto" onsubmit="submitConcepto(event)" class="flex flex-col gap-xs mt-xs">
+                    <input type="hidden" id="editing-concepto-id" value=""/>
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del artículo, uniforme o evento</label>
+                        <input required id="inp-concepto-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Torneo Sagrado Corazón"/>
+                    </div>
+                    <div class="flex gap-xs">
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Precio</label>
+                            <input required id="inp-concepto-precio" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="number" placeholder="50000"/>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Plazo de pago (opcional)</label>
+                            <input id="inp-concepto-plazo" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="date"/>
+                        </div>
+                    </div>
+                    <div class="flex gap-xs">
+                        <button type="submit" id="btn-concepto-submit" class="flex-1 h-touch-target-min bg-primary text-on-primary rounded-lg font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                            <span class="material-symbols-outlined">add</span>
+                            <span id="btn-concepto-submit-label">Agregar al catálogo</span>
+                        </button>
+                        <button type="button" id="btn-concepto-cancelar" onclick="cancelarEdicionConcepto()" class="hidden h-touch-target-min px-md bg-surface-variant text-on-surface rounded-lg font-label-sm text-label-sm active:scale-95 transition-transform">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Historial y Exportación -->
+            <section class="flex flex-col gap-sm">
+                <h3 class="font-headline-md text-headline-md text-on-surface">Historial de Pagos</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant"><span id="config-num-transacciones">0</span> transacciones registradas en total.</p>
+                <button onclick="exportarHistorialCSV()" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant text-on-surface rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">download</span>
+                    Exportar historial a Excel (CSV)
                 </button>
             </section>
 
@@ -568,34 +580,24 @@
             </div>
             <form id="form-nuevo-alumno" onsubmit="addAlumno(event)" class="flex flex-col gap-md">
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del alumno</label>
-                    <input required id="inp-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Santiago Pérez"/>
-                </div>
-                <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del acudiente</label>
-                    <input required id="inp-nombre-acudiente" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: María Pérez"/>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del padre / acudiente</label>
+                    <input required id="inp-acudiente" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Jorge Pérez"/>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono acudiente (WhatsApp)</label>
                     <input required id="inp-telefono" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="tel" placeholder="Ej: 311 234 5678"/>
                 </div>
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría</label>
-                    <div class="flex flex-wrap gap-2">
-                        <label class="cursor-pointer"><input type="radio" name="categoria" value="2011-2013" class="sr-only peer" checked/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2011-2013</span></label>
-                        <label class="cursor-pointer"><input type="radio" name="categoria" value="2014-2015" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2014-2015</span></label>
-                        <label class="cursor-pointer"><input type="radio" name="categoria" value="2016-2018" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2016-2018</span></label>
-                    </div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del jugador</label>
+                    <input required id="inp-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Santiago Pérez"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría (año de nacimiento)</label>
+                    <div id="inp-categoria-group" class="flex flex-wrap gap-2"></div>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Talla de uniforme</label>
-                    <select id="inp-talla" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md">
-                        <option value="XS">XS</option>
-                        <option value="S">S</option>
-                        <option value="M" selected>M</option>
-                        <option value="L">L</option>
-                        <option value="XL">XL</option>
-                    </select>
+                    <select id="inp-talla" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md"></select>
                 </div>
                 <button type="submit" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
                     <span class="material-symbols-outlined">person_add</span>
@@ -636,20 +638,27 @@
                         <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-fecha"></span>
                     </div>
                     <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
-                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Alumno</span>
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Padre / Acudiente</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-acudiente"></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Jugador</span>
                         <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-alumno"></span>
                     </div>
                     <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
                         <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Categoría</span>
                         <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-categoria"></span>
                     </div>
+                    <div class="flex flex-col gap-1 border-b border-surface-variant pb-xs" id="recibo-items">
+                        <!-- Populated by JS: una línea por mes/concepto -->
+                    </div>
                     <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
-                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Concepto</span>
-                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px] text-right" id="recibo-concepto"></span>
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Método de pago</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-metodo">—</span>
                     </div>
                     <div class="flex justify-between items-center pt-sm">
                         <span class="font-headline-md text-headline-md text-on-surface">Total</span>
-                        <span class="font-data-display text-data-display text-primary">$80.000</span>
+                        <span class="font-data-display text-data-display text-primary" id="recibo-total">$0</span>
                     </div>
                 </div>
                 <!-- Receipt Footer -->
@@ -701,12 +710,8 @@
                     <input required id="inp-cancha" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Cancha La Castellana"/>
                 </div>
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría</label>
-                    <div class="flex flex-wrap gap-2">
-                        <label class="cursor-pointer"><input type="radio" name="cat-partido" value="2011-2013" class="sr-only peer" checked/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2011-2013</span></label>
-                        <label class="cursor-pointer"><input type="radio" name="cat-partido" value="2014-2015" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2014-2015</span></label>
-                        <label class="cursor-pointer"><input type="radio" name="cat-partido" value="2016-2018" class="sr-only peer"/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">2016-2018</span></label>
-                    </div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría (año de nacimiento)</label>
+                    <div id="inp-cat-partido-group" class="flex flex-wrap gap-2"></div>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Costo arbitraje</label>
@@ -720,18 +725,204 @@
         </div>
     </div>
 
-    <!-- ===== MODAL: Recordatorios Masivos ===== -->
-    <div id="modal-recordatorios" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
-        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
-        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[80vh] overflow-y-auto p-lg pb-xl z-10">
-            <div class="flex justify-between items-center mb-md">
-                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Recordatorios pendientes</h2>
-                <button onclick="this.closest('#modal-recordatorios').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+    <!-- ===== MODAL: Editar Alumno ===== -->
+    <div id="modal-editar-alumno" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="cerrarModalEditar()"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-lg">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Editar Alumno</h2>
+                <button onclick="cerrarModalEditar()" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <div id="recordatorios-list" class="flex flex-col gap-sm">
-                <!-- Populated by JS -->
+            <form id="form-editar-alumno" onsubmit="saveEditAlumno(event)" class="flex flex-col gap-md">
+                <input type="hidden" id="edit-id"/>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del padre / acudiente</label>
+                    <input required id="edit-acudiente" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono acudiente (WhatsApp)</label>
+                    <input required id="edit-telefono" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="tel"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del jugador</label>
+                    <div id="edit-nombre-display" class="w-full h-touch-target-min bg-surface-container border border-outline-variant rounded-lg px-3 flex items-center text-on-surface font-body-md"></div>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría (año de nacimiento)</label>
+                    <div id="edit-categoria-group" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Talla de uniforme</label>
+                    <select id="edit-talla" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md"></select>
+                </div>
+                <button type="submit" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar cambios
+                </button>
+                <button type="button" onclick="deleteAlumno()" class="w-full h-touch-target-min bg-error/10 text-error rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">person_remove</span>
+                    Eliminar por retiro
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Registrar Pago (POS multi-producto) ===== -->
+    <div id="modal-cobro" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="cerrarModalCobro()"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Registrar Pago</h2>
+                <button onclick="cerrarModalCobro()" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-sm" id="cobro-alumno-nombre"></p>
+            <div id="cobro-deuda-banner" class="bg-error/10 text-error rounded-lg p-sm font-label-sm text-label-sm mb-md hidden"></div>
+
+            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Meses pendientes (elige cuáles cobrar)</label>
+            <div id="cobro-meses-list" class="flex flex-col gap-xs mb-md"></div>
+
+            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Otros conceptos (inscripción, uniformes, torneos...)</label>
+            <div id="cobro-conceptos-list" class="flex flex-col gap-xs mb-md"></div>
+
+            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Método de pago</label>
+            <div id="cobro-metodo-group" class="flex flex-col gap-sm mb-lg">
+                <label class="cursor-pointer"><input type="radio" name="metodo-pago" value="Efectivo" class="sr-only peer" checked/><span class="w-full h-touch-target-min px-md rounded-lg bg-surface-container border border-outline-variant font-body-md text-body-md flex items-center gap-sm peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all"><span class="material-symbols-outlined">payments</span>Efectivo</span></label>
+                <label class="cursor-pointer"><input type="radio" name="metodo-pago" value="Nequi" class="sr-only peer"/><span class="w-full h-touch-target-min px-md rounded-lg bg-surface-container border border-outline-variant font-body-md text-body-md flex items-center gap-sm peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all"><span class="material-symbols-outlined">smartphone</span>Nequi</span></label>
+                <label class="cursor-pointer"><input type="radio" name="metodo-pago" value="Transferencia Bancaria" class="sr-only peer"/><span class="w-full h-touch-target-min px-md rounded-lg bg-surface-container border border-outline-variant font-body-md text-body-md flex items-center gap-sm peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all"><span class="material-symbols-outlined">account_balance</span>Transferencia Bancaria</span></label>
+            </div>
+            <button onclick="confirmarCobro()" id="btn-confirmar-cobro" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform disabled:opacity-40">
+                <span class="material-symbols-outlined">check_circle</span>
+                Confirmar pago de <span id="cobro-monto" class="ml-1"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Actividad completa ===== -->
+    <div id="modal-actividad" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-actividad').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto z-10">
+            <div class="flex justify-between items-center px-lg pt-lg pb-sm sticky top-0 bg-surface z-10">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Actividad reciente</h2>
+                <button onclick="document.getElementById('modal-actividad').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <ul id="activity-list-full" class="flex flex-col divide-y divide-surface-variant pb-lg"></ul>
+        </div>
+    </div>
+
+    <!-- ===== NOTIFICATION CENTER (floating panel) ===== -->
+    <div id="notif-overlay" onclick="toggleNotifPanel()" class="hidden fixed inset-0 z-[65] bg-black/20"></div>
+    <div id="notif-panel" class="hidden fixed top-[64px] right-[max(8px,calc(50%-207px))] w-[92%] max-w-[380px] max-h-[70vh] bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-variant z-[66] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center px-md py-sm border-b border-surface-variant bg-surface-container-lowest sticky top-0">
+            <h3 class="font-body-lg text-body-lg font-bold text-on-surface">Notificaciones</h3>
+            <button onclick="markAllNotifsRead()" class="font-label-sm text-label-sm text-primary px-sm py-1 rounded-full hover:bg-primary/10">Marcar todas leídas</button>
+        </div>
+        <ul id="notif-list" class="flex flex-col divide-y divide-surface-variant overflow-y-auto no-scrollbar"></ul>
+    </div>
+
+    <!-- ===== MODAL: Convocados ===== -->
+    <div id="modal-convocados" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-convocados').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[88vh] overflow-y-auto z-10 flex flex-col">
+            <div class="flex justify-between items-center px-lg pt-lg pb-sm sticky top-0 bg-surface z-10">
+                <div>
+                    <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Convocatoria</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant" id="convocados-partido-info"></p>
+                </div>
+                <button onclick="document.getElementById('modal-convocados').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="px-lg">
+                <div class="bg-primary/10 rounded-lg p-sm flex items-center justify-between mb-md">
+                    <span class="font-body-md text-body-md text-on-surface"><span id="convocados-count" class="font-bold text-primary">0</span> convocados</span>
+                    <span class="font-body-md text-body-md text-on-surface">Arbitraje c/u: <span id="convocados-costo" class="font-bold text-primary">$0</span></span>
+                </div>
+            </div>
+            <ul id="convocados-checklist" class="flex flex-col divide-y divide-surface-variant px-lg"></ul>
+            <div class="flex flex-col gap-sm p-lg sticky bottom-0 bg-surface border-t border-surface-variant mt-auto">
+                <button onclick="guardarConvocados()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar convocatoria
+                </button>
+                <button onclick="openConvocatoriaMsg()" class="w-full h-touch-target-min bg-surface-variant text-on-surface rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    Redactar mensaje de convocatoria
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Mensaje de Convocatoria ===== -->
+    <div id="modal-convocatoria-msg" class="hidden fixed inset-0 z-[62] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-convocatoria-msg').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[88vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Mensaje de Convocatoria</h2>
+                <button onclick="document.getElementById('modal-convocatoria-msg').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <textarea id="convocatoria-texto" rows="7" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-sm text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all mb-md"></textarea>
+            <button onclick="copyText(document.getElementById('convocatoria-texto').value)" class="w-full h-touch-target-min bg-surface-variant text-on-surface rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform mb-md">
+                <span class="material-symbols-outlined">content_copy</span>
+                Copiar mensaje
+            </button>
+            <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-sm">Enviar individualmente</h3>
+            <div id="convocatoria-send-list" class="flex flex-col gap-sm"></div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Automatización de Recordatorios (n8n) ===== -->
+    <div id="modal-automatizacion" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-automatizacion').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[88vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Recordatorios automáticos</h2>
+                <button onclick="document.getElementById('modal-automatizacion').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Plantilla del mensaje de WhatsApp</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-sm">Personaliza libremente el texto. Variables disponibles: <code class="bg-surface-container-high px-1 rounded">{padre}</code> <code class="bg-surface-container-high px-1 rounded">{alumno}</code> <code class="bg-surface-container-high px-1 rounded">{deuda}</code> <code class="bg-surface-container-high px-1 rounded">{meses}</code> <code class="bg-surface-container-high px-1 rounded">{corte}</code> <code class="bg-surface-container-high px-1 rounded">{mensualidad}</code> <code class="bg-surface-container-high px-1 rounded">{mes}</code></p>
+            <textarea id="inp-reminder-template" rows="6" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-sm text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all mb-sm"></textarea>
+            <div class="flex gap-sm mb-lg">
+                <button onclick="saveReminderTemplate()" class="flex-1 h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar plantilla
+                </button>
+                <button onclick="restoreDefaultTemplate()" class="h-touch-target-min px-md bg-surface-variant text-on-surface rounded-xl font-label-sm text-label-sm active:scale-95 transition-transform">Restaurar</button>
+            </div>
+            <div class="border-t border-surface-variant pt-md mb-md"></div>
+
+            <p class="font-body-md text-body-md text-on-surface-variant mb-md">Conecta este webhook a un <strong>Schedule Trigger</strong> de n8n programado para los días <strong>3, 7 y 12</strong> de cada mes. Filtra automáticamente a los alumnos con estado <strong>Pendiente</strong> y arma los enlaces de WhatsApp listos para enviar, ya con tu plantilla aplicada.</p>
+            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">URL del Webhook n8n</label>
+            <input id="inp-webhook-url" type="url" placeholder="https://tu-instancia-n8n.com/webhook/recordatorios" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md mb-sm"/>
+            <button onclick="saveWebhookUrl()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform mb-md">
+                <span class="material-symbols-outlined">link</span>
+                Guardar URL
+            </button>
+            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Vista previa del payload</label>
+            <div class="flex gap-2 mb-sm">
+                <button onclick="renderAutomationPreview(3)" class="preview-day-btn flex-1 h-9 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm" data-day="3">Día 3</button>
+                <button onclick="renderAutomationPreview(7)" class="preview-day-btn flex-1 h-9 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm" data-day="7">Día 7</button>
+                <button onclick="renderAutomationPreview(12)" class="preview-day-btn flex-1 h-9 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm" data-day="12">Día 12</button>
+            </div>
+            <pre id="automation-preview" class="bg-surface-container-highest rounded-lg p-sm text-[11px] leading-tight overflow-x-auto max-h-[220px] mb-md whitespace-pre-wrap break-words"></pre>
+            <div class="flex flex-col gap-sm">
+                <button onclick="copyText(document.getElementById('automation-preview').textContent)" class="w-full h-touch-target-min bg-surface-variant text-on-surface rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">content_copy</span>
+                    Copiar JSON
+                </button>
+                <button onclick="testWebhook()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">send</span>
+                    Enviar de prueba a n8n
+                </button>
             </div>
         </div>
     </div>
@@ -770,231 +961,320 @@
 
 <script>
 // ===========================
-// SUPABASE CONFIG
-// ===========================
-const SUPABASE_URL = 'https://izntwgnsjyypeaklcfbo.supabase.co';
-const SUPABASE_ANON_KEY = 'PEGAR_AQUÍ_TU_ANON_KEY';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ===========================
-// CONSTANTS
+// DATA STORE (simulated DB)
 // ===========================
 const MENSUALIDAD = 80000;
-const FECHA_CORTE = 15;
-const CATEGORIAS = ['2011-2013', '2014-2015', '2016-2018'];
-const TALLAS = ['XS', 'S', 'M', 'L', 'XL'];
+const FECHA_CORTE = 30;
+const DIAS_RECORDATORIO = [3, 7, 12];
+// Categorías individuales por año de nacimiento (ver CLAUDE.md — ya no se agrupan en rangos)
+const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'];
+const TALLAS_INFANTIL = ['6', '8', '10', '12', '14', '16'];
+const TALLAS_ADULTO = ['XS', 'S', 'M', 'L', 'XL'];
+const TIPOS_PAGO = ['Efectivo', 'Nequi', 'Transferencia Bancaria'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
 const DIAS_NOMBRES = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+const STORAGE_KEY = 'misterapp_state_v2';
+const WEBHOOK_KEY = 'misterapp_n8n_webhook';
+const MESES_VENTANA_MORA = 4; // meses activos que el motor de mora controla (mes actual + 3 anteriores)
+const DEFAULT_REMINDER_TEMPLATE = `⚽ *Cancha Directa — Recordatorio de Pago*\n\nHola {padre}, te recordamos que {alumno} tiene {meses} mensualidad(es) pendiente(s), por un total de {deuda}.\n\n💳 Fecha de corte: día {corte} de cada mes ({mes}).\n\n¡Gracias por confiar en nuestra escuela!`;
+
+let reminderTemplate = DEFAULT_REMINDER_TEMPLATE;
 
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let activeCategory = 'todos';
+let calendarCategory = 'todas';
 let receiptCounter = 1000;
+let activityIdCounter = 1000;
+let transaccionIdCounter = 1000;
+let pendingCobroId = null;
+let currentConvocadosPartidoId = null;
+let tempConvocadosIds = [];
+let cobroMesesSeleccionados = [];
+let cobroConceptosSeleccionados = [];
 
-// Local caches populated from Supabase on each render
-let padresCache = [];
-let cobrosCache = [];
-let partidosCache = [];
-
-// ===========================
-// AUTH (Magic Link)
-// ===========================
-let appInitialized = false;
-
-async function enviarMagicLink(e) {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
-    const btn = document.getElementById('btn-login');
-    btn.disabled = true;
-    btn.classList.add('opacity-60');
-    try {
-        const { error } = await supabase.auth.signInWithOtp({
-            email,
-            options: { emailRedirectTo: window.location.href }
-        });
-        if (error) throw error;
-        document.getElementById('form-login').classList.add('hidden');
-        setLoginMessage(`Revisa tu correo (${email}) y haz clic en el enlace para ingresar.`, false);
-    } catch (err) {
-        console.error(err);
-        setLoginMessage(err.message || 'No se pudo enviar el enlace. Intenta de nuevo.', true);
-    } finally {
-        btn.disabled = false;
-        btn.classList.remove('opacity-60');
-    }
+// Helper para sembrar N meses de mora consecutivos terminando en el mes actual
+function seedPagosDebiendo(mesesAtrasado) {
+    const keys = getActiveMonthKeys();
+    const pagos = {};
+    keys.forEach((k, i) => {
+        // i=0 es el mes más antiguo de la ventana; los últimos `mesesAtrasado` quedan pendientes
+        const idxDesdeElFinal = keys.length - i;
+        pagos[k] = { pagado: idxDesdeElFinal > mesesAtrasado ? true : false };
+    });
+    return pagos;
 }
 
-function setLoginMessage(text, isError) {
-    const el = document.getElementById('login-message');
-    el.textContent = text;
-    el.classList.remove('hidden', 'text-primary', 'bg-primary/10', 'text-error', 'bg-error/10');
-    el.classList.add(isError ? 'text-error' : 'text-primary', isError ? 'bg-error/10' : 'bg-primary/10');
-}
+// Sample students data — demo: TODOS en categoría 2015, TODOS con mora activa
+let alumnos = [
+    { id: 1, nombre: 'Santiago Pérez', acudiente: 'Jorge Pérez', telefono: '311 234 5678', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 2, nombre: 'Mateo García', acudiente: 'Liliana García', telefono: '311 987 6543', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
+    { id: 3, nombre: 'Isabella Martínez', acudiente: 'Carlos Martínez', telefono: '312 456 7890', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
+    { id: 4, nombre: 'Luciana Torres', acudiente: 'Marcela Torres', telefono: '313 789 0123', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 5, nombre: 'Valentina Rojas', acudiente: 'Andrés Rojas', telefono: '314 321 6540', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
+    { id: 6, nombre: 'Samuel Díaz', acudiente: 'Patricia Díaz', telefono: '315 654 3210', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
+    { id: 7, nombre: 'Camila Herrera', acudiente: 'Ricardo Herrera', telefono: '316 147 2583', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 8, nombre: 'Daniel Vargas', acudiente: 'Sandra Vargas', telefono: '317 258 3694', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, true, true], pagos: {} },
+    { id: 9, nombre: 'Sofía Morales', acudiente: 'Felipe Morales', telefono: '318 369 4705', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 10, nombre: 'Andrés López', acudiente: 'Diana López', telefono: '319 470 5816', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
+    { id: 11, nombre: 'Mariana Castro', acudiente: 'Iván Castro', telefono: '320 581 6927', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
+    { id: 12, nombre: 'Tomás Restrepo', acudiente: 'Claudia Restrepo', telefono: '310 692 7038', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 13, nombre: 'Emiliano Ruiz', acudiente: 'Verónica Ruiz', telefono: '321 111 2233', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, false], pagos: {} },
+    { id: 14, nombre: 'Gabriela Sánchez', acudiente: 'Oscar Sánchez', telefono: '321 222 3344', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
+    { id: 15, nombre: 'Nicolás Ramírez', acudiente: 'Beatriz Ramírez', telefono: '321 333 4455', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, false, true], pagos: {} },
+    { id: 16, nombre: 'Salomé Ortiz', acudiente: 'Camilo Ortiz', telefono: '321 444 5566', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 17, nombre: 'Máximo Guerrero', acudiente: 'Natalia Guerrero', telefono: '321 555 6677', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
+    { id: 18, nombre: 'Antonella Cabrera', acudiente: 'Julián Cabrera', telefono: '321 666 7788', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, true, false], pagos: {} },
+    { id: 19, nombre: 'Thiago Mendoza', acudiente: 'Paola Mendoza', telefono: '321 777 8899', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
+    { id: 20, nombre: 'Emma Cárdenas', acudiente: 'Sergio Cárdenas', telefono: '321 888 9900', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, false], pagos: {} },
+    { id: 21, nombre: 'Benjamín Silva', acudiente: 'Alejandra Silva', telefono: '321 999 0011', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
+    { id: 22, nombre: 'Renata Peña', acudiente: 'Mauricio Peña', telefono: '321 100 1122', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, true, true], pagos: {} },
+    { id: 23, nombre: 'Lucas Molina', acudiente: 'Tatiana Molina', telefono: '321 200 2233', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
+];
 
-async function cerrarSesion() {
-    await supabase.auth.signOut();
-}
+// Meses de mora que arrastra cada alumno demo (todos deben, entre 1 y 4 meses)
+const DEUDA_DEMO_POR_ID = { 1:1, 2:3, 3:2, 4:1, 5:4, 6:2, 7:1, 8:3, 9:1, 10:2, 11:4, 12:1, 13:2, 14:1, 15:3, 16:1, 17:2, 18:4, 19:1, 20:2, 21:3, 22:1, 23:2 };
 
-supabase.auth.onAuthStateChange((event, session) => {
-    document.getElementById('auth-loading').classList.add('hidden');
-    if (session) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        const cuentaEl = document.getElementById('mi-cuenta-email');
-        if (cuentaEl) cuentaEl.textContent = session.user?.email || 'Mi cuenta';
-        if (!appInitialized) {
-            appInitialized = true;
-            init();
-        }
-    } else {
-        appInitialized = false;
-        document.getElementById('app').classList.add('hidden');
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('form-login').classList.remove('hidden');
-        document.getElementById('login-message').classList.add('hidden');
-        document.getElementById('form-login').reset();
-    }
+let partidos = [
+    { id: 1, rival: 'Club Tiburón', fecha: '2026-08-31', hora: '08:00', cancha: 'Cancha La Castellana', categoria: '2015', arbitraje: 120000, convocadosIds: [1, 2, 7, 10], completado: false },
+    { id: 2, rival: 'Academia Norte', fecha: '2026-08-31', hora: '10:00', cancha: 'Cancha Municipal', categoria: '2015', arbitraje: 150000, convocadosIds: [4, 6, 8, 12], completado: false },
+    { id: 3, rival: 'Delfines FC', fecha: '2026-08-24', hora: '09:00', cancha: 'Cancha Norte', categoria: '2015', arbitraje: 100000, convocadosIds: [3, 5, 9, 11], completado: true },
+];
+
+// Catálogo dinámico de conceptos/artículos/torneos cobrables (POS) — Sub-Agente 1 y 3
+let conceptos = [
+    { id: 1, nombre: 'Inscripción', precio: 60000, tipo: 'inscripcion', plazo: null },
+    { id: 2, nombre: 'Uniforme Local (camiseta+pantaloneta)', precio: 90000, tipo: 'uniforme', plazo: null },
+    { id: 3, nombre: 'Uniforme Visitante', precio: 90000, tipo: 'uniforme', plazo: null },
+    { id: 4, nombre: 'Torneo Sagrado Corazón', precio: 50000, tipo: 'evento', plazo: '2026-09-15' },
+    { id: 5, nombre: 'Carné deportivo', precio: 15000, tipo: 'otro', plazo: null },
+];
+
+let transacciones = []; // Historial de cobros (para recibo itemizado y exportación CSV)
+
+let inventario = {};
+CATEGORIAS.forEach(cat => {
+    inventario[cat] = cat === '2015'
+        ? { local: { total: 45, entregados: 40 }, visitante: { total: 45, entregados: 32 }, torneo: { total: 20, entregados: 8 } }
+        : { local: { total: 0, entregados: 0 }, visitante: { total: 0, entregados: 0 }, torneo: { total: 0, entregados: 0 } };
 });
 
+const respuestasRapidas = [
+    { titulo: 'Información general', texto: '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.' },
+    { titulo: 'Costos y mensualidad', texto: 'La mensualidad es de $80.000 con fecha de corte el 30 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.' },
+    { titulo: 'Horarios de entrenamiento', texto: 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM' },
+    { titulo: 'Requisitos de inscripción', texto: 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.' },
+];
+
+let activityLog = [
+    { id: 3, icon: 'notifications_active', title: 'Recordatorio enviado — 23 padres', subtitle: 'Pendientes de pago (Cat. 2015)', time: 'Hace 2 horas', read: false },
+    { id: 2, icon: 'sell', title: 'Catálogo de cobros actualizado', subtitle: 'Torneo Sagrado Corazón agregado', time: 'Ayer, 6:00 PM', read: false },
+    { id: 1, icon: 'sports_soccer', title: 'Partido creado — 2015', subtitle: 'vs Academia Norte', time: 'Lun 19 Ago', read: true },
+];
+
 // ===========================
-// DATA LAYER (Supabase)
+// PERSISTENCE (localStorage)
 // ===========================
-async function cargarPadres() {
-    const { data, error } = await supabase
-        .from('padres')
-        .select('*, entregas_uniforme(*)')
-        .eq('activo', true)
-        .order('nombre');
-    if (error) { console.error(error); showToast('Error al cargar alumnos', 'error'); return []; }
-    return data || [];
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            alumnos, partidos, inventario, activityLog, respuestasRapidas, conceptos, transacciones, reminderTemplate,
+            receiptCounter, activityIdCounter, transaccionIdCounter
+        }));
+    } catch (e) { /* storage unavailable — app keeps working in-memory */ }
 }
 
-async function buscarPadres(termino) {
-    const { data, error } = await supabase
-        .from('padres')
-        .select('*, entregas_uniforme(*)')
-        .eq('activo', true)
-        .or(`nombre.ilike.%${termino}%,nombre_hijo.ilike.%${termino}%`);
-    if (error) { console.error(error); showToast('Error al buscar alumnos', 'error'); return []; }
-    return data || [];
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.alumnos) alumnos = data.alumnos;
+        if (data.partidos) partidos = data.partidos;
+        if (data.inventario) inventario = data.inventario;
+        if (data.activityLog) activityLog = data.activityLog;
+        if (data.respuestasRapidas) respuestasRapidas = data.respuestasRapidas;
+        if (data.conceptos) conceptos = data.conceptos;
+        if (data.transacciones) transacciones = data.transacciones;
+        if (typeof data.reminderTemplate === 'string' && data.reminderTemplate.trim()) reminderTemplate = data.reminderTemplate;
+        if (typeof data.receiptCounter === 'number') receiptCounter = data.receiptCounter;
+        if (typeof data.activityIdCounter === 'number') activityIdCounter = data.activityIdCounter;
+        if (typeof data.transaccionIdCounter === 'number') transaccionIdCounter = data.transaccionIdCounter;
+    } catch (e) { /* corrupted storage — fall back to seed data */ }
 }
 
-async function crearPadre(padre) {
-    const { data, error } = await supabase.from('padres').insert(padre).select().single();
-    if (error) { console.error(error); showToast('Error al inscribir alumno', 'error'); throw error; }
-    return data;
+// ===========================
+// MOTOR DE MORA (ledger mensual por alumno)
+// ===========================
+function getMonthKey(year, monthIdx) {
+    return `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
 }
 
-async function editarPadre(id, cambios) {
-    const { data, error } = await supabase.from('padres').update(cambios).eq('id', id).select().single();
-    if (error) { console.error(error); showToast('Error al actualizar alumno', 'error'); throw error; }
-    return data;
+function getMonthLabel(key) {
+    const [y, m] = key.split('-').map(Number);
+    return `${MESES[m - 1]} ${y}`;
 }
 
-async function cargarPagos(mes, anio) {
-    const { data, error } = await supabase
-        .from('pagos')
-        .select('*, padres(nombre, telefono, nombre_hijo)')
-        .eq('mes', mes)
-        .eq('anio', anio);
-    if (error) { console.error(error); showToast('Error al cargar pagos', 'error'); return []; }
-    return data || [];
+function getActiveMonthKeys() {
+    const hoy = new Date();
+    const keys = [];
+    for (let i = MESES_VENTANA_MORA - 1; i >= 0; i--) {
+        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        keys.push(getMonthKey(d.getFullYear(), d.getMonth()));
+    }
+    return keys; // ordenado del más antiguo al más reciente
 }
 
-async function cargarPadresConPago() {
-    const { data, error } = await supabase.from('padres_con_pago').select('*');
-    if (error) { console.error(error); showToast('Error al cargar cobros', 'error'); return []; }
-    return data || [];
+// Garantiza que el alumno tenga entradas para todos los meses activos (los nuevos quedan pendientes)
+function ensurePagosLedger(alumno) {
+    if (!alumno.pagos) alumno.pagos = {};
+    getActiveMonthKeys().forEach(k => {
+        if (!alumno.pagos[k]) alumno.pagos[k] = { pagado: false };
+    });
 }
 
-async function registrarPagoDB(padreId, mes, anio, metodoPago) {
-    const { data, error } = await supabase
-        .from('pagos')
-        .upsert({
-            padre_id: padreId,
-            mes: mes,
-            anio: anio,
-            monto: MENSUALIDAD,
-            fecha_pago: new Date().toISOString(),
-            estado: 'pagado',
-            metodo_pago: metodoPago
-        }, { onConflict: 'padre_id,mes,anio' })
-        .select('*, padres(nombre, telefono, nombre_hijo)')
-        .single();
-    if (error) { console.error(error); showToast('Error al registrar el pago', 'error'); throw error; }
-    return data;
+function getPendingMonths(alumno) {
+    ensurePagosLedger(alumno);
+    return getActiveMonthKeys().filter(k => !alumno.pagos[k].pagado);
 }
 
-async function padresPendientes() {
-    const { data, error } = await supabase.rpc('padres_pendientes_pago');
-    if (error) { console.error(error); showToast('Error al calcular pendientes', 'error'); return []; }
-    return data || [];
+function getDeudaTotal(alumno) {
+    return getPendingMonths(alumno).length * MENSUALIDAD;
 }
 
-async function cargarPartidos() {
-    const { data, error } = await supabase
-        .from('partidos')
-        .select('*, convocatorias(*, padres(nombre, nombre_hijo))')
-        .order('fecha', { ascending: true });
-    if (error) { console.error(error); showToast('Error al cargar partidos', 'error'); return []; }
-    return data || [];
+function estaAlDia(alumno) {
+    return getPendingMonths(alumno).length === 0;
 }
 
-async function crearPartidoDB(partido) {
-    const { data, error } = await supabase.from('partidos').insert(partido).select().single();
-    if (error) { console.error(error); showToast('Error al crear partido', 'error'); throw error; }
-    return data;
+// Siembra la mora de demostración (solo la primera vez, cuando el ledger está vacío)
+function seedDemoDebt() {
+    alumnos.forEach(a => {
+        if (a.pagos && Object.keys(a.pagos).length > 0) return;
+        a.pagos = seedPagosDebiendo(DEUDA_DEMO_POR_ID[a.id] || 1);
+    });
 }
 
-async function convocarJugador(partidoId, padreId) {
-    const { data, error } = await supabase
-        .from('convocatorias')
-        .insert({ partido_id: partidoId, padre_id: padreId })
-        .select()
-        .single();
-    if (error) { console.error(error); showToast('Error al convocar jugador', 'error'); throw error; }
-    return data;
+// ===========================
+// ACTIVITY LOG & NOTIFICATIONS
+// ===========================
+function addActivity(icon, title, subtitle) {
+    activityIdCounter++;
+    activityLog.unshift({ id: activityIdCounter, icon, title, subtitle, time: 'Ahora mismo', read: false });
+    saveState();
+    renderInicio();
+    updateNotifBadge();
+    if (!document.getElementById('modal-actividad').classList.contains('hidden')) renderActivityModal();
+    if (!document.getElementById('notif-panel').classList.contains('hidden')) renderNotifPanel();
 }
 
-async function cargarInventario() {
-    const { data, error } = await supabase.from('uniformes').select('*').order('tipo');
-    if (error) { console.error(error); showToast('Error al cargar inventario', 'error'); return []; }
-    return data || [];
+function updateNotifBadge() {
+    const unread = activityLog.filter(a => !a.read).length;
+    document.querySelectorAll('.notif-badge').forEach(b => {
+        b.textContent = unread > 9 ? '9+' : unread;
+        b.classList.toggle('hidden', unread === 0);
+    });
 }
 
-async function cargarEntregasPadre(padreId) {
-    const { data, error } = await supabase
-        .from('entregas_uniforme')
-        .select('*')
-        .eq('padre_id', padreId)
-        .single();
-    if (error) return null;
-    return data;
+function activityItemHtml(a) {
+    return `
+        <li onclick="markNotifRead(${a.id})" class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px] cursor-pointer ${a.read ? '' : 'notif-unread'}">
+            <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 mt-1 relative">
+                <span class="material-symbols-outlined text-on-surface-variant text-xl">${a.icon}</span>
+                ${a.read ? '' : '<span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-error"></span>'}
+            </div>
+            <div class="flex flex-col gap-0.5 flex-1">
+                <p class="font-body-md text-body-md text-on-surface font-semibold">${a.title}</p>
+                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.subtitle}</p>
+                <span class="font-label-sm text-label-sm text-outline mt-1">${a.time}</span>
+            </div>
+        </li>`;
 }
 
-async function marcarEntregaUniforme(padreId, tipo, entregado) {
-    const campo = tipo === 'local' ? 'uniforme_local'
-        : tipo === 'visitante' ? 'uniforme_visitante'
-        : 'kit_torneo';
-
-    const { data, error } = await supabase
-        .from('entregas_uniforme')
-        .upsert({ padre_id: padreId, [campo]: entregado }, { onConflict: 'padre_id' })
-        .select()
-        .single();
-    if (error) { console.error(error); showToast('Error al actualizar entrega', 'error'); throw error; }
-    return data;
+function openActivityModal() {
+    renderActivityModal();
+    document.getElementById('modal-actividad').classList.remove('hidden');
 }
 
-async function cargarRespuestasRapidas() {
-    const { data, error } = await supabase
-        .from('respuestas_rapidas')
-        .select('*')
-        .eq('activo', true)
-        .order('orden');
-    if (error) { console.error(error); showToast('Error al cargar respuestas', 'error'); return []; }
-    return data || [];
+function renderActivityModal() {
+    document.getElementById('activity-list-full').innerHTML = activityLog.length
+        ? activityLog.map(activityItemHtml).join('')
+        : `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">Sin actividad todavía</li>`;
+}
+
+function toggleNotifPanel() {
+    const panel = document.getElementById('notif-panel');
+    const overlay = document.getElementById('notif-overlay');
+    const opening = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    overlay.classList.toggle('hidden');
+    if (opening) renderNotifPanel();
+}
+
+function renderNotifPanel() {
+    document.getElementById('notif-list').innerHTML = activityLog.length
+        ? activityLog.map(activityItemHtml).join('')
+        : `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">No tienes notificaciones</li>`;
+}
+
+function markNotifRead(id) {
+    const item = activityLog.find(a => a.id === id);
+    if (item && !item.read) {
+        item.read = true;
+        saveState();
+        updateNotifBadge();
+        renderNotifPanel();
+        renderActivityModal();
+    }
+}
+
+function markAllNotifsRead() {
+    activityLog.forEach(a => a.read = true);
+    saveState();
+    updateNotifBadge();
+    renderNotifPanel();
+    renderActivityModal();
+}
+
+// ===========================
+// CATEGORÍAS Y TALLAS (dinámicas — Sub-Agente Data & Schema)
+// ===========================
+function tallaOptionsHtml(selected) {
+    const infantil = TALLAS_INFANTIL.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+    const adulto = TALLAS_ADULTO.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+    return `<optgroup label="Infantil">${infantil}</optgroup><optgroup label="Adulto">${adulto}</optgroup>`;
+}
+
+function renderTallaSelects() {
+    const inp = document.getElementById('inp-talla');
+    if (inp) inp.innerHTML = tallaOptionsHtml('10');
+    const edit = document.getElementById('edit-talla');
+    if (edit) edit.innerHTML = tallaOptionsHtml(null);
+}
+
+function categoryRadioHtml(name, cat, checked) {
+    return `<label class="cursor-pointer"><input type="radio" name="${name}" value="${cat}" class="sr-only peer" ${checked ? 'checked' : ''}/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">${cat}</span></label>`;
+}
+
+function renderCategoryChips() {
+    // Filtro de Alumnos
+    const alumnosFilter = document.getElementById('alumnos-cat-filters');
+    if (alumnosFilter) {
+        alumnosFilter.innerHTML = `<button onclick="filterByCategory('todos')" class="cat-chip ${activeCategory === 'todos' ? 'chip-active' : 'bg-surface-container border border-outline-variant text-on-surface'} whitespace-nowrap px-sm h-8 rounded-full font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="todos">Todos</button>`
+            + CATEGORIAS.map(cat => `<button onclick="filterByCategory('${cat}')" class="cat-chip ${activeCategory === cat ? 'chip-active' : 'bg-surface-container border border-outline-variant text-on-surface'} whitespace-nowrap px-sm h-8 rounded-full font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="${cat}">${cat}</button>`).join('');
+    }
+    // Chips de Calendario
+    const calFilter = document.getElementById('calendario-cat-filters');
+    if (calFilter) {
+        calFilter.innerHTML = `<button onclick="filterCalendarCategory('todas')" class="cal-cat-chip ${calendarCategory === 'todas' ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-lowest text-on-surface border border-outline-variant/50 hover:bg-surface-container-high'} h-[32px] px-4 rounded-full font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform" data-cat="todas">Todas</button>`
+            + CATEGORIAS.map(cat => `<button onclick="filterCalendarCategory('${cat}')" class="cal-cat-chip ${calendarCategory === cat ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-lowest text-on-surface border border-outline-variant/50 hover:bg-surface-container-high'} h-[32px] px-4 rounded-full font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform" data-cat="${cat}">${cat}</button>`).join('');
+    }
+    // Radios de Nuevo Alumno
+    const nuevoAlumnoGroup = document.getElementById('inp-categoria-group');
+    if (nuevoAlumnoGroup) nuevoAlumnoGroup.innerHTML = CATEGORIAS.map((cat, i) => categoryRadioHtml('categoria', cat, cat === '2015')).join('');
+    // Radios de Nuevo Partido
+    const nuevoPartidoGroup = document.getElementById('inp-cat-partido-group');
+    if (nuevoPartidoGroup) nuevoPartidoGroup.innerHTML = CATEGORIAS.map((cat, i) => categoryRadioHtml('cat-partido', cat, cat === '2015')).join('');
 }
 
 // ===========================
@@ -1027,11 +1307,11 @@ function navigateTo(view) {
 // UTILITIES
 // ===========================
 function formatMoney(n) {
-    return '$' + (n || 0).toLocaleString('es-CO');
+    return '$' + n.toLocaleString('es-CO');
 }
 
 function getInitials(name) {
-    return (name || '').split(' ').filter(Boolean).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
 }
 
 function showToast(text, icon = 'check_circle') {
@@ -1055,147 +1335,69 @@ function formatDate() {
     return `${dias[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()}`;
 }
 
-function normalizePhone(tel) {
-    let digits = (tel || '').replace(/\D/g, '');
-    if (digits.length === 10) digits = '57' + digits;
-    return digits;
-}
-
-function escJs(str) {
-    return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
-function timeAgo(dateStr) {
-    if (!dateStr) return '';
-    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-    if (diff < 60) return 'Hace un momento';
-    if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
-    if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`;
-    return `Hace ${Math.floor(diff / 86400)} días`;
-}
-
-function spinnerBlock() {
-    return `<div class="flex justify-center py-xl"><div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div></div>`;
-}
-
-function emptyState(msg) {
-    return `<div class="flex flex-col items-center justify-center py-xl gap-sm text-on-surface-variant"><span class="material-symbols-outlined text-3xl">inbox</span><p class="font-body-md text-body-md">${msg}</p></div>`;
-}
-
 // ===========================
 // INICIO (Dashboard)
 // ===========================
-async function renderInicio() {
+function renderInicio() {
     document.getElementById('greeting-text').textContent = getGreeting();
     document.getElementById('date-text').textContent = formatDate();
-    document.getElementById('activity-list').innerHTML = spinnerBlock();
 
-    const mes = currentMonth + 1;
-    const anio = currentYear;
+    const pendientes = alumnos.filter(a => !estaAlDia(a));
+    const hoy = new Date();
+    const cobradoEsteMes = transacciones
+        .filter(t => t.fecha && t.fecha.slice(0, 7) === getMonthKey(hoy.getFullYear(), hoy.getMonth()))
+        .reduce((sum, t) => sum + t.total, 0);
+    document.getElementById('stat-cobrado').textContent = formatMoney(cobradoEsteMes);
+    document.getElementById('stat-pendientes').textContent = pendientes.length;
+    document.getElementById('stat-total-esperado').textContent = formatMoney(alumnos.length * MENSUALIDAD);
 
-    try {
-        const [totalRes, pagadosRes, partidosArr, recientesRes] = await Promise.all([
-            supabase.from('padres').select('id', { count: 'exact', head: true }).eq('activo', true),
-            supabase.from('pagos').select('id', { count: 'exact', head: true }).eq('mes', mes).eq('anio', anio).eq('estado', 'pagado'),
-            cargarPartidos(),
-            supabase.from('pagos').select('*, padres(nombre, nombre_hijo)').order('fecha_pago', { ascending: false }).limit(5)
-        ]);
+    // Activity (last 3 only — full log lives in the "Ver todo" modal)
+    const list = document.getElementById('activity-list');
+    list.innerHTML = activityLog.slice(0, 3).map(activityItemHtml).join('')
+        || `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">Sin actividad todavía</li>`;
 
-        const totalPadres = totalRes.count || 0;
-        const pagadosCount = pagadosRes.count || 0;
-        const pendientesCount = Math.max(totalPadres - pagadosCount, 0);
-
-        document.getElementById('stat-cobrado').textContent = formatMoney(pagadosCount * MENSUALIDAD);
-        document.getElementById('stat-pendientes').textContent = pendientesCount;
-
-        const hoy = new Date(new Date().toDateString());
-        const proximo = partidosArr
-            .filter(p => !p.completado && new Date(p.fecha + 'T00:00:00') >= hoy)
-            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))[0];
-
-        if (proximo) {
-            const pd = new Date(proximo.fecha + 'T12:00:00');
-            document.getElementById('stat-partido').textContent = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} ${MESES[pd.getMonth()].substring(0, 3)}`;
-            document.getElementById('stat-partido-sub').textContent = `${proximo.categoria} vs ${proximo.rival}`;
-        } else {
-            document.getElementById('stat-partido').textContent = 'Sin partidos';
-            document.getElementById('stat-partido-sub').textContent = 'No hay partidos programados';
-        }
-
-        const recientesPagos = recientesRes.data || [];
-        const list = document.getElementById('activity-list');
-        if (recientesPagos.length === 0) {
-            list.innerHTML = `<li class="p-md font-body-md text-body-md text-on-surface-variant text-center">Sin actividad reciente</li>`;
-        } else {
-            list.innerHTML = recientesPagos.map(pg => `
-                <li class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px]">
-                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 mt-1">
-                        <span class="material-symbols-outlined text-on-surface-variant text-xl">check_circle</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5 flex-1">
-                        <p class="font-body-md text-body-md text-on-surface font-semibold">Pago registrado — ${pg.padres?.nombre_hijo || pg.padres?.nombre || 'Alumno'}</p>
-                        <p class="font-body-md text-body-md text-on-surface-variant text-sm">${MESES[pg.mes - 1]} ${pg.anio}</p>
-                        <span class="font-label-sm text-label-sm text-outline mt-1">${timeAgo(pg.fecha_pago)}</span>
-                    </div>
-                </li>
-            `).join('');
-        }
-    } catch (err) {
-        console.error(err);
-        showToast('No se pudo cargar el panel', 'error');
-    }
+    updateNotifBadge();
 }
 
 // ===========================
 // ALUMNOS
 // ===========================
-async function renderAlumnos() {
-    document.getElementById('alumnos-list').innerHTML = spinnerBlock();
-
-    const mes = currentMonth + 1;
-    const anio = currentYear;
-    const [padresData, pagosData] = await Promise.all([cargarPadres(), cargarPagos(mes, anio)]);
-    const pagosMap = new Map((pagosData || []).map(pg => [pg.padre_id, pg]));
-
-    padresCache = padresData.map(p => ({ ...p, _pago: pagosMap.get(p.id) || null }));
-    document.getElementById('total-alumnos').textContent = padresCache.length;
-    renderAlumnosList();
-}
-
-function renderAlumnosList() {
+function renderAlumnos() {
     const filtered = getFilteredAlumnos();
+    document.getElementById('total-alumnos').textContent = alumnos.length;
+    const convocadoSet = getConvocadoActivosIds();
     const container = document.getElementById('alumnos-list');
-    if (filtered.length === 0) {
-        container.innerHTML = emptyState('No hay alumnos que coincidan');
-        return;
-    }
-    container.innerHTML = filtered.map(p => {
-        const pagado = p._pago?.estado === 'pagado';
-        const entregas = Array.isArray(p.entregas_uniforme) ? p.entregas_uniforme[0] : p.entregas_uniforme;
-        const uniformes = [!!entregas?.uniforme_local, !!entregas?.uniforme_visitante, !!entregas?.kit_torneo];
-        const nombreAlumno = p.nombre_hijo || p.nombre;
+    container.innerHTML = filtered.map(a => {
+        const alDia = estaAlDia(a);
+        const pendientes = getPendingMonths(a);
+        const deuda = getDeudaTotal(a);
         return `
-        <div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
+        <div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)] ${convocadoSet.has(a.id) ? 'convocado-gold' : ''}">
             <div class="flex items-center gap-sm">
-                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(nombreAlumno)}</div>
+                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.acudiente || a.nombre)}</div>
                 <div>
-                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface">${nombreAlumno}</h3>
-                    <p class="font-body-md text-body-md text-secondary">${p.categoria} • ${p.nombre}</p>
+                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface flex items-center gap-1">${a.acudiente || 'Sin acudiente'} ${convocadoSet.has(a.id) ? '<span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings: \'FILL\' 1;" title="Convocado">military_tech</span>' : ''}</h3>
+                    <p class="font-body-md text-body-md text-secondary">Cat. ${a.categoria} • Jugador: ${a.nombre}</p>
+                    <p class="font-body-md text-body-md text-secondary">${a.telefono}</p>
                     <div class="flex gap-1 mt-1">
-                        ${uniformes.map(u => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
+                        ${a.uniformes.map((u, i) => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
                         <span class="text-[10px] text-secondary self-center ml-1">Uniformes</span>
                     </div>
                 </div>
             </div>
             <div class="flex flex-col items-end gap-2">
-                <div class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full ${pagado ? 'bg-primary' : 'bg-error'}"></span>
-                    <span class="font-label-sm text-label-sm ${pagado ? 'text-primary' : 'text-error'}">${pagado ? 'Pagado' : 'Pendiente'}</span>
+                <div class="flex flex-col items-end">
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full ${alDia ? 'bg-primary' : 'bg-error'}"></span>
+                        <span class="font-label-sm text-label-sm ${alDia ? 'text-primary' : 'text-error'}">${alDia ? 'Al día' : `Debe ${pendientes.length} mes${pendientes.length > 1 ? 'es' : ''}`}</span>
+                    </div>
+                    ${!alDia ? `<span class="font-label-sm text-label-sm text-error font-bold">${formatMoney(deuda)}</span>` : ''}
                 </div>
                 <div class="flex gap-2">
-                    ${!pagado ? `<button onclick="registrarPago('${p.id}')" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Cobrar"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
-                    <button onclick="showRecibo('${p.id}')" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
-                    <button onclick="sendWhatsApp('${escJs(p.telefono)}', '${escJs(nombreAlumno)}')" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="WhatsApp"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                    ${!alDia ? `<button onclick="abrirModalCobro(${a.id})" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Registrar pago"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
+                    <button onclick="showUltimoRecibo(${a.id})" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
+                    <button onclick="${alDia ? `sendWhatsApp('${a.telefono}', '${a.nombre}')` : `sendReminderTo(${a.id})`}" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="${alDia ? 'WhatsApp' : 'Enviar recordatorio'}"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                    <button onclick="editAlumno(${a.id})" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar"><span class="material-symbols-outlined text-[18px]">edit</span></button>
                 </div>
             </div>
         </div>
@@ -1203,33 +1405,32 @@ function renderAlumnosList() {
     }).join('');
 }
 
+function getConvocadoActivosIds() {
+    const set = new Set();
+    partidos.filter(p => !p.completado).forEach(p => (p.convocadosIds || []).forEach(id => set.add(id)));
+    return set;
+}
+
 function getFilteredAlumnos() {
-    let filtered = [...padresCache];
+    let filtered = [...alumnos];
     if (activeCategory !== 'todos') {
-        filtered = filtered.filter(p => p.categoria === activeCategory);
+        filtered = filtered.filter(a => a.categoria === activeCategory);
     }
     const searchTerm = document.getElementById('search-input')?.value?.toLowerCase() || '';
     if (searchTerm) {
-        filtered = filtered.filter(p =>
-            (p.nombre_hijo || '').toLowerCase().includes(searchTerm) ||
-            (p.nombre || '').toLowerCase().includes(searchTerm)
-        );
+        filtered = filtered.filter(a => a.nombre.toLowerCase().includes(searchTerm));
     }
     return filtered;
 }
 
 function filterByCategory(cat) {
     activeCategory = cat;
-    document.querySelectorAll('.cat-chip').forEach(c => {
-        c.classList.remove('chip-active');
-        c.classList.add('bg-surface-container', 'border', 'border-outline-variant', 'text-on-surface');
-    });
-    document.querySelector(`.cat-chip[data-cat="${cat}"]`).classList.add('chip-active');
-    renderAlumnosList();
+    renderCategoryChips();
+    renderAlumnos();
 }
 
 function filterAlumnos() {
-    renderAlumnosList();
+    renderAlumnos();
 }
 
 function toggleSearch() {
@@ -1240,80 +1441,130 @@ function toggleSearch() {
     }
 }
 
-async function addAlumno(e) {
+function addAlumno(e) {
     e.preventDefault();
-    const nombre_hijo = document.getElementById('inp-nombre').value.trim();
-    const nombre = document.getElementById('inp-nombre-acudiente').value.trim();
-    const telefono = normalizePhone(document.getElementById('inp-telefono').value);
+    const nombre = document.getElementById('inp-nombre').value;
+    const acudiente = document.getElementById('inp-acudiente').value;
+    const telefono = document.getElementById('inp-telefono').value;
     const categoria = document.querySelector('input[name="categoria"]:checked').value;
     const talla = document.getElementById('inp-talla').value;
-    const btn = document.querySelector('#form-nuevo-alumno button[type="submit"]');
 
-    btn.disabled = true;
-    try {
-        await crearPadre({ nombre, nombre_hijo, telefono, categoria, talla, activo: true });
-        document.getElementById('form-nuevo-alumno').reset();
-        document.getElementById('modal-nuevo-alumno').classList.add('hidden');
-        showToast(`${nombre_hijo} inscrito exitosamente`);
-        await Promise.all([renderAlumnos(), renderInicio()]);
-    } catch (err) {
-        console.error(err);
-    } finally {
-        btn.disabled = false;
-    }
+    const newId = alumnos.reduce((max, a) => Math.max(max, a.id), 0) + 1;
+    alumnos.push({
+        id: newId,
+        nombre, acudiente, telefono, categoria, talla,
+        fechaPago: null, metodoPago: null, activo: true,
+        uniformes: [false, false, false], pagos: {}
+    });
+    ensurePagosLedger(alumnos[alumnos.length - 1]);
+
+    document.getElementById('form-nuevo-alumno').reset();
+    document.getElementById('modal-nuevo-alumno').classList.add('hidden');
+    renderCategoryChips();
+    renderTallaSelects();
+    showToast(`${nombre} inscrito exitosamente`);
+    saveState();
+    addActivity('person_add', `Alumno inscrito — ${nombre}`, `(${categoria})`);
+    renderAlumnos();
+    renderInicio();
+}
+
+// ===========================
+// EDICIÓN / ELIMINACIÓN DE ALUMNO
+// ===========================
+function editAlumno(id) {
+    const a = alumnos.find(al => al.id === id);
+    if (!a) return;
+    document.getElementById('edit-id').value = a.id;
+    document.getElementById('edit-nombre-display').textContent = a.nombre;
+    document.getElementById('edit-acudiente').value = a.acudiente || '';
+    document.getElementById('edit-telefono').value = a.telefono;
+    document.getElementById('edit-talla').innerHTML = tallaOptionsHtml(a.talla);
+    document.getElementById('edit-categoria-group').innerHTML = CATEGORIAS.map(cat => `
+        <label class="cursor-pointer"><input type="radio" name="edit-categoria" value="${cat}" class="sr-only peer" ${a.categoria === cat ? 'checked' : ''}/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">${cat}</span></label>
+    `).join('');
+    document.getElementById('modal-editar-alumno').classList.remove('hidden');
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modal-editar-alumno').classList.add('hidden');
+}
+
+function saveEditAlumno(e) {
+    e.preventDefault();
+    const id = parseInt(document.getElementById('edit-id').value);
+    const a = alumnos.find(al => al.id === id);
+    if (!a) return;
+    a.acudiente = document.getElementById('edit-acudiente').value;
+    a.telefono = document.getElementById('edit-telefono').value;
+    a.categoria = document.querySelector('input[name="edit-categoria"]:checked').value;
+    a.talla = document.getElementById('edit-talla').value;
+    saveState();
+    addActivity('manage_accounts', `Perfil actualizado — ${a.nombre}`, `(${a.categoria})`);
+    cerrarModalEditar();
+    showToast(`Perfil de ${a.nombre} actualizado`);
+    renderAlumnos();
+    renderCobros();
+}
+
+function deleteAlumno() {
+    const id = parseInt(document.getElementById('edit-id').value);
+    const a = alumnos.find(al => al.id === id);
+    if (!a) return;
+    if (!confirm(`¿Eliminar a ${a.nombre} por retiro? Esta acción no se puede deshacer.`)) return;
+    alumnos = alumnos.filter(al => al.id !== id);
+    partidos.forEach(p => { p.convocadosIds = (p.convocadosIds || []).filter(cid => cid !== id); });
+    saveState();
+    addActivity('person_remove', `Alumno retirado — ${a.nombre}`, `(${a.categoria})`);
+    cerrarModalEditar();
+    showToast(`${a.nombre} fue eliminado del registro`);
+    renderAlumnos();
+    renderCobros();
+    renderInicio();
+    renderCalendar();
 }
 
 // ===========================
 // COBROS
 // ===========================
-async function renderCobros() {
-    document.getElementById('cobros-list').innerHTML = spinnerBlock();
-
+function renderCobros() {
     const monthStr = `${MESES[currentMonth]} ${currentYear}`;
     document.getElementById('month-display').textContent = monthStr;
     document.getElementById('month-name-corte').textContent = MESES[currentMonth].toLowerCase();
+    document.getElementById('fecha-corte-dia').textContent = FECHA_CORTE;
 
-    const mes = currentMonth + 1;
-    const anio = currentYear;
-    const [padresData, pagosData] = await Promise.all([cargarPadres(), cargarPagos(mes, anio)]);
-    const pagosMap = new Map((pagosData || []).map(pg => [pg.padre_id, pg]));
-    cobrosCache = padresData.map(p => ({ ...p, _pago: pagosMap.get(p.id) || null }));
-
-    const pagados = cobrosCache.filter(p => p._pago?.estado === 'pagado');
-    const pendientes = cobrosCache.filter(p => p._pago?.estado !== 'pagado');
-
+    const pagados = alumnos.filter(a => estaAlDia(a));
+    const pendientes = alumnos.filter(a => !estaAlDia(a));
     document.getElementById('cobros-pagados').textContent = pagados.length;
     document.getElementById('cobros-pendientes').textContent = pendientes.length;
-    document.getElementById('cobros-total').textContent = formatMoney(cobrosCache.length * MENSUALIDAD);
+    document.getElementById('cobros-total').textContent = formatMoney(pendientes.reduce((s, a) => s + getDeudaTotal(a), 0));
     document.getElementById('reminder-count').textContent = pendientes.length;
 
     const container = document.getElementById('cobros-list');
-    const sorted = [...pendientes, ...pagados];
-    if (sorted.length === 0) {
-        container.innerHTML = emptyState('No hay alumnos registrados');
-        return;
-    }
-    container.innerHTML = sorted.map(p => {
-        const pagado = p._pago?.estado === 'pagado';
-        const fechaPago = pagado ? new Date(p._pago.fecha_pago) : null;
-        const nombreAlumno = p.nombre_hijo || p.nombre;
+    // Sort: pendientes first (mayor deuda primero)
+    const sorted = [...pendientes.sort((a, b) => getDeudaTotal(b) - getDeudaTotal(a)), ...pagados];
+    container.innerHTML = sorted.map(a => {
+        const alDia = estaAlDia(a);
+        const deuda = getDeudaTotal(a);
+        const nMeses = getPendingMonths(a).length;
         return `
-        <div class="bg-surface-container-lowest ${pagado ? '' : 'shadow-[0_2px_4px_rgba(0,0,0,0.08)]'} rounded-lg p-sm flex items-center justify-between relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1 ${pagado ? 'bg-primary' : 'bg-error'}"></div>
+        <div class="bg-surface-container-lowest ${alDia ? '' : 'shadow-[0_2px_4px_rgba(0,0,0,0.08)]'} rounded-lg p-sm flex items-center justify-between relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${alDia ? 'bg-primary' : 'bg-error'}"></div>
             <div class="flex items-center gap-sm pl-xs">
-                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(nombreAlumno)}</div>
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(a.acudiente || a.nombre)}</div>
                 <div>
-                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${nombreAlumno}</h3>
-                    <p class="font-body-md text-body-md text-on-surface-variant">${p.categoria}</p>
+                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${a.acudiente || 'Sin acudiente'}</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Cat. ${a.categoria} • Jugador: ${a.nombre}</p>
                 </div>
             </div>
             <div class="flex flex-col items-end gap-xs">
-                <span class="font-body-lg text-body-lg text-on-surface font-bold">${formatMoney(MENSUALIDAD)}</span>
+                <span class="font-body-lg text-body-lg text-on-surface font-bold">${alDia ? formatMoney(MENSUALIDAD) : formatMoney(deuda)}</span>
                 <div class="flex items-center gap-xs">
-                    ${pagado
-                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${fechaPago.getDate()} ${MESES[fechaPago.getMonth()].substring(0, 3)}</span>`
-                        : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Pendiente</span>
-                           <button onclick="registrarPago('${p.id}')" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Cobrar</button>`
+                    ${alDia
+                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${a.fechaPago || ''}</span>`
+                        : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Debe ${nMeses} mes${nMeses > 1 ? 'es' : ''}</span>
+                           <button onclick="sendReminderTo(${a.id})" class="w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="Enviar recordatorio"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                           <button onclick="abrirModalCobro(${a.id})" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Registrar pago</button>`
                     }
                 </div>
             </div>
@@ -1321,107 +1572,219 @@ async function renderCobros() {
     }).join('');
 }
 
-async function changeMonth(delta) {
+function changeMonth(delta) {
     currentMonth += delta;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    await renderCobros();
+    renderCobros();
 }
 
-async function registrarPago(padreId) {
-    const padre = padresCache.find(p => p.id === padreId) || cobrosCache.find(p => p.id === padreId);
-    if (!padre) return;
+function abrirModalCobro(id) {
+    const alumno = alumnos.find(a => a.id === id);
+    if (!alumno) return;
+    pendingCobroId = id;
+    const pendientes = getPendingMonths(alumno);
+    // Por defecto se preselecciona solo el mes más antiguo pendiente (el mister puede sumar más manualmente)
+    cobroMesesSeleccionados = pendientes.length ? [pendientes[0]] : [];
+    cobroConceptosSeleccionados = [];
 
-    try {
-        const mes = currentMonth + 1;
-        const anio = currentYear;
-        const pago = await registrarPagoDB(padreId, mes, anio, 'efectivo');
-        showToast(`Pago de ${padre.nombre_hijo || padre.nombre} registrado ✓`);
-        await Promise.all([renderCobros(), renderAlumnos(), renderInicio()]);
-        setTimeout(() => showRecibo(padreId, pago), 500);
-    } catch (err) {
-        console.error(err);
+    document.getElementById('cobro-alumno-nombre').textContent = `${alumno.acudiente || 'Sin acudiente'} — Cat. ${alumno.categoria} — Jugador: ${alumno.nombre}`;
+    const banner = document.getElementById('cobro-deuda-banner');
+    if (pendientes.length > 0) {
+        banner.textContent = `Deuda acumulada: ${formatMoney(pendientes.length * MENSUALIDAD)} (${pendientes.length} mes${pendientes.length > 1 ? 'es' : ''})`;
+        banner.classList.remove('hidden');
+    } else {
+        banner.classList.add('hidden');
     }
+
+    document.getElementById('cobro-meses-list').innerHTML = pendientes.length
+        ? pendientes.map(k => `
+            <label class="cursor-pointer flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm h-touch-target-min">
+                <input type="checkbox" onchange="toggleCobroMes('${k}')" ${cobroMesesSeleccionados.includes(k) ? 'checked' : ''} class="w-5 h-5 accent-primary flex-shrink-0"/>
+                <span class="font-body-md text-body-md text-on-surface flex-1">${getMonthLabel(k)}</span>
+                <span class="font-body-md text-body-md text-on-surface-variant">${formatMoney(MENSUALIDAD)}</span>
+            </label>`).join('')
+        : `<p class="font-body-md text-body-md text-on-surface-variant">Este alumno está al día con la mensualidad.</p>`;
+
+    document.getElementById('cobro-conceptos-list').innerHTML = conceptos.length
+        ? conceptos.map(c => {
+            const plazoInfo = formatPlazo(c.plazo);
+            return `
+            <label class="cursor-pointer flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-2">
+                <input type="checkbox" onchange="toggleCobroConcepto(${c.id})" class="w-5 h-5 accent-primary flex-shrink-0"/>
+                <span class="flex-1">
+                    <span class="font-body-md text-body-md text-on-surface block">${c.nombre}</span>
+                    ${plazoInfo ? `<span class="font-label-sm text-label-sm ${plazoInfo.vencido ? 'text-error' : 'text-on-surface-variant'} block">${plazoInfo.texto}${plazoInfo.vencido ? ' (vencido)' : ''}</span>` : ''}
+                </span>
+                <span class="font-body-md text-body-md text-on-surface-variant">${formatMoney(c.precio)}</span>
+            </label>`;
+        }).join('')
+        : `<p class="font-body-md text-body-md text-on-surface-variant">No hay conceptos en el catálogo todavía.</p>`;
+
+    document.querySelector('input[name="metodo-pago"][value="Efectivo"]').checked = true;
+    updateCobroTotal();
+    document.getElementById('modal-cobro').classList.remove('hidden');
 }
 
-async function showRecibo(padreId, pagoParam) {
-    const padre = padresCache.find(p => p.id === padreId) || cobrosCache.find(p => p.id === padreId);
-    if (!padre) return;
+function toggleCobroMes(key) {
+    cobroMesesSeleccionados = cobroMesesSeleccionados.includes(key)
+        ? cobroMesesSeleccionados.filter(k => k !== key)
+        : [...cobroMesesSeleccionados, key];
+    updateCobroTotal();
+}
 
-    let pago = pagoParam;
-    if (!pago) {
-        const mes = currentMonth + 1;
-        const anio = currentYear;
-        const pagos = await cargarPagos(mes, anio);
-        pago = pagos.find(pg => pg.padre_id === padreId);
-    }
-    if (!pago) { showToast('Este alumno aún no tiene pago registrado este mes', 'info'); return; }
+function toggleCobroConcepto(id) {
+    cobroConceptosSeleccionados = cobroConceptosSeleccionados.includes(id)
+        ? cobroConceptosSeleccionados.filter(cid => cid !== id)
+        : [...cobroConceptosSeleccionados, id];
+    updateCobroTotal();
+}
 
+function updateCobroTotal() {
+    const totalMeses = cobroMesesSeleccionados.length * MENSUALIDAD;
+    const totalConceptos = conceptos.filter(c => cobroConceptosSeleccionados.includes(c.id)).reduce((s, c) => s + c.precio, 0);
+    const total = totalMeses + totalConceptos;
+    document.getElementById('cobro-monto').textContent = formatMoney(total);
+    document.getElementById('btn-confirmar-cobro').disabled = total === 0;
+}
+
+function cerrarModalCobro() {
+    pendingCobroId = null;
+    document.getElementById('modal-cobro').classList.add('hidden');
+}
+
+function confirmarCobro() {
+    if (pendingCobroId === null) return;
+    const alumno = alumnos.find(a => a.id === pendingCobroId);
+    if (!alumno) return;
+    const metodo = document.querySelector('input[name="metodo-pago"]:checked').value;
+    const conceptosSeleccionados = conceptos.filter(c => cobroConceptosSeleccionados.includes(c.id));
+    const totalMeses = cobroMesesSeleccionados.length * MENSUALIDAD;
+    const totalConceptos = conceptosSeleccionados.reduce((s, c) => s + c.precio, 0);
+    const total = totalMeses + totalConceptos;
+    if (total === 0) return;
+
+    ensurePagosLedger(alumno);
+    const d = new Date();
+    const fechaCorta = `${d.getDate()} ${MESES[d.getMonth()].substring(0, 3)}`;
+    cobroMesesSeleccionados.forEach(k => {
+        alumno.pagos[k] = { pagado: true, fecha: fechaCorta, metodo };
+    });
+    alumno.metodoPago = metodo;
+    if (cobroMesesSeleccionados.length > 0) alumno.fechaPago = fechaCorta;
     receiptCounter++;
-    const fechaPago = new Date(pago.fecha_pago);
-    document.getElementById('recibo-numero').textContent = `#${receiptCounter.toString().padStart(4, '0')}`;
-    document.getElementById('recibo-fecha').textContent = `${fechaPago.getDate()} ${MESES[fechaPago.getMonth()]} ${fechaPago.getFullYear()}, ${fechaPago.getHours()}:${fechaPago.getMinutes().toString().padStart(2, '0')}`;
-    document.getElementById('recibo-alumno').textContent = padre.nombre_hijo || padre.nombre;
-    document.getElementById('recibo-categoria').textContent = padre.categoria;
-    document.getElementById('recibo-concepto').textContent = `Mensualidad ${MESES[pago.mes - 1]} ${pago.anio}`;
-    const modal = document.getElementById('modal-recibo');
-    modal.dataset.padreId = padreId;
-    modal.classList.remove('hidden');
+    transaccionIdCounter++;
+
+    const transaccion = {
+        id: transaccionIdCounter,
+        alumnoId: alumno.id,
+        alumnoNombre: alumno.nombre,
+        acudiente: alumno.acudiente || '—',
+        categoria: alumno.categoria,
+        fecha: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        fechaTexto: `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`,
+        metodo,
+        meses: [...cobroMesesSeleccionados],
+        conceptos: conceptosSeleccionados.map(c => ({ nombre: c.nombre, precio: c.precio })),
+        total,
+        recibo: receiptCounter
+    };
+    transacciones.unshift(transaccion);
+
+    saveState();
+    const detalle = [
+        cobroMesesSeleccionados.length ? `${cobroMesesSeleccionados.length} mensualidad(es)` : null,
+        conceptosSeleccionados.length ? conceptosSeleccionados.map(c => c.nombre).join(', ') : null
+    ].filter(Boolean).join(' + ');
+    addActivity('check_circle', `Pago registrado — ${alumno.nombre}`, `${detalle} · ${metodo}`);
+
+    document.getElementById('modal-cobro').classList.add('hidden');
+    showToast(`Pago de ${alumno.nombre} registrado ✓`);
+    pendingCobroId = null;
+    renderCobros();
+    renderAlumnos();
+    renderInicio();
+
+    setTimeout(() => showReciboTransaccion(transaccion.id), 400);
+}
+
+function showReciboTransaccion(txId) {
+    const tx = transacciones.find(t => t.id === txId);
+    if (!tx) return;
+    document.getElementById('recibo-numero').textContent = `#${tx.recibo.toString().padStart(4, '0')}`;
+    document.getElementById('recibo-fecha').textContent = tx.fechaTexto;
+    document.getElementById('recibo-acudiente').textContent = tx.acudiente || '—';
+    document.getElementById('recibo-alumno').textContent = tx.alumnoNombre;
+    document.getElementById('recibo-categoria').textContent = tx.categoria;
+    document.getElementById('recibo-metodo').textContent = tx.metodo;
+    document.getElementById('recibo-total').textContent = formatMoney(tx.total);
+
+    const items = [
+        ...tx.meses.map(k => ({ nombre: `Mensualidad — ${getMonthLabel(k)}`, precio: MENSUALIDAD })),
+        ...tx.conceptos
+    ];
+    document.getElementById('recibo-items').innerHTML = items.map(it => `
+        <div class="flex justify-between items-center text-[13px]">
+            <span class="font-body-md text-body-md text-on-surface-variant">${it.nombre}</span>
+            <span class="font-body-md text-body-md text-on-surface font-semibold">${formatMoney(it.precio)}</span>
+        </div>`).join('');
+
+    document.getElementById('modal-recibo').dataset.txId = txId;
+    document.getElementById('modal-recibo').classList.remove('hidden');
+}
+
+function showUltimoRecibo(alumnoId) {
+    const ultima = transacciones.find(t => t.alumnoId === alumnoId);
+    if (!ultima) {
+        showToast('Este alumno todavía no tiene pagos registrados', 'info');
+        return;
+    }
+    showReciboTransaccion(ultima.id);
 }
 
 function shareWhatsApp() {
-    const modal = document.getElementById('modal-recibo');
-    const padreId = modal.dataset.padreId;
-    const padre = padresCache.find(p => p.id === padreId) || cobrosCache.find(p => p.id === padreId);
-    if (!padre) return;
-
-    const alumno = document.getElementById('recibo-alumno').textContent;
-    const concepto = document.getElementById('recibo-concepto').textContent;
-    const fecha = document.getElementById('recibo-fecha').textContent;
-    const recibo = `🧾 *RECIBO DE PAGO*\n━━━━━━━━━━━━━━━━\n⚽ Cancha Directa Barranquilla\n━━━━━━━━━━━━━━━━\n👤 ${padre.nombre}\n👦 Alumno: ${alumno}\n💰 Monto: ${formatMoney(MENSUALIDAD)} COP\n📋 Concepto: ${concepto}\n✅ Estado: PAGADO\n📆 Fecha: ${fecha}\n━━━━━━━━━━━━━━━━\n¡Gracias por tu puntualidad! 🙏`;
-    const url = `https://wa.me/${padre.telefono}?text=${encodeURIComponent(recibo)}`;
-    window.open(url, '_blank');
-    modal.classList.add('hidden');
+    const txId = parseInt(document.getElementById('modal-recibo').dataset.txId);
+    const tx = transacciones.find(t => t.id === txId);
+    if (!tx) return;
+    const items = [
+        ...tx.meses.map(k => `• Mensualidad ${getMonthLabel(k)}: ${formatMoney(MENSUALIDAD)}`),
+        ...tx.conceptos.map(c => `• ${c.nombre}: ${formatMoney(c.precio)}`)
+    ].join('\n');
+    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recibo de Pago*\n\n✅ Alumno: ${tx.alumnoNombre}\n${items}\n\n💰 Total: ${formatMoney(tx.total)}\n💳 Método: ${tx.metodo}\n📅 Fecha: ${tx.fechaTexto}\n\n¡Gracias por confiar en nuestra escuela!`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    document.getElementById('modal-recibo').classList.add('hidden');
 }
 
 function sendWhatsApp(tel, nombre) {
+    const phone = tel.replace(/\s/g, '');
     const msg = encodeURIComponent(`Hola, este es un mensaje de la escuela de fútbol Cancha Directa sobre ${nombre}.`);
-    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/57${phone}?text=${msg}`, '_blank');
 }
 
-async function sendReminders() {
-    const pendientes = await padresPendientes();
-    if (!pendientes || pendientes.length === 0) {
+function sendReminders() {
+    const pendientes = alumnos.filter(a => !estaAlDia(a));
+    if (pendientes.length === 0) {
         showToast('¡Todos los alumnos están al día! 🎉', 'celebration');
         return;
     }
-    const list = document.getElementById('recordatorios-list');
-    list.innerHTML = pendientes.map(p => {
-        const msg = encodeURIComponent(`⚽ *Cancha Directa — Recordatorio de Pago*\n\n📢 Hola ${p.nombre}, le recordamos que la mensualidad de ${p.nombre_hijo} (${MESES[currentMonth]}, ${formatMoney(MENSUALIDAD)}) tiene fecha de corte el día ${FECHA_CORTE}.\n\n💳 Favor realizar el pago a la brevedad.\n\n¡Gracias por ser parte de nuestra escuela!`);
-        return `
-        <div class="bg-surface-container-lowest rounded-xl p-sm flex items-center justify-between border border-surface-variant">
-            <div>
-                <h4 class="font-body-lg text-body-lg font-semibold text-on-surface">${p.nombre_hijo}</h4>
-                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${p.nombre} · ${p.categoria}</p>
-            </div>
-            <a href="https://wa.me/${p.telefono}?text=${msg}" target="_blank" class="w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center active:scale-95 transition-transform">
-                <span class="material-symbols-outlined text-[20px]">forum</span>
-            </a>
-        </div>`;
-    }).join('');
-    document.getElementById('modal-recordatorios').classList.remove('hidden');
+    const deudaTotal = pendientes.reduce((s, a) => s + getDeudaTotal(a), 0);
+    const mensaje = buildReminderMessage({
+        padre: 'estimado padre de familia',
+        alumno: `${pendientes.length} alumnos`,
+        deuda: formatMoney(deudaTotal),
+        meses: 'una o más'
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
+    showToast(`Recordatorio enviado a ${pendientes.length} familias`, 'send');
+    addActivity('forward_to_inbox', `Recordatorio enviado — ${pendientes.length} padres`, 'Pendientes de pago');
 }
 
 // ===========================
 // CALENDARIO
 // ===========================
-async function renderCalendar() {
-    document.getElementById('partidos-list').innerHTML = spinnerBlock();
-
+function renderCalendar() {
     const d = new Date();
     document.getElementById('cal-month-display').textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
-
-    partidosCache = await cargarPartidos();
 
     // Mini calendar
     const cal = document.getElementById('mini-calendar');
@@ -1429,17 +1792,20 @@ async function renderCalendar() {
     const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     const prevDays = new Date(d.getFullYear(), d.getMonth(), 0).getDate();
 
-    const matchDates = partidosCache.filter(p => {
-        const pd = new Date(p.fecha);
+    // Match dates
+    const matchDates = partidos.filter(p => {
+        const pd = new Date(p.fecha + 'T12:00:00');
         return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
-    }).map(p => new Date(p.fecha).getDate());
+    }).map(p => new Date(p.fecha + 'T12:00:00').getDate());
 
     let html = DIAS_SEMANA.map(dia => `<div class="font-label-sm text-label-sm text-secondary py-1">${dia}</div>`).join('');
 
+    // Previous month days
     for (let i = firstDay - 1; i >= 0; i--) {
         html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${prevDays - i}</div>`;
     }
 
+    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
         const isToday = day === d.getDate();
         const hasMatch = matchDates.includes(day);
@@ -1450,6 +1816,7 @@ async function renderCalendar() {
         html += `<div class="${classes}">${hasMatch && !isToday ? `<span>${day}</span><div class="w-1.5 h-1.5 rounded-full bg-primary mt-0.5"></div>` : day}</div>`;
     }
 
+    // Next month days
     const remaining = 42 - (firstDay + daysInMonth);
     for (let i = 1; i <= remaining; i++) {
         html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${i}</div>`;
@@ -1459,15 +1826,12 @@ async function renderCalendar() {
 
     // Match list
     const list = document.getElementById('partidos-list');
-    const sortedPartidos = [...partidosCache].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-    if (sortedPartidos.length === 0) {
-        list.innerHTML = emptyState('No hay partidos programados');
-        return;
-    }
+    const filteredPartidos = calendarCategory === 'todas' ? partidos : partidos.filter(p => p.categoria === calendarCategory);
+    const sortedPartidos = [...filteredPartidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
     list.innerHTML = sortedPartidos.map(p => {
         const pd = new Date(p.fecha + 'T12:00:00');
-        const convocadosCount = (p.convocatorias || []).length;
-        const costPerKid = convocadosCount > 0 ? Math.round(p.arbitraje / convocadosCount) : 0;
+        const nConvocados = (p.convocadosIds || []).length;
+        const costPerKid = nConvocados > 0 ? Math.round(p.arbitraje / nConvocados) : 0;
         return `
         <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30 flex gap-4 ${p.completado ? 'opacity-60' : ''}">
             <div class="flex flex-col items-center justify-center ${p.completado ? 'bg-surface-container-highest' : 'bg-primary'} rounded-lg p-2 min-w-[60px] h-fit">
@@ -1481,17 +1845,23 @@ async function renderCalendar() {
                     : `<p class="font-body-md text-body-md text-on-surface-variant text-[13px]">${p.cancha}, ${p.hora}</p>
                        <div class="bg-surface-container-low rounded-md p-2 mt-1">
                            <p class="font-body-md text-body-md text-on-surface-variant text-[11px] leading-tight">
-                               Arbitraje: ${formatMoney(p.arbitraje)} · ${convocadosCount} convocados · ${formatMoney(costPerKid)}/niño
+                               Arbitraje: ${formatMoney(p.arbitraje)} · ${nConvocados} convocados · ${formatMoney(costPerKid)}/niño
                            </p>
                        </div>
-                       <button class="mt-2 bg-surface-container-high text-on-surface font-label-sm text-label-sm px-3 py-1.5 rounded-md self-start active:scale-95 transition-transform hover:bg-surface-variant">Ver convocados</button>`
+                       <button onclick="openConvocadosModal(${p.id})" class="mt-2 bg-surface-container-high text-on-surface font-label-sm text-label-sm px-3 py-1.5 rounded-md self-start active:scale-95 transition-transform hover:bg-surface-variant">Ver convocados</button>`
                 }
             </div>
         </div>`;
     }).join('');
 }
 
-async function addPartido(e) {
+function filterCalendarCategory(cat) {
+    calendarCategory = cat;
+    renderCategoryChips();
+    renderCalendar();
+}
+
+function addPartido(e) {
     e.preventDefault();
     const rival = document.getElementById('inp-rival').value;
     const fecha = document.getElementById('inp-fecha-partido').value;
@@ -1500,38 +1870,37 @@ async function addPartido(e) {
     const categoria = document.querySelector('input[name="cat-partido"]:checked').value;
     const arbitraje = parseInt(document.getElementById('inp-arbitraje').value) || 0;
 
-    try {
-        await crearPartidoDB({ rival, fecha, hora, cancha, categoria, arbitraje, completado: false });
-        document.getElementById('modal-nuevo-partido').classList.add('hidden');
-        showToast(`Partido vs ${rival} creado ⚽`);
-        await Promise.all([renderCalendar(), renderInicio()]);
-    } catch (err) {
-        console.error(err);
-    }
+    const newId = partidos.reduce((max, p) => Math.max(max, p.id), 0) + 1;
+    partidos.push({
+        id: newId,
+        rival, fecha, hora, cancha, categoria, arbitraje,
+        convocadosIds: [], completado: false
+    });
+
+    document.getElementById('modal-nuevo-partido').classList.add('hidden');
+    showToast(`Partido vs ${rival} creado ⚽`);
+    saveState();
+    addActivity('sports_soccer', `Partido creado — ${categoria}`, `vs ${rival}`);
+    renderCalendar();
+    renderInicio();
 }
 
 // ===========================
 // MÁS (Settings & Inventory)
 // ===========================
-async function renderMas() {
-    document.getElementById('inventario-cards').innerHTML = spinnerBlock();
-    document.getElementById('respuestas-list').innerHTML = spinnerBlock();
+function renderMas() {
+    document.getElementById('config-num-categorias').textContent = `${CATEGORIAS.length} categorías`;
+    document.getElementById('config-num-transacciones').textContent = transacciones.length;
+    renderConceptos();
 
-    const [inventarioData, respuestasData] = await Promise.all([cargarInventario(), cargarRespuestasRapidas()]);
-
-    const invMap = {};
-    CATEGORIAS.forEach(cat => {
-        invMap[cat] = { local: { total: 0, entregados: 0 }, visitante: { total: 0, entregados: 0 }, torneo: { total: 0, entregados: 0 } };
-    });
-    (inventarioData || []).forEach(row => {
-        if (invMap[row.categoria] && invMap[row.categoria][row.tipo]) {
-            invMap[row.categoria][row.tipo] = { total: row.total, entregados: row.entregados };
-        }
-    });
-
+    // Inventory cards — solo categorías con alumnos o stock cargado (evita tarjetas vacías por las 8 categorías)
     const container = document.getElementById('inventario-cards');
-    container.innerHTML = CATEGORIAS.map(cat => {
-        const inv = invMap[cat];
+    const categoriasConDatos = CATEGORIAS.filter(cat =>
+        alumnos.some(a => a.categoria === cat) ||
+        (inventario[cat] && (inventario[cat].local.total > 0 || inventario[cat].visitante.total > 0 || inventario[cat].torneo.total > 0))
+    );
+    container.innerHTML = categoriasConDatos.map(cat => {
+        const inv = inventario[cat];
         return `
         <div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)] p-md border border-surface-container-highest">
             <h3 class="font-headline-md text-headline-md text-on-surface mb-3 border-b border-surface-variant pb-2 text-[16px]">Categoría ${cat}</h3>
@@ -1543,27 +1912,25 @@ async function renderMas() {
         </div>`;
     }).join('');
 
+    // Quick responses
     const respContainer = document.getElementById('respuestas-list');
-    if (!respuestasData || respuestasData.length === 0) {
-        respContainer.innerHTML = emptyState('No hay respuestas rápidas configuradas');
-    } else {
-        respContainer.innerHTML = respuestasData.map(r => `
-            <div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
-                <h4 class="font-body-lg text-body-lg font-bold">${r.titulo}</h4>
-                <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"${r.texto}"</p>
-                <div class="flex justify-end mt-xs">
-                    <button onclick="copyText('${escJs(r.texto)}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
-                        <span class="material-symbols-outlined text-[20px]">content_copy</span>
-                        <span class="font-label-sm text-label-sm">Copiar</span>
-                    </button>
-                </div>
+    respContainer.innerHTML = respuestasRapidas.map(r => `
+        <div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+            <h4 class="font-body-lg text-body-lg font-bold">${r.titulo}</h4>
+            <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"${r.texto}"</p>
+            <div class="flex justify-end mt-xs">
+                <button onclick="copyText('${r.texto.replace(/'/g, "\\'")}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-[20px]">content_copy</span>
+                    <span class="font-label-sm text-label-sm">Copiar</span>
+                </button>
             </div>
-        `).join('');
-    }
+        </div>
+    `).join('');
 }
 
 function renderInvBar(label, data, barColor, textColor) {
     const pct = data.total > 0 ? Math.round((data.entregados / data.total) * 100) : 0;
+    const isLow = pct < 30;
     return `
     <div>
         <div class="flex justify-between items-center mb-1">
@@ -1587,11 +1954,380 @@ function copyText(text) {
 }
 
 // ===========================
+// CONVOCATORIA (Torneos / Barra Dorada)
+// ===========================
+function openConvocadosModal(partidoId) {
+    const p = partidos.find(pt => pt.id === partidoId);
+    if (!p) return;
+    currentConvocadosPartidoId = partidoId;
+    tempConvocadosIds = [...(p.convocadosIds || [])];
+    const pd = new Date(p.fecha + 'T12:00:00');
+    document.getElementById('convocados-partido-info').textContent = `${p.categoria} vs ${p.rival} · ${pd.getDate()} ${MESES[pd.getMonth()].substring(0,3)}`;
+    renderConvocadosChecklist();
+    document.getElementById('modal-convocados').classList.remove('hidden');
+}
+
+function renderConvocadosChecklist() {
+    const p = partidos.find(pt => pt.id === currentConvocadosPartidoId);
+    if (!p) return;
+    const candidatos = alumnos.filter(a => a.categoria === p.categoria);
+    const list = document.getElementById('convocados-checklist');
+    list.innerHTML = candidatos.length
+        ? candidatos.map(a => {
+            const checked = tempConvocadosIds.includes(a.id);
+            return `
+            <li class="py-sm">
+                <label class="flex items-center gap-sm cursor-pointer rounded-lg p-sm -mx-sm ${checked ? 'convocado-gold' : ''} transition-all">
+                    <input type="checkbox" onchange="toggleConvocado(${a.id})" ${checked ? 'checked' : ''} class="w-5 h-5 accent-primary flex-shrink-0"/>
+                    <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold flex-shrink-0">${getInitials(a.nombre)}</div>
+                    <div class="flex-1">
+                        <p class="font-body-md text-body-md text-on-surface font-semibold">${a.nombre}</p>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant">${a.telefono}</p>
+                    </div>
+                    ${checked ? '<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: \'FILL\' 1;">military_tech</span>' : ''}
+                </label>
+            </li>`;
+        }).join('')
+        : `<li class="py-lg text-center font-body-md text-body-md text-on-surface-variant">No hay alumnos en esta categoría</li>`;
+    updateConvocadosSummary(p);
+}
+
+function toggleConvocado(alumnoId) {
+    if (tempConvocadosIds.includes(alumnoId)) {
+        tempConvocadosIds = tempConvocadosIds.filter(id => id !== alumnoId);
+    } else {
+        tempConvocadosIds.push(alumnoId);
+    }
+    renderConvocadosChecklist();
+}
+
+function updateConvocadosSummary(p) {
+    document.getElementById('convocados-count').textContent = tempConvocadosIds.length;
+    const cost = tempConvocadosIds.length > 0 ? Math.round(p.arbitraje / tempConvocadosIds.length) : 0;
+    document.getElementById('convocados-costo').textContent = formatMoney(cost);
+}
+
+function guardarConvocados() {
+    const p = partidos.find(pt => pt.id === currentConvocadosPartidoId);
+    if (!p) return;
+    p.convocadosIds = [...tempConvocadosIds];
+    saveState();
+    addActivity('groups', `Convocatoria actualizada — ${p.categoria}`, `vs ${p.rival} · ${p.convocadosIds.length} convocados`);
+    showToast(`Convocatoria de ${p.rival} guardada`);
+    document.getElementById('modal-convocados').classList.add('hidden');
+    renderCalendar();
+    renderAlumnos();
+}
+
+function openConvocatoriaMsg() {
+    const p = partidos.find(pt => pt.id === currentConvocadosPartidoId);
+    if (!p) return;
+    const pd = new Date(p.fecha + 'T12:00:00');
+    const fechaTexto = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} de ${MESES[pd.getMonth()]}`;
+    const convocados = alumnos.filter(a => tempConvocadosIds.includes(a.id));
+    const plantilla = `⚽ *Cancha Directa — Convocatoria*\n\n¡Hola! Tu hijo/a ha sido convocado/a para el partido:\n\n🆚 Rival: ${p.rival}\n📅 Fecha: ${fechaTexto}\n⏰ Hora: ${p.hora}\n📍 Lugar: ${p.cancha}\n\nPor favor llegar 30 minutos antes con el uniforme completo. ¡Vamos con toda! 💪`;
+    document.getElementById('convocatoria-texto').value = plantilla;
+
+    const sendList = document.getElementById('convocatoria-send-list');
+    sendList.innerHTML = convocados.length
+        ? convocados.map(a => `
+            <div class="flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm">
+                <div class="flex items-center gap-sm">
+                    <div class="w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.nombre)}</div>
+                    <span class="font-body-md text-body-md text-on-surface">${a.nombre}</span>
+                </div>
+                <button onclick="sendConvocatoriaWhatsApp(${a.id})" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+            </div>`).join('')
+        : `<p class="font-body-md text-body-md text-on-surface-variant text-center py-md">Selecciona convocados primero</p>`;
+
+    document.getElementById('modal-convocatoria-msg').classList.remove('hidden');
+}
+
+function sendConvocatoriaWhatsApp(alumnoId) {
+    const a = alumnos.find(al => al.id === alumnoId);
+    if (!a) return;
+    const texto = document.getElementById('convocatoria-texto').value;
+    const phone = a.telefono.replace(/\s/g, '');
+    window.open(`https://wa.me/57${phone}?text=${encodeURIComponent(texto)}`, '_blank');
+}
+
+// ===========================
+// PLANTILLA DE MENSAJE DE WHATSAPP (editable y persistente)
+// ===========================
+function buildReminderMessage(vars) {
+    const plantilla = reminderTemplate || DEFAULT_REMINDER_TEMPLATE;
+    return plantilla
+        .replace(/\{padre\}/g, vars.padre || 'padre de familia')
+        .replace(/\{alumno\}/g, vars.alumno || '')
+        .replace(/\{deuda\}/g, vars.deuda || '')
+        .replace(/\{meses\}/g, vars.meses ?? '')
+        .replace(/\{corte\}/g, vars.corte ?? FECHA_CORTE)
+        .replace(/\{mensualidad\}/g, vars.mensualidad || formatMoney(MENSUALIDAD))
+        .replace(/\{mes\}/g, vars.mes || `${MESES[currentMonth]} ${currentYear}`);
+}
+
+function renderTemplateEditor() {
+    document.getElementById('inp-reminder-template').value = reminderTemplate || DEFAULT_REMINDER_TEMPLATE;
+}
+
+function saveReminderTemplate() {
+    const texto = document.getElementById('inp-reminder-template').value.trim();
+    reminderTemplate = texto || DEFAULT_REMINDER_TEMPLATE;
+    saveState();
+    showToast('Plantilla de WhatsApp guardada ✓');
+    renderAutomationPreview(DIAS_RECORDATORIO.includes(new Date().getDate()) ? new Date().getDate() : 3);
+}
+
+function restoreDefaultTemplate() {
+    document.getElementById('inp-reminder-template').value = DEFAULT_REMINDER_TEMPLATE;
+    showToast('Plantilla restaurada — recuerda guardar los cambios');
+}
+
+function sendReminderTo(alumnoId) {
+    const a = alumnos.find(al => al.id === alumnoId);
+    if (!a) return;
+    const mensaje = buildReminderMessage({
+        padre: a.acudiente,
+        alumno: a.nombre,
+        deuda: formatMoney(getDeudaTotal(a)),
+        meses: getPendingMonths(a).length
+    });
+    const phone = a.telefono.replace(/\s/g, '');
+    window.open(`https://wa.me/57${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})`);
+}
+
+// ===========================
+// AUTOMATIZACIÓN — WEBHOOKS n8n (recordatorios WhatsApp)
+// ===========================
+function buildReminderPayload(day) {
+    const pendientes = alumnos.filter(a => !estaAlDia(a) && a.activo !== false);
+    return {
+        evento: 'recordatorio_pago',
+        dia_disparo: day,
+        fecha_corte: FECHA_CORTE,
+        mensualidad: MENSUALIDAD,
+        mes: `${MESES[currentMonth]} ${currentYear}`,
+        total_pendientes: pendientes.length,
+        alumnos: pendientes.map(a => {
+            const nMeses = getPendingMonths(a).length;
+            const deuda = getDeudaTotal(a);
+            const mensaje = buildReminderMessage({
+                padre: a.acudiente,
+                alumno: a.nombre,
+                deuda: formatMoney(deuda),
+                meses: nMeses
+            });
+            const telefonoWa = '57' + a.telefono.replace(/\s/g, '');
+            return {
+                id: a.id,
+                nombre: a.nombre,
+                acudiente: a.acudiente || '',
+                categoria: a.categoria,
+                telefono: telefonoWa,
+                estado: 'Pendiente',
+                meses_pendientes: nMeses,
+                deuda_total: deuda,
+                mensaje: mensaje,
+                mensaje_codificado: encodeURIComponent(mensaje),
+                whatsapp_link: `https://wa.me/${telefonoWa}?text=${encodeURIComponent(mensaje)}`
+            };
+        })
+    };
+}
+
+function openAutomationModal() {
+    const saved = localStorage.getItem(WEBHOOK_KEY) || '';
+    document.getElementById('inp-webhook-url').value = saved;
+    renderTemplateEditor();
+    renderAutomationPreview(DIAS_RECORDATORIO.includes(new Date().getDate()) ? new Date().getDate() : 3);
+    document.getElementById('modal-automatizacion').classList.remove('hidden');
+}
+
+function renderAutomationPreview(day) {
+    document.querySelectorAll('.preview-day-btn').forEach(b => {
+        b.classList.toggle('chip-active', parseInt(b.dataset.day) === day);
+    });
+    document.getElementById('automation-preview').textContent = JSON.stringify(buildReminderPayload(day), null, 2);
+}
+
+function saveWebhookUrl() {
+    const url = document.getElementById('inp-webhook-url').value.trim();
+    localStorage.setItem(WEBHOOK_KEY, url);
+    showToast(url ? 'URL de webhook guardada' : 'URL de webhook borrada');
+}
+
+function testWebhook() {
+    const url = localStorage.getItem(WEBHOOK_KEY);
+    if (!url) {
+        showToast('Primero guarda la URL del webhook', 'error');
+        return;
+    }
+    const activeDayBtn = document.querySelector('.preview-day-btn.chip-active');
+    const day = activeDayBtn ? parseInt(activeDayBtn.dataset.day) : 3;
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildReminderPayload(day))
+    }).then(() => {
+        showToast('Payload enviado a n8n ✓', 'send');
+        addActivity('bolt', 'Automatización n8n ejecutada', `Recordatorio día ${day}`);
+    }).catch(() => {
+        showToast('No se pudo contactar el webhook', 'error');
+    });
+}
+
+function checkAutoReminderToday() {
+    const day = new Date().getDate();
+    if (!DIAS_RECORDATORIO.includes(day)) return;
+    const pendientes = alumnos.filter(a => !estaAlDia(a)).length;
+    if (pendientes > 0) {
+        showToast(`Hoy es día de recordatorio automático (${day}) — ${pendientes} pendientes`, 'notifications_active');
+    }
+}
+
+// ===========================
+// CATÁLOGO DE COBROS (conceptos, artículos y torneos dinámicos)
+// ===========================
+function formatPlazo(plazo) {
+    if (!plazo) return null;
+    const d = new Date(plazo + 'T12:00:00');
+    const vencido = d < new Date(new Date().toDateString());
+    return { texto: `Plazo hasta el ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()}`, vencido };
+}
+
+function renderConceptos() {
+    const container = document.getElementById('conceptos-list');
+    if (!container) return;
+    container.innerHTML = conceptos.length
+        ? conceptos.map(c => {
+            const plazoInfo = formatPlazo(c.plazo);
+            return `
+            <div class="flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm">
+                <div class="flex-1">
+                    <p class="font-body-md text-body-md text-on-surface font-semibold">${c.nombre}</p>
+                    <p class="font-label-sm text-label-sm text-on-surface-variant">${formatMoney(c.precio)}</p>
+                    ${plazoInfo ? `<p class="font-label-sm text-label-sm ${plazoInfo.vencido ? 'text-error' : 'text-primary'} flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-[14px]">event</span>${plazoInfo.texto}${plazoInfo.vencido ? ' (vencido)' : ''}</p>` : ''}
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="editConcepto(${c.id})" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar">
+                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <button onclick="deleteConcepto(${c.id})" class="w-9 h-9 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </div>
+            </div>`;
+        }).join('')
+        : `<p class="font-body-md text-body-md text-on-surface-variant">Sin conceptos todavía.</p>`;
+}
+
+function submitConcepto(e) {
+    e.preventDefault();
+    const editingId = document.getElementById('editing-concepto-id').value;
+    const nombre = document.getElementById('inp-concepto-nombre').value;
+    const precio = parseInt(document.getElementById('inp-concepto-precio').value) || 0;
+    const plazo = document.getElementById('inp-concepto-plazo').value || null;
+
+    if (editingId) {
+        const c = conceptos.find(co => co.id === parseInt(editingId));
+        if (c) { c.nombre = nombre; c.precio = precio; c.plazo = plazo; }
+        showToast(`"${nombre}" actualizado`);
+        addActivity('sell', `Concepto actualizado — ${nombre}`, formatMoney(precio));
+    } else {
+        const newId = conceptos.reduce((max, c) => Math.max(max, c.id), 0) + 1;
+        conceptos.push({ id: newId, nombre, precio, tipo: 'otro', plazo });
+        showToast(`"${nombre}" agregado al catálogo de cobros`);
+        addActivity('sell', `Concepto agregado al catálogo — ${nombre}`, formatMoney(precio));
+    }
+
+    cancelarEdicionConcepto();
+    saveState();
+    renderConceptos();
+}
+
+function editConcepto(id) {
+    const c = conceptos.find(co => co.id === id);
+    if (!c) return;
+    document.getElementById('editing-concepto-id').value = c.id;
+    document.getElementById('inp-concepto-nombre').value = c.nombre;
+    document.getElementById('inp-concepto-precio').value = c.precio;
+    document.getElementById('inp-concepto-plazo').value = c.plazo || '';
+    document.getElementById('btn-concepto-submit-label').textContent = 'Guardar cambios';
+    document.getElementById('btn-concepto-cancelar').classList.remove('hidden');
+    document.getElementById('form-concepto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarEdicionConcepto() {
+    document.getElementById('form-concepto').reset();
+    document.getElementById('editing-concepto-id').value = '';
+    document.getElementById('btn-concepto-submit-label').textContent = 'Agregar al catálogo';
+    document.getElementById('btn-concepto-cancelar').classList.add('hidden');
+}
+
+function deleteConcepto(id) {
+    const c = conceptos.find(co => co.id === id);
+    if (!c) return;
+    if (!confirm(`¿Eliminar "${c.nombre}" del catálogo de cobros?`)) return;
+    conceptos = conceptos.filter(co => co.id !== id);
+    saveState();
+    showToast(`"${c.nombre}" eliminado del catálogo`);
+    if (document.getElementById('editing-concepto-id').value === String(id)) cancelarEdicionConcepto();
+    renderConceptos();
+}
+
+// ===========================
+// EXPORTAR HISTORIAL A CSV (Excel)
+// ===========================
+function exportarHistorialCSV() {
+    if (transacciones.length === 0) {
+        showToast('Todavía no hay transacciones para exportar', 'info');
+        return;
+    }
+    const headers = ['Recibo', 'Fecha', 'Alumno', 'Categoría', 'Meses pagados', 'Conceptos', 'Método de pago', 'Total'];
+    const rows = transacciones.map(t => [
+        `#${t.recibo}`,
+        t.fecha,
+        t.alumnoNombre,
+        t.categoria,
+        t.meses.map(getMonthLabel).join(' | '),
+        t.conceptos.map(c => c.nombre).join(' | '),
+        t.metodo,
+        t.total
+    ]);
+    const csvEscape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [headers, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historial_pagos_cancha_directa_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Historial exportado (${transacciones.length} transacciones)`, 'download');
+}
+
+// ===========================
 // INIT
 // ===========================
-async function init() {
-    await renderInicio();
+function init() {
+    loadState();
+    seedDemoDebt();
+    alumnos.forEach(ensurePagosLedger);
+    renderCategoryChips();
+    renderTallaSelects();
+    renderInicio();
+    renderAlumnos();
+    renderCobros();
+    renderCalendar();
+    renderMas();
+    updateNotifBadge();
+    checkAutoReminderToday();
 }
+
+document.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>

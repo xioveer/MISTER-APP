@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -145,8 +146,37 @@
 </head>
 <body class="bg-background text-on-background antialiased">
 
+<!-- ===== AUTH LOADING SPLASH ===== -->
+<div id="auth-loading" class="fixed inset-0 z-[100] bg-surface flex items-center justify-center">
+    <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+</div>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen" class="hidden fixed inset-0 z-[90] bg-surface flex items-center justify-center px-lg">
+    <div class="w-full max-w-[380px] flex flex-col items-center gap-lg">
+        <div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary-container text-3xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+        </div>
+        <div class="text-center">
+            <h1 class="font-headline-lg text-headline-lg font-bold text-primary">Cancha Directa</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-1">Míster App — Barranquilla</p>
+        </div>
+        <form id="form-login" onsubmit="enviarMagicLink(event)" class="w-full flex flex-col gap-md">
+            <div>
+                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Correo electrónico</label>
+                <input required id="login-email" type="email" autocomplete="email" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" placeholder="tu@correo.com"/>
+            </div>
+            <button type="submit" id="btn-login" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+                <span class="material-symbols-outlined">mail</span>
+                Enviar enlace mágico
+            </button>
+        </form>
+        <p id="login-message" class="hidden font-body-md text-body-md text-center rounded-lg p-md w-full"></p>
+    </div>
+</div>
+
 <!-- ===== APP SHELL ===== -->
-<div id="app" class="max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
+<div id="app" class="hidden max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
 
     <!-- ===== VIEW 1: INICIO (Dashboard) ===== -->
     <div id="view-inicio" class="view active pb-[88px]">
@@ -194,7 +224,7 @@
                     <div class="font-headline-lg text-headline-lg text-on-surface" id="stat-partido">Sáb 31 Ago</div>
                     <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
                         <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
-                        2011-2013 vs Club Tiburón
+                        <span id="stat-partido-sub">Sin partidos próximos</span>
                     </div>
                 </article>
             </section>
@@ -475,12 +505,18 @@
                         </div>
                         <span class="font-body-md text-body-md text-on-surface-variant">3 categorías</span>
                     </div>
-                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
                         <div class="flex items-center gap-md">
                             <span class="material-symbols-outlined text-on-surface-variant">person</span>
-                            <span class="font-body-md text-body-md">Mi cuenta</span>
+                            <span class="font-body-md text-body-md" id="mi-cuenta-email">Mi cuenta</span>
                         </div>
                         <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                    <button onclick="cerrarSesion()" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-error">logout</span>
+                            <span class="font-body-md text-body-md text-error font-semibold">Cerrar sesión</span>
+                        </div>
                     </button>
                 </div>
             </section>
@@ -532,8 +568,12 @@
             </div>
             <form id="form-nuevo-alumno" onsubmit="addAlumno(event)" class="flex flex-col gap-md">
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre completo</label>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del alumno</label>
                     <input required id="inp-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Santiago Pérez"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del acudiente</label>
+                    <input required id="inp-nombre-acudiente" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: María Pérez"/>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono acudiente (WhatsApp)</label>
@@ -680,6 +720,22 @@
         </div>
     </div>
 
+    <!-- ===== MODAL: Recordatorios Masivos ===== -->
+    <div id="modal-recordatorios" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[80vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Recordatorios pendientes</h2>
+                <button onclick="this.closest('#modal-recordatorios').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="recordatorios-list" class="flex flex-col gap-sm">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- ===== TOAST NOTIFICATION ===== -->
     <div id="toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-inverse-surface text-inverse-on-surface px-lg py-sm rounded-xl shadow-lg font-body-md text-body-md flex items-center gap-sm max-w-[350px]" style="animation: fadeIn 0.3s ease-out;">
         <span class="material-symbols-outlined text-inverse-primary" id="toast-icon">check_circle</span>
@@ -714,7 +770,14 @@
 
 <script>
 // ===========================
-// DATA STORE (simulated DB)
+// SUPABASE CONFIG
+// ===========================
+const SUPABASE_URL = 'https://izntwgnsjyypeaklcfbo.supabase.co';
+const SUPABASE_ANON_KEY = 'PEGAR_AQUÍ_TU_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===========================
+// CONSTANTS
 // ===========================
 const MENSUALIDAD = 80000;
 const FECHA_CORTE = 15;
@@ -729,46 +792,210 @@ let currentYear = new Date().getFullYear();
 let activeCategory = 'todos';
 let receiptCounter = 1000;
 
-// Sample students data
-let alumnos = [
-    { id: 1, nombre: 'Santiago Pérez', telefono: '311 234 5678', categoria: '2011-2013', talla: 'M', pagado: true, fechaPago: '12 Ago', uniformes: [true, true, true] },
-    { id: 2, nombre: 'Mateo García', telefono: '311 987 6543', categoria: '2011-2013', talla: 'L', pagado: false, fechaPago: null, uniformes: [true, false, true] },
-    { id: 3, nombre: 'Isabella Martínez', telefono: '312 456 7890', categoria: '2016-2018', talla: 'S', pagado: false, fechaPago: null, uniformes: [true, true, false] },
-    { id: 4, nombre: 'Luciana Torres', telefono: '313 789 0123', categoria: '2014-2015', talla: 'M', pagado: false, fechaPago: null, uniformes: [true, true, true] },
-    { id: 5, nombre: 'Valentina Rojas', telefono: '314 321 6540', categoria: '2016-2018', talla: 'XS', pagado: true, fechaPago: '10 Ago', uniformes: [true, true, false] },
-    { id: 6, nombre: 'Samuel Díaz', telefono: '315 654 3210', categoria: '2014-2015', talla: 'L', pagado: true, fechaPago: '8 Ago', uniformes: [true, false, true] },
-    { id: 7, nombre: 'Camila Herrera', telefono: '316 147 2583', categoria: '2011-2013', talla: 'M', pagado: true, fechaPago: '5 Ago', uniformes: [true, true, true] },
-    { id: 8, nombre: 'Daniel Vargas', telefono: '317 258 3694', categoria: '2014-2015', talla: 'S', pagado: false, fechaPago: null, uniformes: [false, true, true] },
-    { id: 9, nombre: 'Sofía Morales', telefono: '318 369 4705', categoria: '2016-2018', talla: 'XS', pagado: true, fechaPago: '14 Ago', uniformes: [true, true, true] },
-    { id: 10, nombre: 'Andrés López', telefono: '319 470 5816', categoria: '2011-2013', talla: 'L', pagado: false, fechaPago: null, uniformes: [true, true, false] },
-    { id: 11, nombre: 'Mariana Castro', telefono: '320 581 6927', categoria: '2016-2018', talla: 'S', pagado: false, fechaPago: null, uniformes: [true, false, true] },
-    { id: 12, nombre: 'Tomás Restrepo', telefono: '310 692 7038', categoria: '2014-2015', talla: 'M', pagado: true, fechaPago: '3 Ago', uniformes: [true, true, true] },
-];
+// Local caches populated from Supabase on each render
+let padresCache = [];
+let cobrosCache = [];
+let partidosCache = [];
 
-let partidos = [
-    { id: 1, rival: 'Club Tiburón', fecha: '2026-08-31', hora: '08:00', cancha: 'Cancha La Castellana', categoria: '2011-2013', arbitraje: 120000, convocados: 14, completado: false },
-    { id: 2, rival: 'Academia Norte', fecha: '2026-08-31', hora: '10:00', cancha: 'Cancha Municipal', categoria: '2014-2015', arbitraje: 150000, convocados: 10, completado: false },
-    { id: 3, rival: 'Delfines FC', fecha: '2026-08-24', hora: '09:00', cancha: 'Cancha Norte', categoria: '2016-2018', arbitraje: 100000, convocados: 12, completado: true },
-];
+// ===========================
+// AUTH (Magic Link)
+// ===========================
+let appInitialized = false;
 
-let inventario = {
-    '2011-2013': { local: { total: 50, entregados: 45 }, visitante: { total: 50, entregados: 20 }, torneo: { total: 30, entregados: 15 } },
-    '2014-2015': { local: { total: 40, entregados: 35 }, visitante: { total: 40, entregados: 28 }, torneo: { total: 25, entregados: 10 } },
-    '2016-2018': { local: { total: 45, entregados: 40 }, visitante: { total: 45, entregados: 32 }, torneo: { total: 20, entregados: 8 } },
-};
+async function enviarMagicLink(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.classList.add('opacity-60');
+    try {
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: window.location.href }
+        });
+        if (error) throw error;
+        document.getElementById('form-login').classList.add('hidden');
+        setLoginMessage(`Revisa tu correo (${email}) y haz clic en el enlace para ingresar.`, false);
+    } catch (err) {
+        console.error(err);
+        setLoginMessage(err.message || 'No se pudo enviar el enlace. Intenta de nuevo.', true);
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
+    }
+}
 
-const respuestasRapidas = [
-    { titulo: 'Información general', texto: '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.' },
-    { titulo: 'Costos y mensualidad', texto: 'La mensualidad es de $80.000 con fecha de corte el 15 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.' },
-    { titulo: 'Horarios de entrenamiento', texto: 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM' },
-    { titulo: 'Requisitos de inscripción', texto: 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.' },
-];
+function setLoginMessage(text, isError) {
+    const el = document.getElementById('login-message');
+    el.textContent = text;
+    el.classList.remove('hidden', 'text-primary', 'bg-primary/10', 'text-error', 'bg-error/10');
+    el.classList.add(isError ? 'text-error' : 'text-primary', isError ? 'bg-error/10' : 'bg-primary/10');
+}
 
-const activityLog = [
-    { icon: 'check_circle', title: 'Pago registrado — Santiago Pérez', subtitle: '(2011-2013)', time: 'Hace 2 horas' },
-    { icon: 'forward_to_inbox', title: 'Recordatorio enviado — 8 padres', subtitle: 'Pendientes de pago', time: 'Ayer, 6:00 PM' },
-    { icon: 'sports_soccer', title: 'Partido creado — 2014-2015', subtitle: 'vs Academia Norte', time: 'Lun 19 Ago' },
-];
+async function cerrarSesion() {
+    await supabase.auth.signOut();
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+    document.getElementById('auth-loading').classList.add('hidden');
+    if (session) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        const cuentaEl = document.getElementById('mi-cuenta-email');
+        if (cuentaEl) cuentaEl.textContent = session.user?.email || 'Mi cuenta';
+        if (!appInitialized) {
+            appInitialized = true;
+            init();
+        }
+    } else {
+        appInitialized = false;
+        document.getElementById('app').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('form-login').classList.remove('hidden');
+        document.getElementById('login-message').classList.add('hidden');
+        document.getElementById('form-login').reset();
+    }
+});
+
+// ===========================
+// DATA LAYER (Supabase)
+// ===========================
+async function cargarPadres() {
+    const { data, error } = await supabase
+        .from('padres')
+        .select('*, entregas_uniforme(*)')
+        .eq('activo', true)
+        .order('nombre');
+    if (error) { console.error(error); showToast('Error al cargar alumnos', 'error'); return []; }
+    return data || [];
+}
+
+async function buscarPadres(termino) {
+    const { data, error } = await supabase
+        .from('padres')
+        .select('*, entregas_uniforme(*)')
+        .eq('activo', true)
+        .or(`nombre.ilike.%${termino}%,nombre_hijo.ilike.%${termino}%`);
+    if (error) { console.error(error); showToast('Error al buscar alumnos', 'error'); return []; }
+    return data || [];
+}
+
+async function crearPadre(padre) {
+    const { data, error } = await supabase.from('padres').insert(padre).select().single();
+    if (error) { console.error(error); showToast('Error al inscribir alumno', 'error'); throw error; }
+    return data;
+}
+
+async function editarPadre(id, cambios) {
+    const { data, error } = await supabase.from('padres').update(cambios).eq('id', id).select().single();
+    if (error) { console.error(error); showToast('Error al actualizar alumno', 'error'); throw error; }
+    return data;
+}
+
+async function cargarPagos(mes, anio) {
+    const { data, error } = await supabase
+        .from('pagos')
+        .select('*, padres(nombre, telefono, nombre_hijo)')
+        .eq('mes', mes)
+        .eq('anio', anio);
+    if (error) { console.error(error); showToast('Error al cargar pagos', 'error'); return []; }
+    return data || [];
+}
+
+async function cargarPadresConPago() {
+    const { data, error } = await supabase.from('padres_con_pago').select('*');
+    if (error) { console.error(error); showToast('Error al cargar cobros', 'error'); return []; }
+    return data || [];
+}
+
+async function registrarPagoDB(padreId, mes, anio, metodoPago) {
+    const { data, error } = await supabase
+        .from('pagos')
+        .upsert({
+            padre_id: padreId,
+            mes: mes,
+            anio: anio,
+            monto: MENSUALIDAD,
+            fecha_pago: new Date().toISOString(),
+            estado: 'pagado',
+            metodo_pago: metodoPago
+        }, { onConflict: 'padre_id,mes,anio' })
+        .select('*, padres(nombre, telefono, nombre_hijo)')
+        .single();
+    if (error) { console.error(error); showToast('Error al registrar el pago', 'error'); throw error; }
+    return data;
+}
+
+async function padresPendientes() {
+    const { data, error } = await supabase.rpc('padres_pendientes_pago');
+    if (error) { console.error(error); showToast('Error al calcular pendientes', 'error'); return []; }
+    return data || [];
+}
+
+async function cargarPartidos() {
+    const { data, error } = await supabase
+        .from('partidos')
+        .select('*, convocatorias(*, padres(nombre, nombre_hijo))')
+        .order('fecha', { ascending: true });
+    if (error) { console.error(error); showToast('Error al cargar partidos', 'error'); return []; }
+    return data || [];
+}
+
+async function crearPartidoDB(partido) {
+    const { data, error } = await supabase.from('partidos').insert(partido).select().single();
+    if (error) { console.error(error); showToast('Error al crear partido', 'error'); throw error; }
+    return data;
+}
+
+async function convocarJugador(partidoId, padreId) {
+    const { data, error } = await supabase
+        .from('convocatorias')
+        .insert({ partido_id: partidoId, padre_id: padreId })
+        .select()
+        .single();
+    if (error) { console.error(error); showToast('Error al convocar jugador', 'error'); throw error; }
+    return data;
+}
+
+async function cargarInventario() {
+    const { data, error } = await supabase.from('uniformes').select('*').order('tipo');
+    if (error) { console.error(error); showToast('Error al cargar inventario', 'error'); return []; }
+    return data || [];
+}
+
+async function cargarEntregasPadre(padreId) {
+    const { data, error } = await supabase
+        .from('entregas_uniforme')
+        .select('*')
+        .eq('padre_id', padreId)
+        .single();
+    if (error) return null;
+    return data;
+}
+
+async function marcarEntregaUniforme(padreId, tipo, entregado) {
+    const campo = tipo === 'local' ? 'uniforme_local'
+        : tipo === 'visitante' ? 'uniforme_visitante'
+        : 'kit_torneo';
+
+    const { data, error } = await supabase
+        .from('entregas_uniforme')
+        .upsert({ padre_id: padreId, [campo]: entregado }, { onConflict: 'padre_id' })
+        .select()
+        .single();
+    if (error) { console.error(error); showToast('Error al actualizar entrega', 'error'); throw error; }
+    return data;
+}
+
+async function cargarRespuestasRapidas() {
+    const { data, error } = await supabase
+        .from('respuestas_rapidas')
+        .select('*')
+        .eq('activo', true)
+        .order('orden');
+    if (error) { console.error(error); showToast('Error al cargar respuestas', 'error'); return []; }
+    return data || [];
+}
 
 // ===========================
 // NAVIGATION
@@ -800,11 +1027,11 @@ function navigateTo(view) {
 // UTILITIES
 // ===========================
 function formatMoney(n) {
-    return '$' + n.toLocaleString('es-CO');
+    return '$' + (n || 0).toLocaleString('es-CO');
 }
 
 function getInitials(name) {
-    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    return (name || '').split(' ').filter(Boolean).map(w => w[0]).join('').substring(0, 2).toUpperCase();
 }
 
 function showToast(text, icon = 'check_circle') {
@@ -828,77 +1055,165 @@ function formatDate() {
     return `${dias[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()}`;
 }
 
+function normalizePhone(tel) {
+    let digits = (tel || '').replace(/\D/g, '');
+    if (digits.length === 10) digits = '57' + digits;
+    return digits;
+}
+
+function escJs(str) {
+    return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return 'Hace un momento';
+    if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`;
+    return `Hace ${Math.floor(diff / 86400)} días`;
+}
+
+function spinnerBlock() {
+    return `<div class="flex justify-center py-xl"><div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div></div>`;
+}
+
+function emptyState(msg) {
+    return `<div class="flex flex-col items-center justify-center py-xl gap-sm text-on-surface-variant"><span class="material-symbols-outlined text-3xl">inbox</span><p class="font-body-md text-body-md">${msg}</p></div>`;
+}
+
 // ===========================
 // INICIO (Dashboard)
 // ===========================
-function renderInicio() {
+async function renderInicio() {
     document.getElementById('greeting-text').textContent = getGreeting();
     document.getElementById('date-text').textContent = formatDate();
+    document.getElementById('activity-list').innerHTML = spinnerBlock();
 
-    const pagados = alumnos.filter(a => a.pagado);
-    const pendientes = alumnos.filter(a => !a.pagado);
-    document.getElementById('stat-cobrado').textContent = formatMoney(pagados.length * MENSUALIDAD);
-    document.getElementById('stat-pendientes').textContent = pendientes.length;
+    const mes = currentMonth + 1;
+    const anio = currentYear;
 
-    // Activity
-    const list = document.getElementById('activity-list');
-    list.innerHTML = activityLog.map(a => `
-        <li class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px]">
-            <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 mt-1">
-                <span class="material-symbols-outlined text-on-surface-variant text-xl">${a.icon}</span>
-            </div>
-            <div class="flex flex-col gap-0.5 flex-1">
-                <p class="font-body-md text-body-md text-on-surface font-semibold">${a.title}</p>
-                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.subtitle}</p>
-                <span class="font-label-sm text-label-sm text-outline mt-1">${a.time}</span>
-            </div>
-        </li>
-    `).join('');
+    try {
+        const [totalRes, pagadosRes, partidosArr, recientesRes] = await Promise.all([
+            supabase.from('padres').select('id', { count: 'exact', head: true }).eq('activo', true),
+            supabase.from('pagos').select('id', { count: 'exact', head: true }).eq('mes', mes).eq('anio', anio).eq('estado', 'pagado'),
+            cargarPartidos(),
+            supabase.from('pagos').select('*, padres(nombre, nombre_hijo)').order('fecha_pago', { ascending: false }).limit(5)
+        ]);
+
+        const totalPadres = totalRes.count || 0;
+        const pagadosCount = pagadosRes.count || 0;
+        const pendientesCount = Math.max(totalPadres - pagadosCount, 0);
+
+        document.getElementById('stat-cobrado').textContent = formatMoney(pagadosCount * MENSUALIDAD);
+        document.getElementById('stat-pendientes').textContent = pendientesCount;
+
+        const hoy = new Date(new Date().toDateString());
+        const proximo = partidosArr
+            .filter(p => !p.completado && new Date(p.fecha + 'T00:00:00') >= hoy)
+            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))[0];
+
+        if (proximo) {
+            const pd = new Date(proximo.fecha + 'T12:00:00');
+            document.getElementById('stat-partido').textContent = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} ${MESES[pd.getMonth()].substring(0, 3)}`;
+            document.getElementById('stat-partido-sub').textContent = `${proximo.categoria} vs ${proximo.rival}`;
+        } else {
+            document.getElementById('stat-partido').textContent = 'Sin partidos';
+            document.getElementById('stat-partido-sub').textContent = 'No hay partidos programados';
+        }
+
+        const recientesPagos = recientesRes.data || [];
+        const list = document.getElementById('activity-list');
+        if (recientesPagos.length === 0) {
+            list.innerHTML = `<li class="p-md font-body-md text-body-md text-on-surface-variant text-center">Sin actividad reciente</li>`;
+        } else {
+            list.innerHTML = recientesPagos.map(pg => `
+                <li class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px]">
+                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 mt-1">
+                        <span class="material-symbols-outlined text-on-surface-variant text-xl">check_circle</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5 flex-1">
+                        <p class="font-body-md text-body-md text-on-surface font-semibold">Pago registrado — ${pg.padres?.nombre_hijo || pg.padres?.nombre || 'Alumno'}</p>
+                        <p class="font-body-md text-body-md text-on-surface-variant text-sm">${MESES[pg.mes - 1]} ${pg.anio}</p>
+                        <span class="font-label-sm text-label-sm text-outline mt-1">${timeAgo(pg.fecha_pago)}</span>
+                    </div>
+                </li>
+            `).join('');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('No se pudo cargar el panel', 'error');
+    }
 }
 
 // ===========================
 // ALUMNOS
 // ===========================
-function renderAlumnos() {
+async function renderAlumnos() {
+    document.getElementById('alumnos-list').innerHTML = spinnerBlock();
+
+    const mes = currentMonth + 1;
+    const anio = currentYear;
+    const [padresData, pagosData] = await Promise.all([cargarPadres(), cargarPagos(mes, anio)]);
+    const pagosMap = new Map((pagosData || []).map(pg => [pg.padre_id, pg]));
+
+    padresCache = padresData.map(p => ({ ...p, _pago: pagosMap.get(p.id) || null }));
+    document.getElementById('total-alumnos').textContent = padresCache.length;
+    renderAlumnosList();
+}
+
+function renderAlumnosList() {
     const filtered = getFilteredAlumnos();
-    document.getElementById('total-alumnos').textContent = alumnos.length;
     const container = document.getElementById('alumnos-list');
-    container.innerHTML = filtered.map(a => `
+    if (filtered.length === 0) {
+        container.innerHTML = emptyState('No hay alumnos que coincidan');
+        return;
+    }
+    container.innerHTML = filtered.map(p => {
+        const pagado = p._pago?.estado === 'pagado';
+        const entregas = Array.isArray(p.entregas_uniforme) ? p.entregas_uniforme[0] : p.entregas_uniforme;
+        const uniformes = [!!entregas?.uniforme_local, !!entregas?.uniforme_visitante, !!entregas?.kit_torneo];
+        const nombreAlumno = p.nombre_hijo || p.nombre;
+        return `
         <div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
             <div class="flex items-center gap-sm">
-                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.nombre)}</div>
+                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(nombreAlumno)}</div>
                 <div>
-                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface">${a.nombre}</h3>
-                    <p class="font-body-md text-body-md text-secondary">${a.categoria} • ${a.telefono}</p>
+                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface">${nombreAlumno}</h3>
+                    <p class="font-body-md text-body-md text-secondary">${p.categoria} • ${p.nombre}</p>
                     <div class="flex gap-1 mt-1">
-                        ${a.uniformes.map((u, i) => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
+                        ${uniformes.map(u => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
                         <span class="text-[10px] text-secondary self-center ml-1">Uniformes</span>
                     </div>
                 </div>
             </div>
             <div class="flex flex-col items-end gap-2">
                 <div class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full ${a.pagado ? 'bg-primary' : 'bg-error'}"></span>
-                    <span class="font-label-sm text-label-sm ${a.pagado ? 'text-primary' : 'text-error'}">${a.pagado ? 'Pagado' : 'Pendiente'}</span>
+                    <span class="w-2.5 h-2.5 rounded-full ${pagado ? 'bg-primary' : 'bg-error'}"></span>
+                    <span class="font-label-sm text-label-sm ${pagado ? 'text-primary' : 'text-error'}">${pagado ? 'Pagado' : 'Pendiente'}</span>
                 </div>
                 <div class="flex gap-2">
-                    ${!a.pagado ? `<button onclick="registrarPago(${a.id})" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Cobrar"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
-                    <button onclick="showRecibo(${a.id})" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
-                    <button onclick="sendWhatsApp('${a.telefono}', '${a.nombre}')" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="WhatsApp"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                    ${!pagado ? `<button onclick="registrarPago('${p.id}')" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Cobrar"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
+                    <button onclick="showRecibo('${p.id}')" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
+                    <button onclick="sendWhatsApp('${escJs(p.telefono)}', '${escJs(nombreAlumno)}')" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="WhatsApp"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function getFilteredAlumnos() {
-    let filtered = [...alumnos];
+    let filtered = [...padresCache];
     if (activeCategory !== 'todos') {
-        filtered = filtered.filter(a => a.categoria === activeCategory);
+        filtered = filtered.filter(p => p.categoria === activeCategory);
     }
     const searchTerm = document.getElementById('search-input')?.value?.toLowerCase() || '';
     if (searchTerm) {
-        filtered = filtered.filter(a => a.nombre.toLowerCase().includes(searchTerm));
+        filtered = filtered.filter(p =>
+            (p.nombre_hijo || '').toLowerCase().includes(searchTerm) ||
+            (p.nombre || '').toLowerCase().includes(searchTerm)
+        );
     }
     return filtered;
 }
@@ -910,11 +1225,11 @@ function filterByCategory(cat) {
         c.classList.add('bg-surface-container', 'border', 'border-outline-variant', 'text-on-surface');
     });
     document.querySelector(`.cat-chip[data-cat="${cat}"]`).classList.add('chip-active');
-    renderAlumnos();
+    renderAlumnosList();
 }
 
 function filterAlumnos() {
-    renderAlumnos();
+    renderAlumnosList();
 }
 
 function toggleSearch() {
@@ -925,146 +1240,188 @@ function toggleSearch() {
     }
 }
 
-function addAlumno(e) {
+async function addAlumno(e) {
     e.preventDefault();
-    const nombre = document.getElementById('inp-nombre').value;
-    const telefono = document.getElementById('inp-telefono').value;
+    const nombre_hijo = document.getElementById('inp-nombre').value.trim();
+    const nombre = document.getElementById('inp-nombre-acudiente').value.trim();
+    const telefono = normalizePhone(document.getElementById('inp-telefono').value);
     const categoria = document.querySelector('input[name="categoria"]:checked').value;
     const talla = document.getElementById('inp-talla').value;
+    const btn = document.querySelector('#form-nuevo-alumno button[type="submit"]');
 
-    alumnos.push({
-        id: alumnos.length + 1,
-        nombre, telefono, categoria, talla,
-        pagado: false, fechaPago: null,
-        uniformes: [false, false, false]
-    });
-
-    document.getElementById('form-nuevo-alumno').reset();
-    document.getElementById('modal-nuevo-alumno').classList.add('hidden');
-    showToast(`${nombre} inscrito exitosamente`);
-    renderAlumnos();
-    renderInicio();
+    btn.disabled = true;
+    try {
+        await crearPadre({ nombre, nombre_hijo, telefono, categoria, talla, activo: true });
+        document.getElementById('form-nuevo-alumno').reset();
+        document.getElementById('modal-nuevo-alumno').classList.add('hidden');
+        showToast(`${nombre_hijo} inscrito exitosamente`);
+        await Promise.all([renderAlumnos(), renderInicio()]);
+    } catch (err) {
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 // ===========================
 // COBROS
 // ===========================
-function renderCobros() {
+async function renderCobros() {
+    document.getElementById('cobros-list').innerHTML = spinnerBlock();
+
     const monthStr = `${MESES[currentMonth]} ${currentYear}`;
     document.getElementById('month-display').textContent = monthStr;
     document.getElementById('month-name-corte').textContent = MESES[currentMonth].toLowerCase();
 
-    const pagados = alumnos.filter(a => a.pagado);
-    const pendientes = alumnos.filter(a => !a.pagado);
+    const mes = currentMonth + 1;
+    const anio = currentYear;
+    const [padresData, pagosData] = await Promise.all([cargarPadres(), cargarPagos(mes, anio)]);
+    const pagosMap = new Map((pagosData || []).map(pg => [pg.padre_id, pg]));
+    cobrosCache = padresData.map(p => ({ ...p, _pago: pagosMap.get(p.id) || null }));
+
+    const pagados = cobrosCache.filter(p => p._pago?.estado === 'pagado');
+    const pendientes = cobrosCache.filter(p => p._pago?.estado !== 'pagado');
+
     document.getElementById('cobros-pagados').textContent = pagados.length;
     document.getElementById('cobros-pendientes').textContent = pendientes.length;
-    document.getElementById('cobros-total').textContent = formatMoney(alumnos.length * MENSUALIDAD);
+    document.getElementById('cobros-total').textContent = formatMoney(cobrosCache.length * MENSUALIDAD);
     document.getElementById('reminder-count').textContent = pendientes.length;
 
     const container = document.getElementById('cobros-list');
-    // Sort: pendientes first
     const sorted = [...pendientes, ...pagados];
-    container.innerHTML = sorted.map(a => `
-        <div class="bg-surface-container-lowest ${a.pagado ? '' : 'shadow-[0_2px_4px_rgba(0,0,0,0.08)]'} rounded-lg p-sm flex items-center justify-between relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1 ${a.pagado ? 'bg-primary' : 'bg-error'}"></div>
+    if (sorted.length === 0) {
+        container.innerHTML = emptyState('No hay alumnos registrados');
+        return;
+    }
+    container.innerHTML = sorted.map(p => {
+        const pagado = p._pago?.estado === 'pagado';
+        const fechaPago = pagado ? new Date(p._pago.fecha_pago) : null;
+        const nombreAlumno = p.nombre_hijo || p.nombre;
+        return `
+        <div class="bg-surface-container-lowest ${pagado ? '' : 'shadow-[0_2px_4px_rgba(0,0,0,0.08)]'} rounded-lg p-sm flex items-center justify-between relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${pagado ? 'bg-primary' : 'bg-error'}"></div>
             <div class="flex items-center gap-sm pl-xs">
-                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(a.nombre)}</div>
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(nombreAlumno)}</div>
                 <div>
-                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${a.nombre}</h3>
-                    <p class="font-body-md text-body-md text-on-surface-variant">${a.categoria}</p>
+                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${nombreAlumno}</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">${p.categoria}</p>
                 </div>
             </div>
             <div class="flex flex-col items-end gap-xs">
                 <span class="font-body-lg text-body-lg text-on-surface font-bold">${formatMoney(MENSUALIDAD)}</span>
                 <div class="flex items-center gap-xs">
-                    ${a.pagado
-                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${a.fechaPago}</span>`
+                    ${pagado
+                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${fechaPago.getDate()} ${MESES[fechaPago.getMonth()].substring(0, 3)}</span>`
                         : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Pendiente</span>
-                           <button onclick="registrarPago(${a.id})" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Cobrar</button>`
+                           <button onclick="registrarPago('${p.id}')" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Cobrar</button>`
                     }
                 </div>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
-function changeMonth(delta) {
+async function changeMonth(delta) {
     currentMonth += delta;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    renderCobros();
+    await renderCobros();
 }
 
-function registrarPago(id) {
-    const alumno = alumnos.find(a => a.id === id);
-    if (alumno) {
-        alumno.pagado = true;
-        const d = new Date();
-        alumno.fechaPago = `${d.getDate()} ${MESES[d.getMonth()].substring(0, 3)}`;
-        receiptCounter++;
+async function registrarPago(padreId) {
+    const padre = padresCache.find(p => p.id === padreId) || cobrosCache.find(p => p.id === padreId);
+    if (!padre) return;
 
-        activityLog.unshift({
-            icon: 'check_circle',
-            title: `Pago registrado — ${alumno.nombre}`,
-            subtitle: `(${alumno.categoria})`,
-            time: 'Ahora mismo'
-        });
-
-        showToast(`Pago de ${alumno.nombre} registrado ✓`);
-        renderCobros();
-        renderAlumnos();
-        renderInicio();
-
-        // Auto-show receipt
-        setTimeout(() => showRecibo(id), 500);
+    try {
+        const mes = currentMonth + 1;
+        const anio = currentYear;
+        const pago = await registrarPagoDB(padreId, mes, anio, 'efectivo');
+        showToast(`Pago de ${padre.nombre_hijo || padre.nombre} registrado ✓`);
+        await Promise.all([renderCobros(), renderAlumnos(), renderInicio()]);
+        setTimeout(() => showRecibo(padreId, pago), 500);
+    } catch (err) {
+        console.error(err);
     }
 }
 
-function showRecibo(id) {
-    const alumno = alumnos.find(a => a.id === id);
-    if (!alumno) return;
+async function showRecibo(padreId, pagoParam) {
+    const padre = padresCache.find(p => p.id === padreId) || cobrosCache.find(p => p.id === padreId);
+    if (!padre) return;
 
-    const d = new Date();
-    document.getElementById('recibo-numero').textContent = `#${(receiptCounter).toString().padStart(4, '0')}`;
-    document.getElementById('recibo-fecha').textContent = `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
-    document.getElementById('recibo-alumno').textContent = alumno.nombre;
-    document.getElementById('recibo-categoria').textContent = `${alumno.categoria}`;
-    document.getElementById('recibo-concepto').textContent = `Mensualidad ${MESES[currentMonth]} ${currentYear}`;
-    document.getElementById('modal-recibo').classList.remove('hidden');
+    let pago = pagoParam;
+    if (!pago) {
+        const mes = currentMonth + 1;
+        const anio = currentYear;
+        const pagos = await cargarPagos(mes, anio);
+        pago = pagos.find(pg => pg.padre_id === padreId);
+    }
+    if (!pago) { showToast('Este alumno aún no tiene pago registrado este mes', 'info'); return; }
+
+    receiptCounter++;
+    const fechaPago = new Date(pago.fecha_pago);
+    document.getElementById('recibo-numero').textContent = `#${receiptCounter.toString().padStart(4, '0')}`;
+    document.getElementById('recibo-fecha').textContent = `${fechaPago.getDate()} ${MESES[fechaPago.getMonth()]} ${fechaPago.getFullYear()}, ${fechaPago.getHours()}:${fechaPago.getMinutes().toString().padStart(2, '0')}`;
+    document.getElementById('recibo-alumno').textContent = padre.nombre_hijo || padre.nombre;
+    document.getElementById('recibo-categoria').textContent = padre.categoria;
+    document.getElementById('recibo-concepto').textContent = `Mensualidad ${MESES[pago.mes - 1]} ${pago.anio}`;
+    const modal = document.getElementById('modal-recibo');
+    modal.dataset.padreId = padreId;
+    modal.classList.remove('hidden');
 }
 
 function shareWhatsApp() {
+    const modal = document.getElementById('modal-recibo');
+    const padreId = modal.dataset.padreId;
+    const padre = padresCache.find(p => p.id === padreId) || cobrosCache.find(p => p.id === padreId);
+    if (!padre) return;
+
     const alumno = document.getElementById('recibo-alumno').textContent;
     const concepto = document.getElementById('recibo-concepto').textContent;
-    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recibo de Pago*\n\n✅ Alumno: ${alumno}\n💰 Total: ${formatMoney(MENSUALIDAD)}\n📋 Concepto: ${concepto}\n📅 Fecha: ${new Date().toLocaleDateString('es-CO')}\n\n¡Gracias por confiar en nuestra escuela!`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
-    document.getElementById('modal-recibo').classList.add('hidden');
+    const fecha = document.getElementById('recibo-fecha').textContent;
+    const recibo = `🧾 *RECIBO DE PAGO*\n━━━━━━━━━━━━━━━━\n⚽ Cancha Directa Barranquilla\n━━━━━━━━━━━━━━━━\n👤 ${padre.nombre}\n👦 Alumno: ${alumno}\n💰 Monto: ${formatMoney(MENSUALIDAD)} COP\n📋 Concepto: ${concepto}\n✅ Estado: PAGADO\n📆 Fecha: ${fecha}\n━━━━━━━━━━━━━━━━\n¡Gracias por tu puntualidad! 🙏`;
+    const url = `https://wa.me/${padre.telefono}?text=${encodeURIComponent(recibo)}`;
+    window.open(url, '_blank');
+    modal.classList.add('hidden');
 }
 
 function sendWhatsApp(tel, nombre) {
-    const phone = tel.replace(/\s/g, '');
     const msg = encodeURIComponent(`Hola, este es un mensaje de la escuela de fútbol Cancha Directa sobre ${nombre}.`);
-    window.open(`https://wa.me/57${phone}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
 }
 
-function sendReminders() {
-    const pendientes = alumnos.filter(a => !a.pagado);
-    if (pendientes.length === 0) {
+async function sendReminders() {
+    const pendientes = await padresPendientes();
+    if (!pendientes || pendientes.length === 0) {
         showToast('¡Todos los alumnos están al día! 🎉', 'celebration');
         return;
     }
-    const nombres = pendientes.map(a => a.nombre).join(', ');
-    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recordatorio de Pago*\n\n📢 Estimado padre de familia, le recordamos que la mensualidad de ${MESES[currentMonth]} (${formatMoney(MENSUALIDAD)}) tiene fecha de corte el día ${FECHA_CORTE}.\n\n💳 Favor realizar el pago a la brevedad.\n\n¡Gracias por ser parte de nuestra escuela!`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
-    showToast(`Recordatorio enviado a ${pendientes.length} familias`, 'send');
+    const list = document.getElementById('recordatorios-list');
+    list.innerHTML = pendientes.map(p => {
+        const msg = encodeURIComponent(`⚽ *Cancha Directa — Recordatorio de Pago*\n\n📢 Hola ${p.nombre}, le recordamos que la mensualidad de ${p.nombre_hijo} (${MESES[currentMonth]}, ${formatMoney(MENSUALIDAD)}) tiene fecha de corte el día ${FECHA_CORTE}.\n\n💳 Favor realizar el pago a la brevedad.\n\n¡Gracias por ser parte de nuestra escuela!`);
+        return `
+        <div class="bg-surface-container-lowest rounded-xl p-sm flex items-center justify-between border border-surface-variant">
+            <div>
+                <h4 class="font-body-lg text-body-lg font-semibold text-on-surface">${p.nombre_hijo}</h4>
+                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${p.nombre} · ${p.categoria}</p>
+            </div>
+            <a href="https://wa.me/${p.telefono}?text=${msg}" target="_blank" class="w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center active:scale-95 transition-transform">
+                <span class="material-symbols-outlined text-[20px]">forum</span>
+            </a>
+        </div>`;
+    }).join('');
+    document.getElementById('modal-recordatorios').classList.remove('hidden');
 }
 
 // ===========================
 // CALENDARIO
 // ===========================
-function renderCalendar() {
+async function renderCalendar() {
+    document.getElementById('partidos-list').innerHTML = spinnerBlock();
+
     const d = new Date();
     document.getElementById('cal-month-display').textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+
+    partidosCache = await cargarPartidos();
 
     // Mini calendar
     const cal = document.getElementById('mini-calendar');
@@ -1072,20 +1429,17 @@ function renderCalendar() {
     const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     const prevDays = new Date(d.getFullYear(), d.getMonth(), 0).getDate();
 
-    // Match dates
-    const matchDates = partidos.filter(p => {
+    const matchDates = partidosCache.filter(p => {
         const pd = new Date(p.fecha);
         return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
     }).map(p => new Date(p.fecha).getDate());
 
     let html = DIAS_SEMANA.map(dia => `<div class="font-label-sm text-label-sm text-secondary py-1">${dia}</div>`).join('');
 
-    // Previous month days
     for (let i = firstDay - 1; i >= 0; i--) {
         html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${prevDays - i}</div>`;
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
         const isToday = day === d.getDate();
         const hasMatch = matchDates.includes(day);
@@ -1096,7 +1450,6 @@ function renderCalendar() {
         html += `<div class="${classes}">${hasMatch && !isToday ? `<span>${day}</span><div class="w-1.5 h-1.5 rounded-full bg-primary mt-0.5"></div>` : day}</div>`;
     }
 
-    // Next month days
     const remaining = 42 - (firstDay + daysInMonth);
     for (let i = 1; i <= remaining; i++) {
         html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${i}</div>`;
@@ -1106,10 +1459,15 @@ function renderCalendar() {
 
     // Match list
     const list = document.getElementById('partidos-list');
-    const sortedPartidos = [...partidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    const sortedPartidos = [...partidosCache].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    if (sortedPartidos.length === 0) {
+        list.innerHTML = emptyState('No hay partidos programados');
+        return;
+    }
     list.innerHTML = sortedPartidos.map(p => {
         const pd = new Date(p.fecha + 'T12:00:00');
-        const costPerKid = p.convocados > 0 ? Math.round(p.arbitraje / p.convocados) : 0;
+        const convocadosCount = (p.convocatorias || []).length;
+        const costPerKid = convocadosCount > 0 ? Math.round(p.arbitraje / convocadosCount) : 0;
         return `
         <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30 flex gap-4 ${p.completado ? 'opacity-60' : ''}">
             <div class="flex flex-col items-center justify-center ${p.completado ? 'bg-surface-container-highest' : 'bg-primary'} rounded-lg p-2 min-w-[60px] h-fit">
@@ -1123,7 +1481,7 @@ function renderCalendar() {
                     : `<p class="font-body-md text-body-md text-on-surface-variant text-[13px]">${p.cancha}, ${p.hora}</p>
                        <div class="bg-surface-container-low rounded-md p-2 mt-1">
                            <p class="font-body-md text-body-md text-on-surface-variant text-[11px] leading-tight">
-                               Arbitraje: ${formatMoney(p.arbitraje)} · ${p.convocados} convocados · ${formatMoney(costPerKid)}/niño
+                               Arbitraje: ${formatMoney(p.arbitraje)} · ${convocadosCount} convocados · ${formatMoney(costPerKid)}/niño
                            </p>
                        </div>
                        <button class="mt-2 bg-surface-container-high text-on-surface font-label-sm text-label-sm px-3 py-1.5 rounded-md self-start active:scale-95 transition-transform hover:bg-surface-variant">Ver convocados</button>`
@@ -1133,7 +1491,7 @@ function renderCalendar() {
     }).join('');
 }
 
-function addPartido(e) {
+async function addPartido(e) {
     e.preventDefault();
     const rival = document.getElementById('inp-rival').value;
     const fecha = document.getElementById('inp-fecha-partido').value;
@@ -1142,26 +1500,38 @@ function addPartido(e) {
     const categoria = document.querySelector('input[name="cat-partido"]:checked').value;
     const arbitraje = parseInt(document.getElementById('inp-arbitraje').value) || 0;
 
-    partidos.push({
-        id: partidos.length + 1,
-        rival, fecha, hora, cancha, categoria, arbitraje,
-        convocados: 0, completado: false
-    });
-
-    document.getElementById('modal-nuevo-partido').classList.add('hidden');
-    showToast(`Partido vs ${rival} creado ⚽`);
-    renderCalendar();
-    renderInicio();
+    try {
+        await crearPartidoDB({ rival, fecha, hora, cancha, categoria, arbitraje, completado: false });
+        document.getElementById('modal-nuevo-partido').classList.add('hidden');
+        showToast(`Partido vs ${rival} creado ⚽`);
+        await Promise.all([renderCalendar(), renderInicio()]);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // ===========================
 // MÁS (Settings & Inventory)
 // ===========================
-function renderMas() {
-    // Inventory cards
+async function renderMas() {
+    document.getElementById('inventario-cards').innerHTML = spinnerBlock();
+    document.getElementById('respuestas-list').innerHTML = spinnerBlock();
+
+    const [inventarioData, respuestasData] = await Promise.all([cargarInventario(), cargarRespuestasRapidas()]);
+
+    const invMap = {};
+    CATEGORIAS.forEach(cat => {
+        invMap[cat] = { local: { total: 0, entregados: 0 }, visitante: { total: 0, entregados: 0 }, torneo: { total: 0, entregados: 0 } };
+    });
+    (inventarioData || []).forEach(row => {
+        if (invMap[row.categoria] && invMap[row.categoria][row.tipo]) {
+            invMap[row.categoria][row.tipo] = { total: row.total, entregados: row.entregados };
+        }
+    });
+
     const container = document.getElementById('inventario-cards');
     container.innerHTML = CATEGORIAS.map(cat => {
-        const inv = inventario[cat];
+        const inv = invMap[cat];
         return `
         <div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)] p-md border border-surface-container-highest">
             <h3 class="font-headline-md text-headline-md text-on-surface mb-3 border-b border-surface-variant pb-2 text-[16px]">Categoría ${cat}</h3>
@@ -1173,25 +1543,27 @@ function renderMas() {
         </div>`;
     }).join('');
 
-    // Quick responses
     const respContainer = document.getElementById('respuestas-list');
-    respContainer.innerHTML = respuestasRapidas.map(r => `
-        <div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
-            <h4 class="font-body-lg text-body-lg font-bold">${r.titulo}</h4>
-            <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"${r.texto}"</p>
-            <div class="flex justify-end mt-xs">
-                <button onclick="copyText('${r.texto.replace(/'/g, "\\'")}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
-                    <span class="material-symbols-outlined text-[20px]">content_copy</span>
-                    <span class="font-label-sm text-label-sm">Copiar</span>
-                </button>
+    if (!respuestasData || respuestasData.length === 0) {
+        respContainer.innerHTML = emptyState('No hay respuestas rápidas configuradas');
+    } else {
+        respContainer.innerHTML = respuestasData.map(r => `
+            <div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
+                <h4 class="font-body-lg text-body-lg font-bold">${r.titulo}</h4>
+                <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"${r.texto}"</p>
+                <div class="flex justify-end mt-xs">
+                    <button onclick="copyText('${escJs(r.texto)}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
+                        <span class="material-symbols-outlined text-[20px]">content_copy</span>
+                        <span class="font-label-sm text-label-sm">Copiar</span>
+                    </button>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 }
 
 function renderInvBar(label, data, barColor, textColor) {
-    const pct = Math.round((data.entregados / data.total) * 100);
-    const isLow = pct < 30;
+    const pct = data.total > 0 ? Math.round((data.entregados / data.total) * 100) : 0;
     return `
     <div>
         <div class="flex justify-between items-center mb-1">
@@ -1217,15 +1589,9 @@ function copyText(text) {
 // ===========================
 // INIT
 // ===========================
-function init() {
-    renderInicio();
-    renderAlumnos();
-    renderCobros();
-    renderCalendar();
-    renderMas();
+async function init() {
+    await renderInicio();
 }
-
-document.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>

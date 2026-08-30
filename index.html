@@ -519,18 +519,29 @@
                 <div id="conceptos-list" class="flex flex-col gap-sm">
                     <!-- Populated by JS -->
                 </div>
-                <form onsubmit="addConcepto(event)" class="flex gap-xs items-end mt-xs">
-                    <div class="flex-1">
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nuevo concepto</label>
+                <form id="form-concepto" onsubmit="submitConcepto(event)" class="flex flex-col gap-xs mt-xs">
+                    <input type="hidden" id="editing-concepto-id" value=""/>
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del artículo, uniforme o evento</label>
                         <input required id="inp-concepto-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Torneo Sagrado Corazón"/>
                     </div>
-                    <div class="w-[110px]">
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Precio</label>
-                        <input required id="inp-concepto-precio" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="number" placeholder="50000"/>
+                    <div class="flex gap-xs">
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Precio</label>
+                            <input required id="inp-concepto-precio" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="number" placeholder="50000"/>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Plazo de pago (opcional)</label>
+                            <input id="inp-concepto-plazo" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="date"/>
+                        </div>
                     </div>
-                    <button type="submit" class="h-touch-target-min w-touch-target-min flex-shrink-0 bg-primary text-on-primary rounded-lg flex items-center justify-center active:scale-95 transition-transform">
-                        <span class="material-symbols-outlined">add</span>
-                    </button>
+                    <div class="flex gap-xs">
+                        <button type="submit" id="btn-concepto-submit" class="flex-1 h-touch-target-min bg-primary text-on-primary rounded-lg font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                            <span class="material-symbols-outlined">add</span>
+                            <span id="btn-concepto-submit-label">Agregar al catálogo</span>
+                        </button>
+                        <button type="button" id="btn-concepto-cancelar" onclick="cancelarEdicionConcepto()" class="hidden h-touch-target-min px-md bg-surface-variant text-on-surface rounded-lg font-label-sm text-label-sm active:scale-95 transition-transform">Cancelar</button>
+                    </div>
                 </form>
             </section>
 
@@ -569,16 +580,16 @@
             </div>
             <form id="form-nuevo-alumno" onsubmit="addAlumno(event)" class="flex flex-col gap-md">
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del alumno</label>
-                    <input required id="inp-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Santiago Pérez"/>
-                </div>
-                <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del padre / acudiente</label>
                     <input required id="inp-acudiente" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Jorge Pérez"/>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono acudiente (WhatsApp)</label>
                     <input required id="inp-telefono" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="tel" placeholder="Ej: 311 234 5678"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del jugador</label>
+                    <input required id="inp-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Santiago Pérez"/>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría (año de nacimiento)</label>
@@ -627,7 +638,11 @@
                         <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-fecha"></span>
                     </div>
                     <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
-                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Alumno</span>
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Padre / Acudiente</span>
+                        <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-acudiente"></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant text-[13px]">Jugador</span>
                         <span class="font-body-md text-body-md text-on-surface font-semibold text-[13px]" id="recibo-alumno"></span>
                     </div>
                     <div class="flex justify-between items-center border-b border-surface-variant pb-xs">
@@ -723,16 +738,16 @@
             <form id="form-editar-alumno" onsubmit="saveEditAlumno(event)" class="flex flex-col gap-md">
                 <input type="hidden" id="edit-id"/>
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del alumno</label>
-                    <div id="edit-nombre-display" class="w-full h-touch-target-min bg-surface-container border border-outline-variant rounded-lg px-3 flex items-center text-on-surface font-body-md"></div>
-                </div>
-                <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del padre / acudiente</label>
                     <input required id="edit-acudiente" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text"/>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono acudiente (WhatsApp)</label>
                     <input required id="edit-telefono" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="tel"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del jugador</label>
+                    <div id="edit-nombre-display" class="w-full h-touch-target-min bg-surface-container border border-outline-variant rounded-lg px-3 flex items-center text-on-surface font-body-md"></div>
                 </div>
                 <div>
                     <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría (año de nacimiento)</label>
@@ -873,7 +888,19 @@
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <p class="font-body-md text-body-md text-on-surface-variant mb-md">Conecta este webhook a un <strong>Schedule Trigger</strong> de n8n programado para los días <strong>3, 7 y 12</strong> de cada mes. Filtra automáticamente a los alumnos con estado <strong>Pendiente</strong> y arma los enlaces de WhatsApp listos para enviar.</p>
+            <h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Plantilla del mensaje de WhatsApp</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-sm">Personaliza libremente el texto. Variables disponibles: <code class="bg-surface-container-high px-1 rounded">{padre}</code> <code class="bg-surface-container-high px-1 rounded">{alumno}</code> <code class="bg-surface-container-high px-1 rounded">{deuda}</code> <code class="bg-surface-container-high px-1 rounded">{meses}</code> <code class="bg-surface-container-high px-1 rounded">{corte}</code> <code class="bg-surface-container-high px-1 rounded">{mensualidad}</code> <code class="bg-surface-container-high px-1 rounded">{mes}</code></p>
+            <textarea id="inp-reminder-template" rows="6" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-sm text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all mb-sm"></textarea>
+            <div class="flex gap-sm mb-lg">
+                <button onclick="saveReminderTemplate()" class="flex-1 h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar plantilla
+                </button>
+                <button onclick="restoreDefaultTemplate()" class="h-touch-target-min px-md bg-surface-variant text-on-surface rounded-xl font-label-sm text-label-sm active:scale-95 transition-transform">Restaurar</button>
+            </div>
+            <div class="border-t border-surface-variant pt-md mb-md"></div>
+
+            <p class="font-body-md text-body-md text-on-surface-variant mb-md">Conecta este webhook a un <strong>Schedule Trigger</strong> de n8n programado para los días <strong>3, 7 y 12</strong> de cada mes. Filtra automáticamente a los alumnos con estado <strong>Pendiente</strong> y arma los enlaces de WhatsApp listos para enviar, ya con tu plantilla aplicada.</p>
             <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">URL del Webhook n8n</label>
             <input id="inp-webhook-url" type="url" placeholder="https://tu-instancia-n8n.com/webhook/recordatorios" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md mb-sm"/>
             <button onclick="saveWebhookUrl()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform mb-md">
@@ -950,6 +977,9 @@ const DIAS_NOMBRES = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const STORAGE_KEY = 'misterapp_state_v2';
 const WEBHOOK_KEY = 'misterapp_n8n_webhook';
 const MESES_VENTANA_MORA = 4; // meses activos que el motor de mora controla (mes actual + 3 anteriores)
+const DEFAULT_REMINDER_TEMPLATE = `⚽ *Cancha Directa — Recordatorio de Pago*\n\nHola {padre}, te recordamos que {alumno} tiene {meses} mensualidad(es) pendiente(s), por un total de {deuda}.\n\n💳 Fecha de corte: día {corte} de cada mes ({mes}).\n\n¡Gracias por confiar en nuestra escuela!`;
+
+let reminderTemplate = DEFAULT_REMINDER_TEMPLATE;
 
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -1014,11 +1044,11 @@ let partidos = [
 
 // Catálogo dinámico de conceptos/artículos/torneos cobrables (POS) — Sub-Agente 1 y 3
 let conceptos = [
-    { id: 1, nombre: 'Inscripción', precio: 60000, tipo: 'inscripcion' },
-    { id: 2, nombre: 'Uniforme Local (camiseta+pantaloneta)', precio: 90000, tipo: 'uniforme' },
-    { id: 3, nombre: 'Uniforme Visitante', precio: 90000, tipo: 'uniforme' },
-    { id: 4, nombre: 'Torneo Sagrado Corazón', precio: 50000, tipo: 'evento' },
-    { id: 5, nombre: 'Carné deportivo', precio: 15000, tipo: 'otro' },
+    { id: 1, nombre: 'Inscripción', precio: 60000, tipo: 'inscripcion', plazo: null },
+    { id: 2, nombre: 'Uniforme Local (camiseta+pantaloneta)', precio: 90000, tipo: 'uniforme', plazo: null },
+    { id: 3, nombre: 'Uniforme Visitante', precio: 90000, tipo: 'uniforme', plazo: null },
+    { id: 4, nombre: 'Torneo Sagrado Corazón', precio: 50000, tipo: 'evento', plazo: '2026-09-15' },
+    { id: 5, nombre: 'Carné deportivo', precio: 15000, tipo: 'otro', plazo: null },
 ];
 
 let transacciones = []; // Historial de cobros (para recibo itemizado y exportación CSV)
@@ -1049,7 +1079,7 @@ let activityLog = [
 function saveState() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            alumnos, partidos, inventario, activityLog, respuestasRapidas, conceptos, transacciones,
+            alumnos, partidos, inventario, activityLog, respuestasRapidas, conceptos, transacciones, reminderTemplate,
             receiptCounter, activityIdCounter, transaccionIdCounter
         }));
     } catch (e) { /* storage unavailable — app keeps working in-memory */ }
@@ -1067,6 +1097,7 @@ function loadState() {
         if (data.respuestasRapidas) respuestasRapidas = data.respuestasRapidas;
         if (data.conceptos) conceptos = data.conceptos;
         if (data.transacciones) transacciones = data.transacciones;
+        if (typeof data.reminderTemplate === 'string' && data.reminderTemplate.trim()) reminderTemplate = data.reminderTemplate;
         if (typeof data.receiptCounter === 'number') receiptCounter = data.receiptCounter;
         if (typeof data.activityIdCounter === 'number') activityIdCounter = data.activityIdCounter;
         if (typeof data.transaccionIdCounter === 'number') transaccionIdCounter = data.transaccionIdCounter;
@@ -1343,10 +1374,10 @@ function renderAlumnos() {
         return `
         <div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)] ${convocadoSet.has(a.id) ? 'convocado-gold' : ''}">
             <div class="flex items-center gap-sm">
-                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.nombre)}</div>
+                <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.acudiente || a.nombre)}</div>
                 <div>
-                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface flex items-center gap-1">${a.nombre} ${convocadoSet.has(a.id) ? '<span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings: \'FILL\' 1;" title="Convocado">military_tech</span>' : ''}</h3>
-                    <p class="font-body-md text-body-md text-secondary">Cat. ${a.categoria} • Acudiente: ${a.acudiente || '—'}</p>
+                    <h3 class="font-body-lg text-body-lg font-bold text-on-surface flex items-center gap-1">${a.acudiente || 'Sin acudiente'} ${convocadoSet.has(a.id) ? '<span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings: \'FILL\' 1;" title="Convocado">military_tech</span>' : ''}</h3>
+                    <p class="font-body-md text-body-md text-secondary">Cat. ${a.categoria} • Jugador: ${a.nombre}</p>
                     <p class="font-body-md text-body-md text-secondary">${a.telefono}</p>
                     <div class="flex gap-1 mt-1">
                         ${a.uniformes.map((u, i) => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
@@ -1365,7 +1396,7 @@ function renderAlumnos() {
                 <div class="flex gap-2">
                     ${!alDia ? `<button onclick="abrirModalCobro(${a.id})" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Registrar pago"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
                     <button onclick="showUltimoRecibo(${a.id})" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
-                    <button onclick="sendWhatsApp('${a.telefono}', '${a.nombre}')" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="WhatsApp"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                    <button onclick="${alDia ? `sendWhatsApp('${a.telefono}', '${a.nombre}')` : `sendReminderTo(${a.id})`}" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="${alDia ? 'WhatsApp' : 'Enviar recordatorio'}"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
                     <button onclick="editAlumno(${a.id})" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar"><span class="material-symbols-outlined text-[18px]">edit</span></button>
                 </div>
             </div>
@@ -1520,10 +1551,10 @@ function renderCobros() {
         <div class="bg-surface-container-lowest ${alDia ? '' : 'shadow-[0_2px_4px_rgba(0,0,0,0.08)]'} rounded-lg p-sm flex items-center justify-between relative overflow-hidden">
             <div class="absolute left-0 top-0 bottom-0 w-1 ${alDia ? 'bg-primary' : 'bg-error'}"></div>
             <div class="flex items-center gap-sm pl-xs">
-                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(a.nombre)}</div>
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">${getInitials(a.acudiente || a.nombre)}</div>
                 <div>
-                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${a.nombre}</h3>
-                    <p class="font-body-md text-body-md text-on-surface-variant">Cat. ${a.categoria} • ${a.acudiente || '—'}</p>
+                    <h3 class="font-body-lg text-body-lg text-on-surface font-semibold">${a.acudiente || 'Sin acudiente'}</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Cat. ${a.categoria} • Jugador: ${a.nombre}</p>
                 </div>
             </div>
             <div class="flex flex-col items-end gap-xs">
@@ -1532,6 +1563,7 @@ function renderCobros() {
                     ${alDia
                         ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${a.fechaPago || ''}</span>`
                         : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Debe ${nMeses} mes${nMeses > 1 ? 'es' : ''}</span>
+                           <button onclick="sendReminderTo(${a.id})" class="w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="Enviar recordatorio"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
                            <button onclick="abrirModalCobro(${a.id})" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Registrar pago</button>`
                     }
                 </div>
@@ -1556,7 +1588,7 @@ function abrirModalCobro(id) {
     cobroMesesSeleccionados = pendientes.length ? [pendientes[0]] : [];
     cobroConceptosSeleccionados = [];
 
-    document.getElementById('cobro-alumno-nombre').textContent = `${alumno.nombre} — Cat. ${alumno.categoria} — ${alumno.acudiente || 'Sin acudiente'}`;
+    document.getElementById('cobro-alumno-nombre').textContent = `${alumno.acudiente || 'Sin acudiente'} — Cat. ${alumno.categoria} — Jugador: ${alumno.nombre}`;
     const banner = document.getElementById('cobro-deuda-banner');
     if (pendientes.length > 0) {
         banner.textContent = `Deuda acumulada: ${formatMoney(pendientes.length * MENSUALIDAD)} (${pendientes.length} mes${pendientes.length > 1 ? 'es' : ''})`;
@@ -1575,12 +1607,18 @@ function abrirModalCobro(id) {
         : `<p class="font-body-md text-body-md text-on-surface-variant">Este alumno está al día con la mensualidad.</p>`;
 
     document.getElementById('cobro-conceptos-list').innerHTML = conceptos.length
-        ? conceptos.map(c => `
-            <label class="cursor-pointer flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm h-touch-target-min">
+        ? conceptos.map(c => {
+            const plazoInfo = formatPlazo(c.plazo);
+            return `
+            <label class="cursor-pointer flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-2">
                 <input type="checkbox" onchange="toggleCobroConcepto(${c.id})" class="w-5 h-5 accent-primary flex-shrink-0"/>
-                <span class="font-body-md text-body-md text-on-surface flex-1">${c.nombre}</span>
+                <span class="flex-1">
+                    <span class="font-body-md text-body-md text-on-surface block">${c.nombre}</span>
+                    ${plazoInfo ? `<span class="font-label-sm text-label-sm ${plazoInfo.vencido ? 'text-error' : 'text-on-surface-variant'} block">${plazoInfo.texto}${plazoInfo.vencido ? ' (vencido)' : ''}</span>` : ''}
+                </span>
                 <span class="font-body-md text-body-md text-on-surface-variant">${formatMoney(c.precio)}</span>
-            </label>`).join('')
+            </label>`;
+        }).join('')
         : `<p class="font-body-md text-body-md text-on-surface-variant">No hay conceptos en el catálogo todavía.</p>`;
 
     document.querySelector('input[name="metodo-pago"][value="Efectivo"]').checked = true;
@@ -1641,6 +1679,7 @@ function confirmarCobro() {
         id: transaccionIdCounter,
         alumnoId: alumno.id,
         alumnoNombre: alumno.nombre,
+        acudiente: alumno.acudiente || '—',
         categoria: alumno.categoria,
         fecha: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
         fechaTexto: `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`,
@@ -1674,6 +1713,7 @@ function showReciboTransaccion(txId) {
     if (!tx) return;
     document.getElementById('recibo-numero').textContent = `#${tx.recibo.toString().padStart(4, '0')}`;
     document.getElementById('recibo-fecha').textContent = tx.fechaTexto;
+    document.getElementById('recibo-acudiente').textContent = tx.acudiente || '—';
     document.getElementById('recibo-alumno').textContent = tx.alumnoNombre;
     document.getElementById('recibo-categoria').textContent = tx.categoria;
     document.getElementById('recibo-metodo').textContent = tx.metodo;
@@ -1727,9 +1767,14 @@ function sendReminders() {
         showToast('¡Todos los alumnos están al día! 🎉', 'celebration');
         return;
     }
-    const nombres = pendientes.map(a => a.nombre).join(', ');
-    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recordatorio de Pago*\n\n📢 Estimado padre de familia, le recordamos que la mensualidad de ${MESES[currentMonth]} (${formatMoney(MENSUALIDAD)}) tiene fecha de corte el día ${FECHA_CORTE}.\n\n💳 Favor realizar el pago a la brevedad.\n\n¡Gracias por ser parte de nuestra escuela!`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    const deudaTotal = pendientes.reduce((s, a) => s + getDeudaTotal(a), 0);
+    const mensaje = buildReminderMessage({
+        padre: 'estimado padre de familia',
+        alumno: `${pendientes.length} alumnos`,
+        deuda: formatMoney(deudaTotal),
+        meses: 'una o más'
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
     showToast(`Recordatorio enviado a ${pendientes.length} familias`, 'send');
     addActivity('forward_to_inbox', `Recordatorio enviado — ${pendientes.length} padres`, 'Pendientes de pago');
 }
@@ -2007,6 +2052,52 @@ function sendConvocatoriaWhatsApp(alumnoId) {
 }
 
 // ===========================
+// PLANTILLA DE MENSAJE DE WHATSAPP (editable y persistente)
+// ===========================
+function buildReminderMessage(vars) {
+    const plantilla = reminderTemplate || DEFAULT_REMINDER_TEMPLATE;
+    return plantilla
+        .replace(/\{padre\}/g, vars.padre || 'padre de familia')
+        .replace(/\{alumno\}/g, vars.alumno || '')
+        .replace(/\{deuda\}/g, vars.deuda || '')
+        .replace(/\{meses\}/g, vars.meses ?? '')
+        .replace(/\{corte\}/g, vars.corte ?? FECHA_CORTE)
+        .replace(/\{mensualidad\}/g, vars.mensualidad || formatMoney(MENSUALIDAD))
+        .replace(/\{mes\}/g, vars.mes || `${MESES[currentMonth]} ${currentYear}`);
+}
+
+function renderTemplateEditor() {
+    document.getElementById('inp-reminder-template').value = reminderTemplate || DEFAULT_REMINDER_TEMPLATE;
+}
+
+function saveReminderTemplate() {
+    const texto = document.getElementById('inp-reminder-template').value.trim();
+    reminderTemplate = texto || DEFAULT_REMINDER_TEMPLATE;
+    saveState();
+    showToast('Plantilla de WhatsApp guardada ✓');
+    renderAutomationPreview(DIAS_RECORDATORIO.includes(new Date().getDate()) ? new Date().getDate() : 3);
+}
+
+function restoreDefaultTemplate() {
+    document.getElementById('inp-reminder-template').value = DEFAULT_REMINDER_TEMPLATE;
+    showToast('Plantilla restaurada — recuerda guardar los cambios');
+}
+
+function sendReminderTo(alumnoId) {
+    const a = alumnos.find(al => al.id === alumnoId);
+    if (!a) return;
+    const mensaje = buildReminderMessage({
+        padre: a.acudiente,
+        alumno: a.nombre,
+        deuda: formatMoney(getDeudaTotal(a)),
+        meses: getPendingMonths(a).length
+    });
+    const phone = a.telefono.replace(/\s/g, '');
+    window.open(`https://wa.me/57${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})`);
+}
+
+// ===========================
 // AUTOMATIZACIÓN — WEBHOOKS n8n (recordatorios WhatsApp)
 // ===========================
 function buildReminderPayload(day) {
@@ -2021,7 +2112,12 @@ function buildReminderPayload(day) {
         alumnos: pendientes.map(a => {
             const nMeses = getPendingMonths(a).length;
             const deuda = getDeudaTotal(a);
-            const mensaje = `⚽ *Cancha Directa — Recordatorio de Pago*\n\nHola ${a.acudiente || ''}, te recordamos que ${a.nombre} tiene ${nMeses} mensualidad(es) pendiente(s) (${formatMoney(deuda)} en total). Fecha de corte: día ${FECHA_CORTE}. ¡Gracias por tu confianza!`;
+            const mensaje = buildReminderMessage({
+                padre: a.acudiente,
+                alumno: a.nombre,
+                deuda: formatMoney(deuda),
+                meses: nMeses
+            });
             const telefonoWa = '57' + a.telefono.replace(/\s/g, '');
             return {
                 id: a.id,
@@ -2043,6 +2139,7 @@ function buildReminderPayload(day) {
 function openAutomationModal() {
     const saved = localStorage.getItem(WEBHOOK_KEY) || '';
     document.getElementById('inp-webhook-url').value = saved;
+    renderTemplateEditor();
     renderAutomationPreview(DIAS_RECORDATORIO.includes(new Date().getDate()) ? new Date().getDate() : 3);
     document.getElementById('modal-automatizacion').classList.remove('hidden');
 }
@@ -2092,35 +2189,80 @@ function checkAutoReminderToday() {
 // ===========================
 // CATÁLOGO DE COBROS (conceptos, artículos y torneos dinámicos)
 // ===========================
+function formatPlazo(plazo) {
+    if (!plazo) return null;
+    const d = new Date(plazo + 'T12:00:00');
+    const vencido = d < new Date(new Date().toDateString());
+    return { texto: `Plazo hasta el ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()}`, vencido };
+}
+
 function renderConceptos() {
     const container = document.getElementById('conceptos-list');
     if (!container) return;
     container.innerHTML = conceptos.length
-        ? conceptos.map(c => `
+        ? conceptos.map(c => {
+            const plazoInfo = formatPlazo(c.plazo);
+            return `
             <div class="flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm">
                 <div class="flex-1">
                     <p class="font-body-md text-body-md text-on-surface font-semibold">${c.nombre}</p>
                     <p class="font-label-sm text-label-sm text-on-surface-variant">${formatMoney(c.precio)}</p>
+                    ${plazoInfo ? `<p class="font-label-sm text-label-sm ${plazoInfo.vencido ? 'text-error' : 'text-primary'} flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-[14px]">event</span>${plazoInfo.texto}${plazoInfo.vencido ? ' (vencido)' : ''}</p>` : ''}
                 </div>
-                <button onclick="deleteConcepto(${c.id})" class="w-9 h-9 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar">
-                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-            </div>`).join('')
+                <div class="flex gap-1">
+                    <button onclick="editConcepto(${c.id})" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar">
+                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <button onclick="deleteConcepto(${c.id})" class="w-9 h-9 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </div>
+            </div>`;
+        }).join('')
         : `<p class="font-body-md text-body-md text-on-surface-variant">Sin conceptos todavía.</p>`;
 }
 
-function addConcepto(e) {
+function submitConcepto(e) {
     e.preventDefault();
+    const editingId = document.getElementById('editing-concepto-id').value;
     const nombre = document.getElementById('inp-concepto-nombre').value;
     const precio = parseInt(document.getElementById('inp-concepto-precio').value) || 0;
-    const newId = conceptos.reduce((max, c) => Math.max(max, c.id), 0) + 1;
-    conceptos.push({ id: newId, nombre, precio, tipo: 'otro' });
-    document.getElementById('inp-concepto-nombre').value = '';
-    document.getElementById('inp-concepto-precio').value = '';
+    const plazo = document.getElementById('inp-concepto-plazo').value || null;
+
+    if (editingId) {
+        const c = conceptos.find(co => co.id === parseInt(editingId));
+        if (c) { c.nombre = nombre; c.precio = precio; c.plazo = plazo; }
+        showToast(`"${nombre}" actualizado`);
+        addActivity('sell', `Concepto actualizado — ${nombre}`, formatMoney(precio));
+    } else {
+        const newId = conceptos.reduce((max, c) => Math.max(max, c.id), 0) + 1;
+        conceptos.push({ id: newId, nombre, precio, tipo: 'otro', plazo });
+        showToast(`"${nombre}" agregado al catálogo de cobros`);
+        addActivity('sell', `Concepto agregado al catálogo — ${nombre}`, formatMoney(precio));
+    }
+
+    cancelarEdicionConcepto();
     saveState();
-    addActivity('sell', `Concepto agregado al catálogo — ${nombre}`, formatMoney(precio));
-    showToast(`"${nombre}" agregado al catálogo de cobros`);
     renderConceptos();
+}
+
+function editConcepto(id) {
+    const c = conceptos.find(co => co.id === id);
+    if (!c) return;
+    document.getElementById('editing-concepto-id').value = c.id;
+    document.getElementById('inp-concepto-nombre').value = c.nombre;
+    document.getElementById('inp-concepto-precio').value = c.precio;
+    document.getElementById('inp-concepto-plazo').value = c.plazo || '';
+    document.getElementById('btn-concepto-submit-label').textContent = 'Guardar cambios';
+    document.getElementById('btn-concepto-cancelar').classList.remove('hidden');
+    document.getElementById('form-concepto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarEdicionConcepto() {
+    document.getElementById('form-concepto').reset();
+    document.getElementById('editing-concepto-id').value = '';
+    document.getElementById('btn-concepto-submit-label').textContent = 'Agregar al catálogo';
+    document.getElementById('btn-concepto-cancelar').classList.add('hidden');
 }
 
 function deleteConcepto(id) {
@@ -2130,6 +2272,7 @@ function deleteConcepto(id) {
     conceptos = conceptos.filter(co => co.id !== id);
     saveState();
     showToast(`"${c.nombre}" eliminado del catálogo`);
+    if (document.getElementById('editing-concepto-id').value === String(id)) cancelarEdicionConcepto();
     renderConceptos();
 }
 

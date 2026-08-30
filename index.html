@@ -7,6 +7,74 @@
     <meta name="description" content="Aplicación de gestión para la escuela de fútbol Cancha Directa. Controla alumnos, cobros, calendario de partidos e inventario de uniformes."/>
     <meta name="theme-color" content="#2e7d32"/>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>"/>
+    <script>
+    // ===========================
+    // WATCHDOG GLOBAL DE ERRORES (debe ir ANTES de cualquier CDN)
+    // Evita pantallas en blanco silenciosas: si algo falla (sintaxis, CDN
+    // bloqueado, promesa rechazada, o la app se cuelga esperando red),
+    // esto lo muestra en pantalla y en consola con línea exacta.
+    // ===========================
+    (function () {
+        var errores = [];
+
+        function mostrarErrorFatal(detalle) {
+            errores.push(detalle);
+            console.error('[Míster App] Error fatal:', detalle);
+
+            var render = function () {
+                ['app-loading', 'app'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                });
+                var overlay = document.getElementById('fatal-error-overlay');
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'fatal-error-overlay';
+                    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#1a1c1c;color:#fff;font-family:ui-monospace,monospace;font-size:13px;line-height:1.5;padding:20px;overflow:auto;white-space:pre-wrap;';
+                    document.body.appendChild(overlay);
+                }
+                overlay.textContent = '⚠️ Míster App no pudo cargar\n\n' + errores.map(function (e) {
+                    return '• ' + e.message + (e.source ? '\n  en ' + e.source + ':' + e.line + ':' + e.col : '');
+                }).join('\n\n') + '\n\nRevisa la consola (F12) para más detalle. Comparte este texto para diagnosticar.';
+            };
+
+            if (document.body) render();
+            else document.addEventListener('DOMContentLoaded', render);
+        }
+
+        // Captura errores de script (sintaxis, excepciones) y de recursos
+        // (CDN bloqueado o caído) — capture:true es necesario para lo segundo.
+        window.addEventListener('error', function (e) {
+            var t = e.target;
+            if (t && t !== window && t.nodeType === 1) {
+                // Error de carga de un recurso del DOM (script, link, img...).
+                // Solo los CDNs críticos (script/link) son fatales; otros recursos
+                // como imágenes ya tienen su propio fallback visual y se ignoran aquí.
+                if (t.tagName === 'SCRIPT' || t.tagName === 'LINK') {
+                    mostrarErrorFatal({ message: 'No se pudo cargar un recurso externo: ' + (t.src || t.href) });
+                }
+                return;
+            }
+            mostrarErrorFatal({ message: e.message, source: e.filename, line: e.lineno, col: e.colno });
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (e) {
+            var reason = e.reason;
+            mostrarErrorFatal({ message: 'Promesa sin manejar: ' + (reason && reason.message ? reason.message : reason) });
+        });
+
+        // Vigilante: si a los 12s seguimos en el spinner de carga, algo se
+        // colgó sin lanzar error JS (ej: Supabase inalcanzable, CORS, red).
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                var loading = document.getElementById('app-loading');
+                if (loading && !loading.classList.contains('hidden')) {
+                    mostrarErrorFatal({ message: 'Tiempo de espera agotado esperando a Supabase/CDNs. Revisa tu conexión, bloqueadores de anuncios, o si el proyecto de Supabase sigue activo.' });
+                }
+            }, 12000);
+        });
+    })();
+    </script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -156,34 +224,9 @@
 </head>
 <body class="bg-background text-on-background antialiased">
 
-<!-- ===== AUTH LOADING SPLASH ===== -->
-<div id="auth-loading" class="fixed inset-0 z-[100] bg-surface flex items-center justify-center">
+<!-- ===== LOADING SPLASH ===== -->
+<div id="app-loading" class="fixed inset-0 z-[100] bg-surface flex items-center justify-center">
     <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-</div>
-
-<!-- ===== LOGIN SCREEN ===== -->
-<div id="login-screen" class="hidden fixed inset-0 z-[90] bg-surface flex items-center justify-center px-lg">
-    <div class="w-full max-w-[380px] flex flex-col items-center gap-lg">
-        <div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
-            <img src="assets/logo-real-alameda.png" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>
-            <span class="material-symbols-outlined text-on-primary-container text-3xl" style="display:none; font-variation-settings: 'FILL' 1;">sports_soccer</span>
-        </div>
-        <div class="text-center">
-            <h1 class="font-headline-lg text-headline-lg font-bold text-primary">Cancha Directa</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant mt-1">Míster App — Barranquilla</p>
-        </div>
-        <form id="form-login" onsubmit="enviarMagicLink(event)" class="w-full flex flex-col gap-md">
-            <div>
-                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Correo electrónico</label>
-                <input required id="login-email" type="email" autocomplete="email" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" placeholder="tu@correo.com"/>
-            </div>
-            <button type="submit" id="btn-login" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
-                <span class="material-symbols-outlined">mail</span>
-                Enviar enlace mágico
-            </button>
-        </form>
-        <p id="login-message" class="hidden font-body-md text-body-md text-center rounded-lg p-md w-full"></p>
-    </div>
 </div>
 
 <!-- ===== APP SHELL ===== -->
@@ -551,12 +594,6 @@
                             <span class="font-body-md text-body-md" id="mi-cuenta-email">Mi cuenta / Perfil</span>
                         </div>
                         <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
-                    </button>
-                    <button onclick="cerrarSesion()" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
-                        <div class="flex items-center gap-md">
-                            <span class="material-symbols-outlined text-error">logout</span>
-                            <span class="font-body-md text-body-md text-error font-semibold">Cerrar sesión</span>
-                        </div>
                     </button>
                 </div>
             </section>
@@ -1036,8 +1073,6 @@
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <p class="font-label-sm text-label-sm text-on-surface-variant" id="perfil-cuenta-email"></p>
-
             <div class="flex flex-col items-center gap-sm my-md">
                 <div id="perfil-foto-preview" class="w-24 h-24 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
                     <span class="material-symbols-outlined text-on-primary-container text-4xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
@@ -1159,66 +1194,6 @@ let perfilCache = null;
 let perfilMister = {};
 
 let appInitialized = false;
-
-// ===========================
-// AUTH (Magic Link)
-// ===========================
-async function enviarMagicLink(e) {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
-    const btn = document.getElementById('btn-login');
-    btn.disabled = true;
-    btn.classList.add('opacity-60');
-    try {
-        const { error } = await supabase.auth.signInWithOtp({
-            email,
-            options: { emailRedirectTo: window.location.href }
-        });
-        if (error) throw error;
-        document.getElementById('form-login').classList.add('hidden');
-        setLoginMessage(`Revisa tu correo (${email}) y haz clic en el enlace para ingresar.`, false);
-    } catch (err) {
-        console.error(err);
-        setLoginMessage(err.message || 'No se pudo enviar el enlace. Intenta de nuevo.', true);
-    } finally {
-        btn.disabled = false;
-        btn.classList.remove('opacity-60');
-    }
-}
-
-function setLoginMessage(text, isError) {
-    const el = document.getElementById('login-message');
-    el.textContent = text;
-    el.classList.remove('hidden', 'text-primary', 'bg-primary/10', 'text-error', 'bg-error/10');
-    el.classList.add(isError ? 'text-error' : 'text-primary', isError ? 'bg-error/10' : 'bg-primary/10');
-}
-
-async function cerrarSesion() {
-    await supabase.auth.signOut();
-}
-
-supabase.auth.onAuthStateChange((event, session) => {
-    document.getElementById('auth-loading').classList.add('hidden');
-    if (session) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        const cuentaEl = document.getElementById('mi-cuenta-email');
-        if (cuentaEl) cuentaEl.textContent = session.user?.email ? `Mi cuenta (${session.user.email})` : 'Mi cuenta / Perfil';
-        const perfilEmailEl = document.getElementById('perfil-cuenta-email');
-        if (perfilEmailEl) perfilEmailEl.textContent = session.user?.email || '';
-        if (!appInitialized) {
-            appInitialized = true;
-            init();
-        }
-    } else {
-        appInitialized = false;
-        document.getElementById('app').classList.add('hidden');
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('form-login').classList.remove('hidden');
-        document.getElementById('login-message').classList.add('hidden');
-        document.getElementById('form-login').reset();
-    }
-});
 
 // ===========================
 // DATA LAYER (Supabase)
@@ -3051,6 +3026,16 @@ async function init() {
     renderTallaSelects();
     await renderInicio();
     checkAutoReminderToday();
+}
+
+// ===========================
+// STARTUP (sin login: la app arranca directo en el dashboard)
+// ===========================
+document.getElementById('app-loading').classList.add('hidden');
+document.getElementById('app').classList.remove('hidden');
+if (!appInitialized) {
+    appInitialized = true;
+    init();
 }
 </script>
 

@@ -1,39 +1,96 @@
 -- ============================================================
 -- Míster App — Cancha Directa Barranquilla
--- Esquema Supabase (tablas, vista, función RPC y RLS)
+-- Esquema Supabase v2 (mora por mes, catálogo con stock,
+-- inventario editable, transacciones, perfil personalizable)
 -- Ejecutar en: Supabase → SQL Editor
+--
+-- Si ya corriste una versión anterior de este archivo, puedes
+-- correr este de nuevo tal cual: usa "if not exists" / "or replace"
+-- en todo, y no borra datos existentes en las tablas que ya creaste.
 -- ============================================================
 
 create extension if not exists pgcrypto;
 
 -- ------------------------------------------------------------
--- padres (alumnos + acudientes)
+-- alumnos (jugador + acudiente)
 -- ------------------------------------------------------------
-create table if not exists padres (
+create table if not exists alumnos (
     id uuid primary key default gen_random_uuid(),
-    nombre text not null,                -- nombre del acudiente
-    nombre_hijo text not null,           -- nombre del alumno
+    nombre text not null,                -- nombre del jugador
+    acudiente text not null,             -- nombre del padre/acudiente
     telefono text not null,              -- formato internacional, ej: 573001234567
-    categoria text not null check (categoria in ('2011-2013', '2014-2015', '2016-2018')),
-    talla text not null default 'M' check (talla in ('XS', 'S', 'M', 'L', 'XL')),
+    categoria text not null,             -- año de nacimiento: '2011'..'2018'
+    talla text not null default '10',
+    activo boolean not null default true,
+    uniforme_local boolean not null default false,
+    uniforme_visitante boolean not null default false,
+    uniforme_torneo boolean not null default false,
+    created_at timestamptz not null default now()
+);
+
+-- ------------------------------------------------------------
+-- pagos_mensuales (ledger de mora — un registro por alumno+mes)
+-- ------------------------------------------------------------
+create table if not exists pagos_mensuales (
+    id uuid primary key default gen_random_uuid(),
+    alumno_id uuid not null references alumnos(id) on delete cascade,
+    mes_key text not null,               -- 'YYYY-MM'
+    pagado boolean not null default false,
+    fecha_pago timestamptz,
+    metodo_pago text,
+    monto numeric not null default 80000,
+    created_at timestamptz not null default now(),
+    unique (alumno_id, mes_key)
+);
+
+-- ------------------------------------------------------------
+-- conceptos (catálogo de cobros: inscripción, uniformes, torneos...)
+-- stock_total / stock_vendido: inventario propio del artículo,
+-- editable por el Míster, se actualiza solo al vender.
+-- ------------------------------------------------------------
+create table if not exists conceptos (
+    id uuid primary key default gen_random_uuid(),
+    nombre text not null,
+    precio numeric not null default 0,
+    tipo text not null default 'otro' check (tipo in ('inscripcion', 'uniforme', 'evento', 'otro')),
+    plazo date,                          -- fecha límite de pago (opcional)
+    stock_total int,                     -- null = sin control de stock
+    stock_vendido int not null default 0,
     activo boolean not null default true,
     created_at timestamptz not null default now()
 );
 
 -- ------------------------------------------------------------
--- pagos (mensualidades)
+-- concepto_compras (quién compró/pagó cada artículo — se borra
+-- en cascada si se elimina el concepto o el alumno, pero la
+-- transacción financiera en `transacciones` queda intacta)
 -- ------------------------------------------------------------
-create table if not exists pagos (
+create table if not exists concepto_compras (
     id uuid primary key default gen_random_uuid(),
-    padre_id uuid not null references padres(id) on delete cascade,
-    mes int not null check (mes between 1 and 12),
-    anio int not null,
-    monto numeric not null default 80000,
-    fecha_pago timestamptz,
-    estado text not null default 'pendiente' check (estado in ('pagado', 'pendiente')),
-    metodo_pago text,
-    created_at timestamptz not null default now(),
-    unique (padre_id, mes, anio)
+    concepto_id uuid not null references conceptos(id) on delete cascade,
+    alumno_id uuid not null references alumnos(id) on delete cascade,
+    transaccion_id uuid,
+    precio_pagado numeric not null default 0,
+    created_at timestamptz not null default now()
+);
+
+-- ------------------------------------------------------------
+-- transacciones (historial financiero — nunca se borra al
+-- eliminar un concepto del catálogo)
+-- ------------------------------------------------------------
+create table if not exists transacciones (
+    id uuid primary key default gen_random_uuid(),
+    alumno_id uuid references alumnos(id) on delete set null,
+    alumno_nombre text not null,
+    acudiente text,
+    categoria text,
+    fecha date not null default current_date,
+    metodo text not null,
+    meses jsonb not null default '[]',       -- ["2026-08", "2026-09"]
+    conceptos jsonb not null default '[]',   -- [{"nombre":"Inscripción","precio":60000}]
+    total numeric not null default 0,
+    recibo_numero int not null,
+    created_at timestamptz not null default now()
 );
 
 -- ------------------------------------------------------------
@@ -45,7 +102,7 @@ create table if not exists partidos (
     fecha date not null,
     hora time not null,
     cancha text not null,
-    categoria text not null check (categoria in ('2011-2013', '2014-2015', '2016-2018')),
+    categoria text not null,
     arbitraje numeric not null default 0,
     completado boolean not null default false,
     created_at timestamptz not null default now()
@@ -54,34 +111,21 @@ create table if not exists partidos (
 create table if not exists convocatorias (
     id uuid primary key default gen_random_uuid(),
     partido_id uuid not null references partidos(id) on delete cascade,
-    padre_id uuid not null references padres(id) on delete cascade,
-    confirmado boolean not null default false,
+    alumno_id uuid not null references alumnos(id) on delete cascade,
     created_at timestamptz not null default now(),
-    unique (partido_id, padre_id)
+    unique (partido_id, alumno_id)
 );
 
 -- ------------------------------------------------------------
--- uniformes (inventario agregado por categoría + tipo)
+-- inventario_uniformes (stock editable por categoría + tipo)
 -- ------------------------------------------------------------
-create table if not exists uniformes (
+create table if not exists inventario_uniformes (
     id uuid primary key default gen_random_uuid(),
-    categoria text not null check (categoria in ('2011-2013', '2014-2015', '2016-2018')),
+    categoria text not null,
     tipo text not null check (tipo in ('local', 'visitante', 'torneo')),
     total int not null default 0,
     entregados int not null default 0,
     unique (categoria, tipo)
-);
-
--- ------------------------------------------------------------
--- entregas_uniforme (uniformes entregados por alumno)
--- ------------------------------------------------------------
-create table if not exists entregas_uniforme (
-    id uuid primary key default gen_random_uuid(),
-    padre_id uuid not null references padres(id) on delete cascade unique,
-    uniforme_local boolean not null default false,
-    uniforme_visitante boolean not null default false,
-    kit_torneo boolean not null default false,
-    updated_at timestamptz not null default now()
 );
 
 -- ------------------------------------------------------------
@@ -96,82 +140,123 @@ create table if not exists respuestas_rapidas (
 );
 
 -- ------------------------------------------------------------
--- Vista: padres con estado de pago del mes actual (calendario)
+-- activity_log (actividad reciente / notificaciones)
 -- ------------------------------------------------------------
-create or replace view padres_con_pago as
-select
-    p.*,
-    pg.id as pago_id,
-    pg.estado as estado_pago,
-    pg.fecha_pago,
-    pg.metodo_pago,
-    pg.monto
-from padres p
-left join pagos pg
-    on pg.padre_id = p.id
-    and pg.mes = extract(month from now())::int
-    and pg.anio = extract(year from now())::int
-where p.activo = true;
+create table if not exists activity_log (
+    id uuid primary key default gen_random_uuid(),
+    icon text not null default 'check_circle',
+    title text not null,
+    subtitle text,
+    read boolean not null default false,
+    created_at timestamptz not null default now()
+);
 
 -- ------------------------------------------------------------
--- Función RPC: padres activos sin pago 'pagado' en el mes actual
+-- ajustes (fila única de configuración: mensualidad, corte,
+-- plantilla de WhatsApp, webhook de n8n)
 -- ------------------------------------------------------------
-create or replace function padres_pendientes_pago()
-returns setof padres
-language sql
-stable
-as $$
-    select p.*
-    from padres p
-    where p.activo = true
-    and not exists (
-        select 1 from pagos pg
-        where pg.padre_id = p.id
-        and pg.mes = extract(month from now())::int
-        and pg.anio = extract(year from now())::int
-        and pg.estado = 'pagado'
-    );
-$$;
+create table if not exists ajustes (
+    id int primary key default 1,
+    mensualidad numeric not null default 80000,
+    fecha_corte int not null default 30,
+    reminder_template text,
+    webhook_url text,
+    constraint ajustes_single_row check (id = 1)
+);
+insert into ajustes (id) values (1) on conflict (id) do nothing;
 
 -- ------------------------------------------------------------
--- Row Level Security: solo usuarios autenticados (el Míster)
--- pueden leer/escribir. Ajusta esto si más adelante manejas
--- varios roles (ej. varios entrenadores).
+-- perfil (fila única: datos de la escuela, logo/foto, colores)
 -- ------------------------------------------------------------
-alter table padres enable row level security;
-alter table pagos enable row level security;
+create table if not exists perfil (
+    id int primary key default 1,
+    nombre_escuela text not null default 'Cancha Directa',
+    ciudad text not null default 'Barranquilla, Colombia',
+    foto_url text,
+    color_primario text not null default '#0d631b',
+    color_primario_container text not null default '#2e7d32',
+    constraint perfil_single_row check (id = 1)
+);
+insert into perfil (id) values (1) on conflict (id) do nothing;
+
+-- ------------------------------------------------------------
+-- Row Level Security: solo usuarios autenticados (el Míster y su
+-- equipo) pueden leer/escribir.
+-- ------------------------------------------------------------
+alter table alumnos enable row level security;
+alter table pagos_mensuales enable row level security;
+alter table conceptos enable row level security;
+alter table concepto_compras enable row level security;
+alter table transacciones enable row level security;
 alter table partidos enable row level security;
 alter table convocatorias enable row level security;
-alter table uniformes enable row level security;
-alter table entregas_uniforme enable row level security;
+alter table inventario_uniformes enable row level security;
 alter table respuestas_rapidas enable row level security;
+alter table activity_log enable row level security;
+alter table ajustes enable row level security;
+alter table perfil enable row level security;
 
-create policy "authenticated_full_access" on padres
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated_full_access" on pagos
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated_full_access" on partidos
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated_full_access" on convocatorias
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated_full_access" on uniformes
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated_full_access" on entregas_uniforme
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated_full_access" on respuestas_rapidas
-    for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+do $$
+declare
+    t text;
+begin
+    for t in select unnest(array[
+        'alumnos','pagos_mensuales','conceptos','concepto_compras','transacciones',
+        'partidos','convocatorias','inventario_uniformes','respuestas_rapidas',
+        'activity_log','ajustes','perfil'
+    ])
+    loop
+        execute format(
+            'create policy if not exists "authenticated_full_access" on %I for all using (auth.role() = ''authenticated'') with check (auth.role() = ''authenticated'');',
+            t
+        );
+    end loop;
+end $$;
 
 -- ------------------------------------------------------------
--- Datos semilla (ajusta las cantidades reales de tu inventario)
+-- Storage: bucket público para la foto de perfil / logo de la
+-- escuela (crea el bucket "perfil" desde Storage si este bloque
+-- falla por permisos; luego re-ejecuta las políticas de abajo).
 -- ------------------------------------------------------------
-insert into uniformes (categoria, tipo, total, entregados) values
-    ('2011-2013', 'local', 50, 0), ('2011-2013', 'visitante', 50, 0), ('2011-2013', 'torneo', 30, 0),
-    ('2014-2015', 'local', 40, 0), ('2014-2015', 'visitante', 40, 0), ('2014-2015', 'torneo', 25, 0),
-    ('2016-2018', 'local', 45, 0), ('2016-2018', 'visitante', 45, 0), ('2016-2018', 'torneo', 20, 0)
+insert into storage.buckets (id, name, public)
+values ('perfil', 'perfil', true)
+on conflict (id) do nothing;
+
+create policy if not exists "perfil_lectura_publica"
+    on storage.objects for select
+    using (bucket_id = 'perfil');
+
+create policy if not exists "perfil_escritura_autenticada"
+    on storage.objects for insert
+    with check (bucket_id = 'perfil' and auth.role() = 'authenticated');
+
+create policy if not exists "perfil_actualizacion_autenticada"
+    on storage.objects for update
+    using (bucket_id = 'perfil' and auth.role() = 'authenticated');
+
+create policy if not exists "perfil_borrado_autenticado"
+    on storage.objects for delete
+    using (bucket_id = 'perfil' and auth.role() = 'authenticated');
+
+-- ------------------------------------------------------------
+-- Datos semilla (inventario base + respuestas rápidas + catálogo)
+-- Ajusta las cantidades reales antes de usar en producción.
+-- ------------------------------------------------------------
+insert into inventario_uniformes (categoria, tipo, total, entregados) values
+    ('2015', 'local', 45, 0), ('2015', 'visitante', 45, 0), ('2015', 'torneo', 20, 0)
 on conflict (categoria, tipo) do nothing;
 
 insert into respuestas_rapidas (titulo, texto, orden) values
     ('Información general', '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.', 1),
-    ('Costos y mensualidad', 'La mensualidad es de $80.000 con fecha de corte el 15 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.', 2),
+    ('Costos y mensualidad', 'La mensualidad es de $80.000 con fecha de corte el 30 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.', 2),
     ('Horarios de entrenamiento', 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM', 3),
-    ('Requisitos de inscripción', 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.', 4);
+    ('Requisitos de inscripción', 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.', 4)
+on conflict do nothing;
+
+insert into conceptos (nombre, precio, tipo, plazo, stock_total, stock_vendido) values
+    ('Inscripción', 60000, 'inscripcion', null, null, 0),
+    ('Uniforme Local (camiseta+pantaloneta)', 90000, 'uniforme', null, 50, 0),
+    ('Uniforme Visitante', 90000, 'uniforme', null, 50, 0),
+    ('Torneo Sagrado Corazón', 50000, 'evento', '2026-09-15', 30, 0),
+    ('Carné deportivo', 15000, 'otro', null, null, 0)
+on conflict do nothing;

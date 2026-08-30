@@ -10,14 +10,16 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#0d631b",
-                        "primary-container": "#2e7d32",
+                        "primary": "var(--color-primary)",
+                        "primary-container": "var(--color-primary-container)",
                         "on-primary": "#ffffff",
                         "on-primary-container": "#cbffc2",
                         "on-primary-fixed": "#002204",
@@ -104,6 +106,7 @@
         }
     </script>
     <style>
+        :root { --color-primary: #0d631b; --color-primary-container: #2e7d32; }
         * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; min-height: 100dvh; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -152,8 +155,38 @@
 </head>
 <body class="bg-background text-on-background antialiased">
 
+<!-- ===== AUTH LOADING SPLASH ===== -->
+<div id="auth-loading" class="fixed inset-0 z-[100] bg-surface flex items-center justify-center">
+    <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+</div>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen" class="hidden fixed inset-0 z-[90] bg-surface flex items-center justify-center px-lg">
+    <div class="w-full max-w-[380px] flex flex-col items-center gap-lg">
+        <div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+            <img src="assets/logo-real-alameda.png" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>
+            <span class="material-symbols-outlined text-on-primary-container text-3xl" style="display:none; font-variation-settings: 'FILL' 1;">sports_soccer</span>
+        </div>
+        <div class="text-center">
+            <h1 class="font-headline-lg text-headline-lg font-bold text-primary">Cancha Directa</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-1">Míster App — Barranquilla</p>
+        </div>
+        <form id="form-login" onsubmit="enviarMagicLink(event)" class="w-full flex flex-col gap-md">
+            <div>
+                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Correo electrónico</label>
+                <input required id="login-email" type="email" autocomplete="email" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" placeholder="tu@correo.com"/>
+            </div>
+            <button type="submit" id="btn-login" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+                <span class="material-symbols-outlined">mail</span>
+                Enviar enlace mágico
+            </button>
+        </form>
+        <p id="login-message" class="hidden font-body-md text-body-md text-center rounded-lg p-md w-full"></p>
+    </div>
+</div>
+
 <!-- ===== APP SHELL ===== -->
-<div id="app" class="max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
+<div id="app" class="hidden max-w-[430px] mx-auto bg-surface min-h-screen relative shadow-2xl">
 
     <!-- ===== VIEW 1: INICIO (Dashboard) ===== -->
     <div id="view-inicio" class="view active pb-[88px]">
@@ -412,14 +445,14 @@
         <main class="px-grid-margin py-md flex flex-col gap-lg">
             <!-- School Info -->
             <section class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-surface-variant flex items-center gap-md">
-                <div class="w-[48px] h-[48px] rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+                <div id="mas-escuela-avatar" class="w-[48px] h-[48px] rounded-full bg-primary-container flex items-center justify-center flex-shrink-0 overflow-hidden">
                     <span class="material-symbols-outlined text-on-primary-container text-2xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
                 </div>
                 <div class="flex-1">
-                    <h2 class="font-body-lg text-body-lg font-bold text-on-surface">Cancha Directa</h2>
-                    <p class="font-body-md text-body-md text-on-surface-variant">Barranquilla, Colombia</p>
+                    <h2 class="font-body-lg text-body-lg font-bold text-on-surface" id="mas-escuela-nombre">Cancha Directa</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant" id="mas-escuela-ciudad">Barranquilla, Colombia</p>
                 </div>
-                <button class="w-[48px] h-[48px] flex items-center justify-center text-primary rounded-full hover:bg-surface-container">
+                <button onclick="abrirModalPerfil()" class="w-[48px] h-[48px] flex items-center justify-center text-primary rounded-full hover:bg-surface-container">
                     <span class="material-symbols-outlined">edit</span>
                 </button>
             </section>
@@ -477,12 +510,18 @@
                         </div>
                         <span class="font-body-md text-body-md text-on-surface-variant" id="config-num-categorias"></span>
                     </div>
-                    <button class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+                    <button onclick="abrirModalPerfil()" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors border-b border-surface-variant">
                         <div class="flex items-center gap-md">
                             <span class="material-symbols-outlined text-on-surface-variant">person</span>
-                            <span class="font-body-md text-body-md">Mi cuenta</span>
+                            <span class="font-body-md text-body-md" id="mi-cuenta-email">Mi cuenta / Perfil</span>
                         </div>
                         <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                    <button onclick="cerrarSesion()" class="w-full min-h-[48px] flex items-center justify-between px-md py-sm hover:bg-surface-container transition-colors">
+                        <div class="flex items-center gap-md">
+                            <span class="material-symbols-outlined text-error">logout</span>
+                            <span class="font-body-md text-body-md text-error font-semibold">Cerrar sesión</span>
+                        </div>
                     </button>
                 </div>
             </section>
@@ -502,11 +541,10 @@
                 <div id="inventario-cards" class="flex flex-col gap-sm">
                     <!-- Populated by JS -->
                 </div>
-                <!-- Action Button -->
-                <button class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
-                    <span class="material-symbols-outlined">update</span>
-                    Actualizar Stock / Entregas
-                </button>
+                <form onsubmit="agregarCategoriaInventario(event)" class="flex gap-xs mt-xs">
+                    <input id="inp-nueva-cat-inventario" required class="flex-1 h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Año de categoría, ej: 2015"/>
+                    <button type="submit" class="h-touch-target-min px-md bg-surface-variant text-on-surface rounded-lg font-label-sm text-label-sm active:scale-95 transition-transform">Agregar categoría</button>
+                </form>
             </section>
 
             <!-- Catálogo de Cobros (Conceptos, artículos y torneos dinámicos) -->
@@ -535,6 +573,10 @@
                             <input id="inp-concepto-plazo" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="date"/>
                         </div>
                     </div>
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Stock inicial (opcional — deja vacío si no controlas unidades)</label>
+                        <input id="inp-concepto-stock" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="number" placeholder="Ej: 30 unidades"/>
+                    </div>
                     <div class="flex gap-xs">
                         <button type="submit" id="btn-concepto-submit" class="flex-1 h-touch-target-min bg-primary text-on-primary rounded-lg font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                             <span class="material-symbols-outlined">add</span>
@@ -549,9 +591,14 @@
             <section class="flex flex-col gap-sm">
                 <h3 class="font-headline-md text-headline-md text-on-surface">Historial de Pagos</h3>
                 <p class="font-body-md text-body-md text-on-surface-variant"><span id="config-num-transacciones">0</span> transacciones registradas en total.</p>
+                <button onclick="exportarReporteExcel()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">table_view</span>
+                    Exportar reporte completo (Excel)
+                </button>
+                <p class="font-label-sm text-label-sm text-on-surface-variant -mt-1">Incluye hojas de Alumnos, Artículos vendidos e Historial — con los datos más recientes de Supabase en cada clic.</p>
                 <button onclick="exportarHistorialCSV()" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant text-on-surface rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                     <span class="material-symbols-outlined">download</span>
-                    Exportar historial a Excel (CSV)
+                    Exportar solo historial (CSV)
                 </button>
             </section>
 
@@ -615,10 +662,11 @@
             <div class="bg-surface-container-lowest rounded-xl shadow-lg w-full overflow-hidden">
                 <!-- Receipt Header -->
                 <div class="bg-surface p-md border-b border-surface-variant flex flex-col items-center text-center zigzag-bottom">
-                    <div class="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center mb-sm shadow-sm border-2 border-white">
-                        <span class="material-symbols-outlined text-on-primary-container text-[28px]" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+                    <div class="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center mb-sm shadow-sm border-2 border-white overflow-hidden">
+                        <img id="recibo-logo" src="assets/logo-real-alameda.png" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>
+                        <span class="material-symbols-outlined text-on-primary-container text-[28px]" style="display:none; font-variation-settings: 'FILL' 1;">sports_soccer</span>
                     </div>
-                    <h2 class="font-headline-md text-headline-md text-primary tracking-tight font-bold">Cancha Directa</h2>
+                    <h2 class="font-headline-md text-headline-md text-primary tracking-tight font-bold" id="recibo-escuela-nombre">Cancha Directa</h2>
                     <p class="font-body-md text-body-md text-on-surface-variant mt-xs">Escuela de Fútbol</p>
                 </div>
                 <!-- Receipt Body -->
@@ -927,6 +975,71 @@
         </div>
     </div>
 
+    <!-- ===== MODAL: Recordatorios Masivos ===== -->
+    <div id="modal-recordatorios" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[80vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Recordatorios pendientes</h2>
+                <button onclick="this.closest('#modal-recordatorios').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="recordatorios-list" class="flex flex-col gap-sm">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Perfil / Mi cuenta ===== -->
+    <div id="modal-perfil" class="hidden fixed inset-0 z-[63] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-perfil').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-lg">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Mi perfil</h2>
+                <button onclick="document.getElementById('modal-perfil').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <p class="font-label-sm text-label-sm text-on-surface-variant" id="perfil-cuenta-email"></p>
+
+            <div class="flex flex-col items-center gap-sm my-md">
+                <div id="perfil-foto-preview" class="w-24 h-24 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+                    <span class="material-symbols-outlined text-on-primary-container text-4xl" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+                </div>
+                <label class="cursor-pointer">
+                    <input type="file" id="inp-perfil-foto" accept="image/*" class="hidden" onchange="previsualizarFotoPerfil(event)"/>
+                    <span class="font-label-sm text-label-sm text-primary px-md py-2 rounded-full border border-primary hover:bg-primary/10 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">photo_camera</span>Cambiar foto / logo</span>
+                </label>
+            </div>
+
+            <form onsubmit="guardarPerfil(event)" class="flex flex-col gap-md">
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre de la escuela</label>
+                    <input required id="inp-perfil-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Ciudad</label>
+                    <input required id="inp-perfil-ciudad" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text"/>
+                </div>
+                <div class="flex gap-md">
+                    <div class="flex-1">
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Color principal</label>
+                        <input id="inp-perfil-color-primario" class="w-full h-touch-target-min rounded-lg border border-outline-variant" type="color" value="#0d631b"/>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Color de acento</label>
+                        <input id="inp-perfil-color-container" class="w-full h-touch-target-min rounded-lg border border-outline-variant" type="color" value="#2e7d32"/>
+                    </div>
+                </div>
+                <button type="submit" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-sm">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar perfil
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- ===== TOAST NOTIFICATION ===== -->
     <div id="toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-inverse-surface text-inverse-on-surface px-lg py-sm rounded-xl shadow-lg font-body-md text-body-md flex items-center gap-sm max-w-[350px]" style="animation: fadeIn 0.3s ease-out;">
         <span class="material-symbols-outlined text-inverse-primary" id="toast-icon">check_circle</span>
@@ -961,147 +1074,367 @@
 
 <script>
 // ===========================
-// DATA STORE (simulated DB)
+// SUPABASE CONFIG
 // ===========================
-const MENSUALIDAD = 80000;
-const FECHA_CORTE = 30;
+const SUPABASE_URL = 'https://izntwgnsjyypeaklcfbo.supabase.co';
+const SUPABASE_ANON_KEY = 'PEGAR_AQUÍ_TU_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===========================
+// CONSTANTS
+// ===========================
+let MENSUALIDAD = 80000;
+let FECHA_CORTE = 30;
 const DIAS_RECORDATORIO = [3, 7, 12];
-// Categorías individuales por año de nacimiento (ver CLAUDE.md — ya no se agrupan en rangos)
+// Categorías individuales por año de nacimiento (ver CLAUDE.md)
 const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'];
 const TALLAS_INFANTIL = ['6', '8', '10', '12', '14', '16'];
 const TALLAS_ADULTO = ['XS', 'S', 'M', 'L', 'XL'];
-const TIPOS_PAGO = ['Efectivo', 'Nequi', 'Transferencia Bancaria'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
 const DIAS_NOMBRES = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
-const STORAGE_KEY = 'misterapp_state_v2';
-const WEBHOOK_KEY = 'misterapp_n8n_webhook';
-const MESES_VENTANA_MORA = 4; // meses activos que el motor de mora controla (mes actual + 3 anteriores)
+const MESES_VENTANA_MORA = 4; // mes actual + 3 anteriores
 const DEFAULT_REMINDER_TEMPLATE = `⚽ *Cancha Directa — Recordatorio de Pago*\n\nHola {padre}, te recordamos que {alumno} tiene {meses} mensualidad(es) pendiente(s), por un total de {deuda}.\n\n💳 Fecha de corte: día {corte} de cada mes ({mes}).\n\n¡Gracias por confiar en nuestra escuela!`;
 
 let reminderTemplate = DEFAULT_REMINDER_TEMPLATE;
+let webhookUrl = '';
 
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let activeCategory = 'todos';
 let calendarCategory = 'todas';
 let receiptCounter = 1000;
-let activityIdCounter = 1000;
-let transaccionIdCounter = 1000;
 let pendingCobroId = null;
 let currentConvocadosPartidoId = null;
 let tempConvocadosIds = [];
 let cobroMesesSeleccionados = [];
 let cobroConceptosSeleccionados = [];
+let perfilFotoFile = null;
 
-// Helper para sembrar N meses de mora consecutivos terminando en el mes actual
-function seedPagosDebiendo(mesesAtrasado) {
-    const keys = getActiveMonthKeys();
-    const pagos = {};
-    keys.forEach((k, i) => {
-        // i=0 es el mes más antiguo de la ventana; los últimos `mesesAtrasado` quedan pendientes
-        const idxDesdeElFinal = keys.length - i;
-        pagos[k] = { pagado: idxDesdeElFinal > mesesAtrasado ? true : false };
-    });
-    return pagos;
+// Local caches populated from Supabase on each render
+let alumnosCache = [];
+let ledgerMap = {};       // { alumnoId: { 'YYYY-MM': {pagado, fecha_pago, metodo_pago} } }
+let partidosCache = [];
+let conceptosCache = [];
+let inventarioCache = [];
+let respuestasCache = [];
+let activityCache = [];
+let transaccionesCache = [];
+let perfilCache = null;
+
+let appInitialized = false;
+
+// ===========================
+// AUTH (Magic Link)
+// ===========================
+async function enviarMagicLink(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.classList.add('opacity-60');
+    try {
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: window.location.href }
+        });
+        if (error) throw error;
+        document.getElementById('form-login').classList.add('hidden');
+        setLoginMessage(`Revisa tu correo (${email}) y haz clic en el enlace para ingresar.`, false);
+    } catch (err) {
+        console.error(err);
+        setLoginMessage(err.message || 'No se pudo enviar el enlace. Intenta de nuevo.', true);
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
+    }
 }
 
-// Sample students data — demo: TODOS en categoría 2015, TODOS con mora activa
-let alumnos = [
-    { id: 1, nombre: 'Santiago Pérez', acudiente: 'Jorge Pérez', telefono: '311 234 5678', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 2, nombre: 'Mateo García', acudiente: 'Liliana García', telefono: '311 987 6543', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
-    { id: 3, nombre: 'Isabella Martínez', acudiente: 'Carlos Martínez', telefono: '312 456 7890', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
-    { id: 4, nombre: 'Luciana Torres', acudiente: 'Marcela Torres', telefono: '313 789 0123', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 5, nombre: 'Valentina Rojas', acudiente: 'Andrés Rojas', telefono: '314 321 6540', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
-    { id: 6, nombre: 'Samuel Díaz', acudiente: 'Patricia Díaz', telefono: '315 654 3210', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
-    { id: 7, nombre: 'Camila Herrera', acudiente: 'Ricardo Herrera', telefono: '316 147 2583', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 8, nombre: 'Daniel Vargas', acudiente: 'Sandra Vargas', telefono: '317 258 3694', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, true, true], pagos: {} },
-    { id: 9, nombre: 'Sofía Morales', acudiente: 'Felipe Morales', telefono: '318 369 4705', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 10, nombre: 'Andrés López', acudiente: 'Diana López', telefono: '319 470 5816', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
-    { id: 11, nombre: 'Mariana Castro', acudiente: 'Iván Castro', telefono: '320 581 6927', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
-    { id: 12, nombre: 'Tomás Restrepo', acudiente: 'Claudia Restrepo', telefono: '310 692 7038', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 13, nombre: 'Emiliano Ruiz', acudiente: 'Verónica Ruiz', telefono: '321 111 2233', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, false], pagos: {} },
-    { id: 14, nombre: 'Gabriela Sánchez', acudiente: 'Oscar Sánchez', telefono: '321 222 3344', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
-    { id: 15, nombre: 'Nicolás Ramírez', acudiente: 'Beatriz Ramírez', telefono: '321 333 4455', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, false, true], pagos: {} },
-    { id: 16, nombre: 'Salomé Ortiz', acudiente: 'Camilo Ortiz', telefono: '321 444 5566', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 17, nombre: 'Máximo Guerrero', acudiente: 'Natalia Guerrero', telefono: '321 555 6677', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, true], pagos: {} },
-    { id: 18, nombre: 'Antonella Cabrera', acudiente: 'Julián Cabrera', telefono: '321 666 7788', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, true, false], pagos: {} },
-    { id: 19, nombre: 'Thiago Mendoza', acudiente: 'Paola Mendoza', telefono: '321 777 8899', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
-    { id: 20, nombre: 'Emma Cárdenas', acudiente: 'Sergio Cárdenas', telefono: '321 888 9900', categoria: '2015', talla: '6', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, false, false], pagos: {} },
-    { id: 21, nombre: 'Benjamín Silva', acudiente: 'Alejandra Silva', telefono: '321 999 0011', categoria: '2015', talla: '10', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, true], pagos: {} },
-    { id: 22, nombre: 'Renata Peña', acudiente: 'Mauricio Peña', telefono: '321 100 1122', categoria: '2015', talla: '8', fechaPago: null, metodoPago: null, activo: true, uniformes: [false, true, true], pagos: {} },
-    { id: 23, nombre: 'Lucas Molina', acudiente: 'Tatiana Molina', telefono: '321 200 2233', categoria: '2015', talla: '12', fechaPago: null, metodoPago: null, activo: true, uniformes: [true, true, false], pagos: {} },
-];
+function setLoginMessage(text, isError) {
+    const el = document.getElementById('login-message');
+    el.textContent = text;
+    el.classList.remove('hidden', 'text-primary', 'bg-primary/10', 'text-error', 'bg-error/10');
+    el.classList.add(isError ? 'text-error' : 'text-primary', isError ? 'bg-error/10' : 'bg-primary/10');
+}
 
-// Meses de mora que arrastra cada alumno demo (todos deben, entre 1 y 4 meses)
-const DEUDA_DEMO_POR_ID = { 1:1, 2:3, 3:2, 4:1, 5:4, 6:2, 7:1, 8:3, 9:1, 10:2, 11:4, 12:1, 13:2, 14:1, 15:3, 16:1, 17:2, 18:4, 19:1, 20:2, 21:3, 22:1, 23:2 };
+async function cerrarSesion() {
+    await supabase.auth.signOut();
+}
 
-let partidos = [
-    { id: 1, rival: 'Club Tiburón', fecha: '2026-08-31', hora: '08:00', cancha: 'Cancha La Castellana', categoria: '2015', arbitraje: 120000, convocadosIds: [1, 2, 7, 10], completado: false },
-    { id: 2, rival: 'Academia Norte', fecha: '2026-08-31', hora: '10:00', cancha: 'Cancha Municipal', categoria: '2015', arbitraje: 150000, convocadosIds: [4, 6, 8, 12], completado: false },
-    { id: 3, rival: 'Delfines FC', fecha: '2026-08-24', hora: '09:00', cancha: 'Cancha Norte', categoria: '2015', arbitraje: 100000, convocadosIds: [3, 5, 9, 11], completado: true },
-];
-
-// Catálogo dinámico de conceptos/artículos/torneos cobrables (POS) — Sub-Agente 1 y 3
-let conceptos = [
-    { id: 1, nombre: 'Inscripción', precio: 60000, tipo: 'inscripcion', plazo: null },
-    { id: 2, nombre: 'Uniforme Local (camiseta+pantaloneta)', precio: 90000, tipo: 'uniforme', plazo: null },
-    { id: 3, nombre: 'Uniforme Visitante', precio: 90000, tipo: 'uniforme', plazo: null },
-    { id: 4, nombre: 'Torneo Sagrado Corazón', precio: 50000, tipo: 'evento', plazo: '2026-09-15' },
-    { id: 5, nombre: 'Carné deportivo', precio: 15000, tipo: 'otro', plazo: null },
-];
-
-let transacciones = []; // Historial de cobros (para recibo itemizado y exportación CSV)
-
-let inventario = {};
-CATEGORIAS.forEach(cat => {
-    inventario[cat] = cat === '2015'
-        ? { local: { total: 45, entregados: 40 }, visitante: { total: 45, entregados: 32 }, torneo: { total: 20, entregados: 8 } }
-        : { local: { total: 0, entregados: 0 }, visitante: { total: 0, entregados: 0 }, torneo: { total: 0, entregados: 0 } };
+supabase.auth.onAuthStateChange((event, session) => {
+    document.getElementById('auth-loading').classList.add('hidden');
+    if (session) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        const cuentaEl = document.getElementById('mi-cuenta-email');
+        if (cuentaEl) cuentaEl.textContent = session.user?.email ? `Mi cuenta (${session.user.email})` : 'Mi cuenta / Perfil';
+        const perfilEmailEl = document.getElementById('perfil-cuenta-email');
+        if (perfilEmailEl) perfilEmailEl.textContent = session.user?.email || '';
+        if (!appInitialized) {
+            appInitialized = true;
+            init();
+        }
+    } else {
+        appInitialized = false;
+        document.getElementById('app').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('form-login').classList.remove('hidden');
+        document.getElementById('login-message').classList.add('hidden');
+        document.getElementById('form-login').reset();
+    }
 });
 
-const respuestasRapidas = [
-    { titulo: 'Información general', texto: '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.' },
-    { titulo: 'Costos y mensualidad', texto: 'La mensualidad es de $80.000 con fecha de corte el 30 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.' },
-    { titulo: 'Horarios de entrenamiento', texto: 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM' },
-    { titulo: 'Requisitos de inscripción', texto: 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.' },
-];
-
-let activityLog = [
-    { id: 3, icon: 'notifications_active', title: 'Recordatorio enviado — 23 padres', subtitle: 'Pendientes de pago (Cat. 2015)', time: 'Hace 2 horas', read: false },
-    { id: 2, icon: 'sell', title: 'Catálogo de cobros actualizado', subtitle: 'Torneo Sagrado Corazón agregado', time: 'Ayer, 6:00 PM', read: false },
-    { id: 1, icon: 'sports_soccer', title: 'Partido creado — 2015', subtitle: 'vs Academia Norte', time: 'Lun 19 Ago', read: true },
-];
-
 // ===========================
-// PERSISTENCE (localStorage)
+// DATA LAYER (Supabase)
 // ===========================
-function saveState() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            alumnos, partidos, inventario, activityLog, respuestasRapidas, conceptos, transacciones, reminderTemplate,
-            receiptCounter, activityIdCounter, transaccionIdCounter
-        }));
-    } catch (e) { /* storage unavailable — app keeps working in-memory */ }
+function dbError(err, msg) {
+    console.error(err);
+    showToast(msg, 'error');
 }
 
-function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const data = JSON.parse(raw);
-        if (data.alumnos) alumnos = data.alumnos;
-        if (data.partidos) partidos = data.partidos;
-        if (data.inventario) inventario = data.inventario;
-        if (data.activityLog) activityLog = data.activityLog;
-        if (data.respuestasRapidas) respuestasRapidas = data.respuestasRapidas;
-        if (data.conceptos) conceptos = data.conceptos;
-        if (data.transacciones) transacciones = data.transacciones;
-        if (typeof data.reminderTemplate === 'string' && data.reminderTemplate.trim()) reminderTemplate = data.reminderTemplate;
-        if (typeof data.receiptCounter === 'number') receiptCounter = data.receiptCounter;
-        if (typeof data.activityIdCounter === 'number') activityIdCounter = data.activityIdCounter;
-        if (typeof data.transaccionIdCounter === 'number') transaccionIdCounter = data.transaccionIdCounter;
-    } catch (e) { /* corrupted storage — fall back to seed data */ }
+async function cargarAjustes() {
+    const { data, error } = await supabase.from('ajustes').select('*').eq('id', 1).single();
+    if (error) { dbError(error, 'Error al cargar ajustes'); return; }
+    if (data) {
+        MENSUALIDAD = Number(data.mensualidad) || 80000;
+        FECHA_CORTE = data.fecha_corte || 30;
+        reminderTemplate = data.reminder_template || DEFAULT_REMINDER_TEMPLATE;
+        webhookUrl = data.webhook_url || '';
+    }
+}
+
+async function cargarPerfil() {
+    const { data, error } = await supabase.from('perfil').select('*').eq('id', 1).single();
+    if (error) { dbError(error, 'Error al cargar el perfil'); return; }
+    perfilCache = data;
+    aplicarPerfilEnUI();
+}
+
+function aplicarPerfilEnUI() {
+    if (!perfilCache) return;
+    document.documentElement.style.setProperty('--color-primary', perfilCache.color_primario || '#0d631b');
+    document.documentElement.style.setProperty('--color-primary-container', perfilCache.color_primario_container || '#2e7d32');
+
+    const nombre = perfilCache.nombre_escuela || 'Cancha Directa';
+    const ciudad = perfilCache.ciudad || 'Barranquilla, Colombia';
+    ['mas-escuela-nombre', 'recibo-escuela-nombre'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = nombre;
+    });
+    const ciudadEl = document.getElementById('mas-escuela-ciudad');
+    if (ciudadEl) ciudadEl.textContent = ciudad;
+
+    if (perfilCache.foto_url) {
+        document.querySelectorAll('#mas-escuela-avatar, #recibo-logo, #perfil-foto-preview').forEach(el => {
+            if (!el) return;
+            el.innerHTML = `<img src="${perfilCache.foto_url}" alt="${escHtml(nombre)}" class="w-full h-full object-cover"/>`;
+        });
+    }
+}
+
+function escHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function guardarPerfilDB(cambios) {
+    const { data, error } = await supabase.from('perfil').update(cambios).eq('id', 1).select().single();
+    if (error) { dbError(error, 'Error al guardar el perfil'); throw error; }
+    perfilCache = data;
+    return data;
+}
+
+async function subirFotoPerfil(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `logo-escuela.${ext}`;
+    const { error } = await supabase.storage.from('perfil').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (error) { dbError(error, 'Error al subir la foto'); throw error; }
+    const { data } = supabase.storage.from('perfil').getPublicUrl(path);
+    return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+async function cargarAlumnos() {
+    const { data, error } = await supabase.from('alumnos').select('*').eq('activo', true).order('acudiente');
+    if (error) { dbError(error, 'Error al cargar alumnos'); return []; }
+    return data || [];
+}
+
+async function crearAlumnoDB(payload) {
+    const { data, error } = await supabase.from('alumnos').insert(payload).select().single();
+    if (error) { dbError(error, 'Error al inscribir alumno'); throw error; }
+    return data;
+}
+
+async function actualizarAlumnoDB(id, cambios) {
+    const { data, error } = await supabase.from('alumnos').update(cambios).eq('id', id).select().single();
+    if (error) { dbError(error, 'Error al actualizar alumno'); throw error; }
+    return data;
+}
+
+async function eliminarAlumnoDB(id) {
+    const { error } = await supabase.from('alumnos').delete().eq('id', id);
+    if (error) { dbError(error, 'Error al eliminar alumno'); throw error; }
+}
+
+async function cargarLedger() {
+    const keys = getActiveMonthKeys();
+    const { data, error } = await supabase.from('pagos_mensuales').select('*').in('mes_key', keys);
+    if (error) { dbError(error, 'Error al cargar pagos'); return {}; }
+    const map = {};
+    (data || []).forEach(row => {
+        if (!map[row.alumno_id]) map[row.alumno_id] = {};
+        map[row.alumno_id][row.mes_key] = row;
+    });
+    return map;
+}
+
+async function registrarPagoMesesDB(alumnoId, mesKeys, metodo) {
+    if (!mesKeys.length) return [];
+    const nowIso = new Date().toISOString();
+    const rows = mesKeys.map(mes_key => ({
+        alumno_id: alumnoId, mes_key, pagado: true,
+        fecha_pago: nowIso, metodo_pago: metodo, monto: MENSUALIDAD
+    }));
+    const { data, error } = await supabase.from('pagos_mensuales').upsert(rows, { onConflict: 'alumno_id,mes_key' }).select();
+    if (error) { dbError(error, 'Error al registrar el pago'); throw error; }
+    return data;
+}
+
+async function cargarConceptos() {
+    const { data, error } = await supabase.from('conceptos').select('*').eq('activo', true).order('created_at');
+    if (error) { dbError(error, 'Error al cargar el catálogo'); return []; }
+    return data || [];
+}
+
+async function crearConceptoDB(payload) {
+    const { data, error } = await supabase.from('conceptos').insert(payload).select().single();
+    if (error) { dbError(error, 'Error al crear el artículo'); throw error; }
+    return data;
+}
+
+async function actualizarConceptoDB(id, cambios) {
+    const { data, error } = await supabase.from('conceptos').update(cambios).eq('id', id).select().single();
+    if (error) { dbError(error, 'Error al actualizar el artículo'); throw error; }
+    return data;
+}
+
+async function eliminarConceptoDB(id) {
+    const { error } = await supabase.from('conceptos').delete().eq('id', id);
+    if (error) { dbError(error, 'Error al eliminar el artículo'); throw error; }
+}
+
+async function ajustarStockConceptoDB(concepto, deltaTotal) {
+    if (concepto.stock_total === null || concepto.stock_total === undefined) return;
+    const nuevoTotal = Math.max(0, concepto.stock_total + deltaTotal);
+    const { data, error } = await supabase.from('conceptos').update({ stock_total: nuevoTotal }).eq('id', concepto.id).select().single();
+    if (error) { dbError(error, 'Error al ajustar el stock'); throw error; }
+    return data;
+}
+
+async function registrarCompraConceptoDB(conceptoId, alumnoId, transaccionId, precio) {
+    const { error } = await supabase.from('concepto_compras').insert({
+        concepto_id: conceptoId, alumno_id: alumnoId, transaccion_id: transaccionId, precio_pagado: precio
+    });
+    if (error) { dbError(error, 'Error al registrar la compra del artículo'); throw error; }
+}
+
+async function cargarCompradoresConcepto(conceptoId) {
+    const { data, error } = await supabase
+        .from('concepto_compras')
+        .select('*, alumnos(nombre, acudiente, telefono)')
+        .eq('concepto_id', conceptoId);
+    if (error) { dbError(error, 'Error al cargar compradores'); return []; }
+    return data || [];
+}
+
+async function crearTransaccionDB(payload) {
+    const { data, error } = await supabase.from('transacciones').insert(payload).select().single();
+    if (error) { dbError(error, 'Error al registrar la transacción'); throw error; }
+    return data;
+}
+
+async function cargarTransacciones() {
+    const { data, error } = await supabase.from('transacciones').select('*').order('created_at', { ascending: false });
+    if (error) { dbError(error, 'Error al cargar historial'); return []; }
+    return data || [];
+}
+
+async function cargarPartidos() {
+    const { data, error } = await supabase
+        .from('partidos')
+        .select('*, convocatorias(alumno_id)')
+        .order('fecha', { ascending: true });
+    if (error) { dbError(error, 'Error al cargar partidos'); return []; }
+    return data || [];
+}
+
+async function crearPartidoDB(payload) {
+    const { data, error } = await supabase.from('partidos').insert(payload).select().single();
+    if (error) { dbError(error, 'Error al crear partido'); throw error; }
+    return data;
+}
+
+async function guardarConvocadosDB(partidoId, alumnoIds) {
+    const { error: delErr } = await supabase.from('convocatorias').delete().eq('partido_id', partidoId);
+    if (delErr) { dbError(delErr, 'Error al guardar convocatoria'); throw delErr; }
+    if (alumnoIds.length) {
+        const { error } = await supabase.from('convocatorias').insert(alumnoIds.map(alumno_id => ({ partido_id: partidoId, alumno_id })));
+        if (error) { dbError(error, 'Error al guardar convocatoria'); throw error; }
+    }
+}
+
+async function cargarInventario() {
+    const { data, error } = await supabase.from('inventario_uniformes').select('*').order('categoria');
+    if (error) { dbError(error, 'Error al cargar inventario'); return []; }
+    return data || [];
+}
+
+async function ajustarInventarioDB(categoria, tipo, campo, delta) {
+    const fila = inventarioCache.find(i => i.categoria === categoria && i.tipo === tipo);
+    const actual = fila ? fila[campo] : 0;
+    const nuevoValor = Math.max(0, actual + delta);
+    const { data, error } = await supabase
+        .from('inventario_uniformes')
+        .upsert({ categoria, tipo, [campo]: nuevoValor, ...(fila ? {} : { total: campo === 'total' ? nuevoValor : 0, entregados: campo === 'entregados' ? nuevoValor : 0 }) }, { onConflict: 'categoria,tipo' })
+        .select()
+        .single();
+    if (error) { dbError(error, 'Error al actualizar inventario'); throw error; }
+    return data;
+}
+
+async function agregarCategoriaInventarioDB(categoria) {
+    const filas = ['local', 'visitante', 'torneo'].map(tipo => ({ categoria, tipo, total: 0, entregados: 0 }));
+    const { error } = await supabase.from('inventario_uniformes').upsert(filas, { onConflict: 'categoria,tipo' });
+    if (error) { dbError(error, 'Error al agregar categoría de inventario'); throw error; }
+}
+
+async function cargarRespuestasRapidas() {
+    const { data, error } = await supabase.from('respuestas_rapidas').select('*').eq('activo', true).order('orden');
+    if (error) { dbError(error, 'Error al cargar respuestas rápidas'); return []; }
+    return data || [];
+}
+
+async function cargarActivity() {
+    const { data, error } = await supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(50);
+    if (error) { dbError(error, 'Error al cargar actividad'); return []; }
+    return data || [];
+}
+
+async function addActivity(icon, title, subtitle) {
+    const { error } = await supabase.from('activity_log').insert({ icon, title, subtitle, read: false });
+    if (error) { console.error(error); return; }
+    activityCache = await cargarActivity();
+    renderActivityWidgets();
+}
+
+function renderActivityWidgets() {
+    updateNotifBadge();
+    const list = document.getElementById('activity-list');
+    if (list) {
+        list.innerHTML = activityCache.slice(0, 3).map(activityItemHtml).join('')
+            || `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">Sin actividad todavía</li>`;
+    }
+    if (!document.getElementById('modal-actividad').classList.contains('hidden')) renderActivityModal();
+    if (!document.getElementById('notif-panel').classList.contains('hidden')) renderNotifPanel();
 }
 
 // ===========================
@@ -1123,20 +1456,12 @@ function getActiveMonthKeys() {
         const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
         keys.push(getMonthKey(d.getFullYear(), d.getMonth()));
     }
-    return keys; // ordenado del más antiguo al más reciente
-}
-
-// Garantiza que el alumno tenga entradas para todos los meses activos (los nuevos quedan pendientes)
-function ensurePagosLedger(alumno) {
-    if (!alumno.pagos) alumno.pagos = {};
-    getActiveMonthKeys().forEach(k => {
-        if (!alumno.pagos[k]) alumno.pagos[k] = { pagado: false };
-    });
+    return keys;
 }
 
 function getPendingMonths(alumno) {
-    ensurePagosLedger(alumno);
-    return getActiveMonthKeys().filter(k => !alumno.pagos[k].pagado);
+    const ledger = ledgerMap[alumno.id] || {};
+    return getActiveMonthKeys().filter(k => !ledger[k]?.pagado);
 }
 
 function getDeudaTotal(alumno) {
@@ -1147,29 +1472,19 @@ function estaAlDia(alumno) {
     return getPendingMonths(alumno).length === 0;
 }
 
-// Siembra la mora de demostración (solo la primera vez, cuando el ledger está vacío)
-function seedDemoDebt() {
-    alumnos.forEach(a => {
-        if (a.pagos && Object.keys(a.pagos).length > 0) return;
-        a.pagos = seedPagosDebiendo(DEUDA_DEMO_POR_ID[a.id] || 1);
-    });
+function getUltimaFechaPago(alumno) {
+    const ledger = ledgerMap[alumno.id] || {};
+    const pagados = Object.values(ledger).filter(p => p.pagado && p.fecha_pago).sort((a, b) => new Date(b.fecha_pago) - new Date(a.fecha_pago));
+    if (!pagados.length) return '';
+    const d = new Date(pagados[0].fecha_pago);
+    return `${d.getDate()} ${MESES[d.getMonth()].substring(0, 3)}`;
 }
 
 // ===========================
 // ACTIVITY LOG & NOTIFICATIONS
 // ===========================
-function addActivity(icon, title, subtitle) {
-    activityIdCounter++;
-    activityLog.unshift({ id: activityIdCounter, icon, title, subtitle, time: 'Ahora mismo', read: false });
-    saveState();
-    renderInicio();
-    updateNotifBadge();
-    if (!document.getElementById('modal-actividad').classList.contains('hidden')) renderActivityModal();
-    if (!document.getElementById('notif-panel').classList.contains('hidden')) renderNotifPanel();
-}
-
 function updateNotifBadge() {
-    const unread = activityLog.filter(a => !a.read).length;
+    const unread = activityCache.filter(a => !a.read).length;
     document.querySelectorAll('.notif-badge').forEach(b => {
         b.textContent = unread > 9 ? '9+' : unread;
         b.classList.toggle('hidden', unread === 0);
@@ -1177,18 +1492,27 @@ function updateNotifBadge() {
 }
 
 function activityItemHtml(a) {
+    const time = a.created_at ? timeAgo(a.created_at) : '';
     return `
-        <li onclick="markNotifRead(${a.id})" class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px] cursor-pointer ${a.read ? '' : 'notif-unread'}">
+        <li onclick="markNotifRead('${a.id}')" class="p-md flex items-start gap-sm active:bg-surface-container-low transition-colors min-h-[48px] cursor-pointer ${a.read ? '' : 'notif-unread'}">
             <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 mt-1 relative">
                 <span class="material-symbols-outlined text-on-surface-variant text-xl">${a.icon}</span>
                 ${a.read ? '' : '<span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-error"></span>'}
             </div>
             <div class="flex flex-col gap-0.5 flex-1">
                 <p class="font-body-md text-body-md text-on-surface font-semibold">${a.title}</p>
-                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.subtitle}</p>
-                <span class="font-label-sm text-label-sm text-outline mt-1">${a.time}</span>
+                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.subtitle || ''}</p>
+                <span class="font-label-sm text-label-sm text-outline mt-1">${time}</span>
             </div>
         </li>`;
+}
+
+function timeAgo(dateStr) {
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return 'Hace un momento';
+    if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`;
+    return `Hace ${Math.floor(diff / 86400)} días`;
 }
 
 function openActivityModal() {
@@ -1197,8 +1521,8 @@ function openActivityModal() {
 }
 
 function renderActivityModal() {
-    document.getElementById('activity-list-full').innerHTML = activityLog.length
-        ? activityLog.map(activityItemHtml).join('')
+    document.getElementById('activity-list-full').innerHTML = activityCache.length
+        ? activityCache.map(activityItemHtml).join('')
         : `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">Sin actividad todavía</li>`;
 }
 
@@ -1212,32 +1536,32 @@ function toggleNotifPanel() {
 }
 
 function renderNotifPanel() {
-    document.getElementById('notif-list').innerHTML = activityLog.length
-        ? activityLog.map(activityItemHtml).join('')
+    document.getElementById('notif-list').innerHTML = activityCache.length
+        ? activityCache.map(activityItemHtml).join('')
         : `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">No tienes notificaciones</li>`;
 }
 
-function markNotifRead(id) {
-    const item = activityLog.find(a => a.id === id);
+async function markNotifRead(id) {
+    const item = activityCache.find(a => a.id === id);
     if (item && !item.read) {
         item.read = true;
-        saveState();
+        await supabase.from('activity_log').update({ read: true }).eq('id', id);
         updateNotifBadge();
         renderNotifPanel();
         renderActivityModal();
     }
 }
 
-function markAllNotifsRead() {
-    activityLog.forEach(a => a.read = true);
-    saveState();
+async function markAllNotifsRead() {
+    activityCache.forEach(a => a.read = true);
+    await supabase.from('activity_log').update({ read: true }).eq('read', false);
     updateNotifBadge();
     renderNotifPanel();
     renderActivityModal();
 }
 
 // ===========================
-// CATEGORÍAS Y TALLAS (dinámicas — Sub-Agente Data & Schema)
+// CATEGORÍAS Y TALLAS
 // ===========================
 function tallaOptionsHtml(selected) {
     const infantil = TALLAS_INFANTIL.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
@@ -1257,24 +1581,20 @@ function categoryRadioHtml(name, cat, checked) {
 }
 
 function renderCategoryChips() {
-    // Filtro de Alumnos
     const alumnosFilter = document.getElementById('alumnos-cat-filters');
     if (alumnosFilter) {
         alumnosFilter.innerHTML = `<button onclick="filterByCategory('todos')" class="cat-chip ${activeCategory === 'todos' ? 'chip-active' : 'bg-surface-container border border-outline-variant text-on-surface'} whitespace-nowrap px-sm h-8 rounded-full font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="todos">Todos</button>`
             + CATEGORIAS.map(cat => `<button onclick="filterByCategory('${cat}')" class="cat-chip ${activeCategory === cat ? 'chip-active' : 'bg-surface-container border border-outline-variant text-on-surface'} whitespace-nowrap px-sm h-8 rounded-full font-label-sm text-label-sm flex items-center shrink-0 transition-all" data-cat="${cat}">${cat}</button>`).join('');
     }
-    // Chips de Calendario
     const calFilter = document.getElementById('calendario-cat-filters');
     if (calFilter) {
         calFilter.innerHTML = `<button onclick="filterCalendarCategory('todas')" class="cal-cat-chip ${calendarCategory === 'todas' ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-lowest text-on-surface border border-outline-variant/50 hover:bg-surface-container-high'} h-[32px] px-4 rounded-full font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform" data-cat="todas">Todas</button>`
             + CATEGORIAS.map(cat => `<button onclick="filterCalendarCategory('${cat}')" class="cal-cat-chip ${calendarCategory === cat ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-lowest text-on-surface border border-outline-variant/50 hover:bg-surface-container-high'} h-[32px] px-4 rounded-full font-label-sm text-label-sm whitespace-nowrap active:scale-95 transition-transform" data-cat="${cat}">${cat}</button>`).join('');
     }
-    // Radios de Nuevo Alumno
     const nuevoAlumnoGroup = document.getElementById('inp-categoria-group');
-    if (nuevoAlumnoGroup) nuevoAlumnoGroup.innerHTML = CATEGORIAS.map((cat, i) => categoryRadioHtml('categoria', cat, cat === '2015')).join('');
-    // Radios de Nuevo Partido
+    if (nuevoAlumnoGroup) nuevoAlumnoGroup.innerHTML = CATEGORIAS.map(cat => categoryRadioHtml('categoria', cat, cat === '2015')).join('');
     const nuevoPartidoGroup = document.getElementById('inp-cat-partido-group');
-    if (nuevoPartidoGroup) nuevoPartidoGroup.innerHTML = CATEGORIAS.map((cat, i) => categoryRadioHtml('cat-partido', cat, cat === '2015')).join('');
+    if (nuevoPartidoGroup) nuevoPartidoGroup.innerHTML = CATEGORIAS.map(cat => categoryRadioHtml('cat-partido', cat, cat === '2015')).join('');
 }
 
 // ===========================
@@ -1294,7 +1614,6 @@ function navigateTo(view) {
     activeBtn.classList.remove('text-on-surface-variant');
     activeBtn.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
 
-    // Refresh view data
     if (view === 'cobros') renderCobros();
     if (view === 'alumnos') renderAlumnos();
     if (view === 'calendario') renderCalendar();
@@ -1307,11 +1626,11 @@ function navigateTo(view) {
 // UTILITIES
 // ===========================
 function formatMoney(n) {
-    return '$' + n.toLocaleString('es-CO');
+    return '$' + (n || 0).toLocaleString('es-CO');
 }
 
 function getInitials(name) {
-    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    return (name || '').split(' ').filter(Boolean).map(w => w[0]).join('').substring(0, 2).toUpperCase();
 }
 
 function showToast(text, icon = 'check_circle') {
@@ -1335,42 +1654,83 @@ function formatDate() {
     return `${dias[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()}`;
 }
 
+function normalizePhone(tel) {
+    let digits = (tel || '').replace(/\D/g, '');
+    if (digits.length === 10) digits = '57' + digits;
+    return digits;
+}
+
+function escJs(str) {
+    return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function spinnerBlock() {
+    return `<div class="flex justify-center py-xl"><div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div></div>`;
+}
+
+function emptyState(msg) {
+    return `<div class="flex flex-col items-center justify-center py-xl gap-sm text-on-surface-variant"><span class="material-symbols-outlined text-3xl">inbox</span><p class="font-body-md text-body-md">${msg}</p></div>`;
+}
+
 // ===========================
 // INICIO (Dashboard)
 // ===========================
-function renderInicio() {
+async function renderInicio() {
     document.getElementById('greeting-text').textContent = getGreeting();
     document.getElementById('date-text').textContent = formatDate();
 
-    const pendientes = alumnos.filter(a => !estaAlDia(a));
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a));
     const hoy = new Date();
-    const cobradoEsteMes = transacciones
-        .filter(t => t.fecha && t.fecha.slice(0, 7) === getMonthKey(hoy.getFullYear(), hoy.getMonth()))
-        .reduce((sum, t) => sum + t.total, 0);
+    const mesActualKey = getMonthKey(hoy.getFullYear(), hoy.getMonth());
+    const cobradoEsteMes = transaccionesCache
+        .filter(t => t.fecha && t.fecha.slice(0, 7) === mesActualKey)
+        .reduce((sum, t) => sum + Number(t.total), 0);
     document.getElementById('stat-cobrado').textContent = formatMoney(cobradoEsteMes);
     document.getElementById('stat-pendientes').textContent = pendientes.length;
-    document.getElementById('stat-total-esperado').textContent = formatMoney(alumnos.length * MENSUALIDAD);
+    document.getElementById('stat-total-esperado').textContent = formatMoney(alumnosCache.length * MENSUALIDAD);
 
-    // Activity (last 3 only — full log lives in the "Ver todo" modal)
-    const list = document.getElementById('activity-list');
-    list.innerHTML = activityLog.slice(0, 3).map(activityItemHtml).join('')
-        || `<li class="p-lg text-center font-body-md text-body-md text-on-surface-variant">Sin actividad todavía</li>`;
+    const proximo = partidosCache
+        .filter(p => !p.completado && new Date(p.fecha + 'T00:00:00') >= new Date(new Date().toDateString()))
+        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))[0];
+    const statPartido = document.getElementById('stat-partido');
+    if (statPartido) {
+        if (proximo) {
+            const pd = new Date(proximo.fecha + 'T12:00:00');
+            statPartido.textContent = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} ${MESES[pd.getMonth()].substring(0, 3)}`;
+            statPartido.nextElementSibling.lastChild.textContent = ` ${proximo.categoria} vs ${proximo.rival}`;
+        } else {
+            statPartido.textContent = 'Sin partidos';
+        }
+    }
 
-    updateNotifBadge();
+    renderActivityWidgets();
 }
 
 // ===========================
 // ALUMNOS
 // ===========================
-function renderAlumnos() {
+async function renderAlumnos() {
+    document.getElementById('alumnos-list').innerHTML = spinnerBlock();
+    alumnosCache = await cargarAlumnos();
+    ledgerMap = await cargarLedger();
+    partidosCache = await cargarPartidos();
+    document.getElementById('total-alumnos').textContent = alumnosCache.length;
+    renderAlumnosList();
+}
+
+function renderAlumnosList() {
     const filtered = getFilteredAlumnos();
-    document.getElementById('total-alumnos').textContent = alumnos.length;
     const convocadoSet = getConvocadoActivosIds();
     const container = document.getElementById('alumnos-list');
+    if (filtered.length === 0) {
+        container.innerHTML = emptyState('No hay alumnos que coincidan');
+        return;
+    }
     container.innerHTML = filtered.map(a => {
         const alDia = estaAlDia(a);
         const pendientes = getPendingMonths(a);
         const deuda = getDeudaTotal(a);
+        const uniformes = [a.uniforme_local, a.uniforme_visitante, a.uniforme_torneo];
         return `
         <div class="bg-surface-container-lowest rounded-xl p-md flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.08)] ${convocadoSet.has(a.id) ? 'convocado-gold' : ''}">
             <div class="flex items-center gap-sm">
@@ -1380,7 +1740,7 @@ function renderAlumnos() {
                     <p class="font-body-md text-body-md text-secondary">Cat. ${a.categoria} • Jugador: ${a.nombre}</p>
                     <p class="font-body-md text-body-md text-secondary">${a.telefono}</p>
                     <div class="flex gap-1 mt-1">
-                        ${a.uniformes.map((u, i) => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
+                        ${uniformes.map(u => `<span class="material-symbols-outlined text-[16px] ${u ? 'text-primary' : 'text-outline'}">${u ? 'check_circle' : 'radio_button_unchecked'}</span>`).join('')}
                         <span class="text-[10px] text-secondary self-center ml-1">Uniformes</span>
                     </div>
                 </div>
@@ -1394,31 +1754,30 @@ function renderAlumnos() {
                     ${!alDia ? `<span class="font-label-sm text-label-sm text-error font-bold">${formatMoney(deuda)}</span>` : ''}
                 </div>
                 <div class="flex gap-2">
-                    ${!alDia ? `<button onclick="abrirModalCobro(${a.id})" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Registrar pago"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
-                    <button onclick="showUltimoRecibo(${a.id})" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
-                    <button onclick="${alDia ? `sendWhatsApp('${a.telefono}', '${a.nombre}')` : `sendReminderTo(${a.id})`}" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="${alDia ? 'WhatsApp' : 'Enviar recordatorio'}"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
-                    <button onclick="editAlumno(${a.id})" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+                    ${!alDia ? `<button onclick="abrirModalCobro('${a.id}')" class="w-9 h-9 rounded-full bg-[#FF9800]/10 text-[#FF9800] flex items-center justify-center hover:bg-[#FF9800]/20 transition-colors" title="Registrar pago"><span class="material-symbols-outlined text-[18px]">payments</span></button>` : ''}
+                    <button onclick="showUltimoRecibo('${a.id}')" class="w-9 h-9 rounded-full bg-primary-container/20 text-primary flex items-center justify-center hover:bg-primary-container/30 transition-colors" title="Recibo"><span class="material-symbols-outlined text-[18px]">receipt_long</span></button>
+                    <button onclick="${alDia ? `sendWhatsApp('${escJs(a.telefono)}', '${escJs(a.nombre)}')` : `sendReminderTo('${a.id}')`}" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="${alDia ? 'WhatsApp' : 'Enviar recordatorio'}"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                    <button onclick="editAlumno('${a.id}')" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar"><span class="material-symbols-outlined text-[18px]">edit</span></button>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
     }).join('');
 }
 
 function getConvocadoActivosIds() {
     const set = new Set();
-    partidos.filter(p => !p.completado).forEach(p => (p.convocadosIds || []).forEach(id => set.add(id)));
+    partidosCache.filter(p => !p.completado).forEach(p => (p.convocatorias || []).forEach(c => set.add(c.alumno_id)));
     return set;
 }
 
 function getFilteredAlumnos() {
-    let filtered = [...alumnos];
+    let filtered = [...alumnosCache];
     if (activeCategory !== 'todos') {
         filtered = filtered.filter(a => a.categoria === activeCategory);
     }
     const searchTerm = document.getElementById('search-input')?.value?.toLowerCase() || '';
     if (searchTerm) {
-        filtered = filtered.filter(a => a.nombre.toLowerCase().includes(searchTerm));
+        filtered = filtered.filter(a => (a.nombre || '').toLowerCase().includes(searchTerm) || (a.acudiente || '').toLowerCase().includes(searchTerm));
     }
     return filtered;
 }
@@ -1426,11 +1785,11 @@ function getFilteredAlumnos() {
 function filterByCategory(cat) {
     activeCategory = cat;
     renderCategoryChips();
-    renderAlumnos();
+    renderAlumnosList();
 }
 
 function filterAlumnos() {
-    renderAlumnos();
+    renderAlumnosList();
 }
 
 function toggleSearch() {
@@ -1441,39 +1800,37 @@ function toggleSearch() {
     }
 }
 
-function addAlumno(e) {
+async function addAlumno(e) {
     e.preventDefault();
-    const nombre = document.getElementById('inp-nombre').value;
-    const acudiente = document.getElementById('inp-acudiente').value;
-    const telefono = document.getElementById('inp-telefono').value;
+    const nombre = document.getElementById('inp-nombre').value.trim();
+    const acudiente = document.getElementById('inp-acudiente').value.trim();
+    const telefono = normalizePhone(document.getElementById('inp-telefono').value);
     const categoria = document.querySelector('input[name="categoria"]:checked').value;
     const talla = document.getElementById('inp-talla').value;
+    const btn = document.querySelector('#form-nuevo-alumno button[type="submit"]');
 
-    const newId = alumnos.reduce((max, a) => Math.max(max, a.id), 0) + 1;
-    alumnos.push({
-        id: newId,
-        nombre, acudiente, telefono, categoria, talla,
-        fechaPago: null, metodoPago: null, activo: true,
-        uniformes: [false, false, false], pagos: {}
-    });
-    ensurePagosLedger(alumnos[alumnos.length - 1]);
-
-    document.getElementById('form-nuevo-alumno').reset();
-    document.getElementById('modal-nuevo-alumno').classList.add('hidden');
-    renderCategoryChips();
-    renderTallaSelects();
-    showToast(`${nombre} inscrito exitosamente`);
-    saveState();
-    addActivity('person_add', `Alumno inscrito — ${nombre}`, `(${categoria})`);
-    renderAlumnos();
-    renderInicio();
+    btn.disabled = true;
+    try {
+        await crearAlumnoDB({ nombre, acudiente, telefono, categoria, talla, activo: true });
+        document.getElementById('form-nuevo-alumno').reset();
+        document.getElementById('modal-nuevo-alumno').classList.add('hidden');
+        renderCategoryChips();
+        renderTallaSelects();
+        showToast(`${nombre} inscrito exitosamente`);
+        await addActivity('person_add', `Alumno inscrito — ${nombre}`, `(${categoria})`);
+        await Promise.all([renderAlumnos(), renderInicio()]);
+    } catch (err) {
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 // ===========================
 // EDICIÓN / ELIMINACIÓN DE ALUMNO
 // ===========================
 function editAlumno(id) {
-    const a = alumnos.find(al => al.id === id);
+    const a = alumnosCache.find(al => al.id === id);
     if (!a) return;
     document.getElementById('edit-id').value = a.id;
     document.getElementById('edit-nombre-display').textContent = a.nombre;
@@ -1490,59 +1847,70 @@ function cerrarModalEditar() {
     document.getElementById('modal-editar-alumno').classList.add('hidden');
 }
 
-function saveEditAlumno(e) {
+async function saveEditAlumno(e) {
     e.preventDefault();
-    const id = parseInt(document.getElementById('edit-id').value);
-    const a = alumnos.find(al => al.id === id);
+    const id = document.getElementById('edit-id').value;
+    const a = alumnosCache.find(al => al.id === id);
     if (!a) return;
-    a.acudiente = document.getElementById('edit-acudiente').value;
-    a.telefono = document.getElementById('edit-telefono').value;
-    a.categoria = document.querySelector('input[name="edit-categoria"]:checked').value;
-    a.talla = document.getElementById('edit-talla').value;
-    saveState();
-    addActivity('manage_accounts', `Perfil actualizado — ${a.nombre}`, `(${a.categoria})`);
-    cerrarModalEditar();
-    showToast(`Perfil de ${a.nombre} actualizado`);
-    renderAlumnos();
-    renderCobros();
+    const cambios = {
+        acudiente: document.getElementById('edit-acudiente').value,
+        telefono: normalizePhone(document.getElementById('edit-telefono').value),
+        categoria: document.querySelector('input[name="edit-categoria"]:checked').value,
+        talla: document.getElementById('edit-talla').value
+    };
+    try {
+        await actualizarAlumnoDB(id, cambios);
+        await addActivity('manage_accounts', `Perfil actualizado — ${a.nombre}`, `(${cambios.categoria})`);
+        cerrarModalEditar();
+        showToast(`Perfil de ${a.nombre} actualizado`);
+        await Promise.all([renderAlumnos(), renderCobros()]);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
-function deleteAlumno() {
-    const id = parseInt(document.getElementById('edit-id').value);
-    const a = alumnos.find(al => al.id === id);
+async function deleteAlumno() {
+    const id = document.getElementById('edit-id').value;
+    const a = alumnosCache.find(al => al.id === id);
     if (!a) return;
     if (!confirm(`¿Eliminar a ${a.nombre} por retiro? Esta acción no se puede deshacer.`)) return;
-    alumnos = alumnos.filter(al => al.id !== id);
-    partidos.forEach(p => { p.convocadosIds = (p.convocadosIds || []).filter(cid => cid !== id); });
-    saveState();
-    addActivity('person_remove', `Alumno retirado — ${a.nombre}`, `(${a.categoria})`);
-    cerrarModalEditar();
-    showToast(`${a.nombre} fue eliminado del registro`);
-    renderAlumnos();
-    renderCobros();
-    renderInicio();
-    renderCalendar();
+    try {
+        await eliminarAlumnoDB(id);
+        await addActivity('person_remove', `Alumno retirado — ${a.nombre}`, `(${a.categoria})`);
+        cerrarModalEditar();
+        showToast(`${a.nombre} fue eliminado del registro`);
+        await Promise.all([renderAlumnos(), renderCobros(), renderInicio(), renderCalendar()]);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // ===========================
 // COBROS
 // ===========================
-function renderCobros() {
+async function renderCobros() {
+    document.getElementById('cobros-list').innerHTML = spinnerBlock();
+    alumnosCache = await cargarAlumnos();
+    ledgerMap = await cargarLedger();
+
     const monthStr = `${MESES[currentMonth]} ${currentYear}`;
     document.getElementById('month-display').textContent = monthStr;
     document.getElementById('month-name-corte').textContent = MESES[currentMonth].toLowerCase();
     document.getElementById('fecha-corte-dia').textContent = FECHA_CORTE;
 
-    const pagados = alumnos.filter(a => estaAlDia(a));
-    const pendientes = alumnos.filter(a => !estaAlDia(a));
+    const pagados = alumnosCache.filter(a => estaAlDia(a));
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a));
     document.getElementById('cobros-pagados').textContent = pagados.length;
     document.getElementById('cobros-pendientes').textContent = pendientes.length;
     document.getElementById('cobros-total').textContent = formatMoney(pendientes.reduce((s, a) => s + getDeudaTotal(a), 0));
     document.getElementById('reminder-count').textContent = pendientes.length;
 
     const container = document.getElementById('cobros-list');
-    // Sort: pendientes first (mayor deuda primero)
     const sorted = [...pendientes.sort((a, b) => getDeudaTotal(b) - getDeudaTotal(a)), ...pagados];
+    if (sorted.length === 0) {
+        container.innerHTML = emptyState('No hay alumnos registrados');
+        return;
+    }
     container.innerHTML = sorted.map(a => {
         const alDia = estaAlDia(a);
         const deuda = getDeudaTotal(a);
@@ -1561,10 +1929,10 @@ function renderCobros() {
                 <span class="font-body-lg text-body-lg text-on-surface font-bold">${alDia ? formatMoney(MENSUALIDAD) : formatMoney(deuda)}</span>
                 <div class="flex items-center gap-xs">
                     ${alDia
-                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${a.fechaPago || ''}</span>`
+                        ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${getUltimaFechaPago(a)}</span>`
                         : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Debe ${nMeses} mes${nMeses > 1 ? 'es' : ''}</span>
-                           <button onclick="sendReminderTo(${a.id})" class="w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="Enviar recordatorio"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
-                           <button onclick="abrirModalCobro(${a.id})" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Registrar pago</button>`
+                           <button onclick="sendReminderTo('${a.id}')" class="w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="Enviar recordatorio"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                           <button onclick="abrirModalCobro('${a.id}')" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Registrar pago</button>`
                     }
                 </div>
             </div>
@@ -1572,19 +1940,19 @@ function renderCobros() {
     }).join('');
 }
 
-function changeMonth(delta) {
+async function changeMonth(delta) {
     currentMonth += delta;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    renderCobros();
+    await renderCobros();
 }
 
-function abrirModalCobro(id) {
-    const alumno = alumnos.find(a => a.id === id);
+async function abrirModalCobro(id) {
+    const alumno = alumnosCache.find(a => a.id === id);
     if (!alumno) return;
     pendingCobroId = id;
+    conceptosCache = await cargarConceptos();
     const pendientes = getPendingMonths(alumno);
-    // Por defecto se preselecciona solo el mes más antiguo pendiente (el mister puede sumar más manualmente)
     cobroMesesSeleccionados = pendientes.length ? [pendientes[0]] : [];
     cobroConceptosSeleccionados = [];
 
@@ -1606,15 +1974,17 @@ function abrirModalCobro(id) {
             </label>`).join('')
         : `<p class="font-body-md text-body-md text-on-surface-variant">Este alumno está al día con la mensualidad.</p>`;
 
-    document.getElementById('cobro-conceptos-list').innerHTML = conceptos.length
-        ? conceptos.map(c => {
+    document.getElementById('cobro-conceptos-list').innerHTML = conceptosCache.length
+        ? conceptosCache.map(c => {
             const plazoInfo = formatPlazo(c.plazo);
+            const agotado = c.stock_total !== null && c.stock_total !== undefined && c.stock_vendido >= c.stock_total;
             return `
-            <label class="cursor-pointer flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-2">
-                <input type="checkbox" onchange="toggleCobroConcepto(${c.id})" class="w-5 h-5 accent-primary flex-shrink-0"/>
+            <label class="flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-2 ${agotado ? 'opacity-50' : 'cursor-pointer'}">
+                <input type="checkbox" onchange="toggleCobroConcepto('${c.id}')" ${agotado ? 'disabled' : ''} class="w-5 h-5 accent-primary flex-shrink-0"/>
                 <span class="flex-1">
                     <span class="font-body-md text-body-md text-on-surface block">${c.nombre}</span>
                     ${plazoInfo ? `<span class="font-label-sm text-label-sm ${plazoInfo.vencido ? 'text-error' : 'text-on-surface-variant'} block">${plazoInfo.texto}${plazoInfo.vencido ? ' (vencido)' : ''}</span>` : ''}
+                    ${c.stock_total !== null && c.stock_total !== undefined ? `<span class="font-label-sm text-label-sm ${agotado ? 'text-error' : 'text-on-surface-variant'} block">${agotado ? 'Agotado' : `Stock: ${c.stock_total - c.stock_vendido} disponibles`}</span>` : ''}
                 </span>
                 <span class="font-body-md text-body-md text-on-surface-variant">${formatMoney(c.precio)}</span>
             </label>`;
@@ -1642,7 +2012,7 @@ function toggleCobroConcepto(id) {
 
 function updateCobroTotal() {
     const totalMeses = cobroMesesSeleccionados.length * MENSUALIDAD;
-    const totalConceptos = conceptos.filter(c => cobroConceptosSeleccionados.includes(c.id)).reduce((s, c) => s + c.precio, 0);
+    const totalConceptos = conceptosCache.filter(c => cobroConceptosSeleccionados.includes(c.id)).reduce((s, c) => s + Number(c.precio), 0);
     const total = totalMeses + totalConceptos;
     document.getElementById('cobro-monto').textContent = formatMoney(total);
     document.getElementById('btn-confirmar-cobro').disabled = total === 0;
@@ -1653,68 +2023,74 @@ function cerrarModalCobro() {
     document.getElementById('modal-cobro').classList.add('hidden');
 }
 
-function confirmarCobro() {
+async function confirmarCobro() {
     if (pendingCobroId === null) return;
-    const alumno = alumnos.find(a => a.id === pendingCobroId);
+    const alumno = alumnosCache.find(a => a.id === pendingCobroId);
     if (!alumno) return;
     const metodo = document.querySelector('input[name="metodo-pago"]:checked').value;
-    const conceptosSeleccionados = conceptos.filter(c => cobroConceptosSeleccionados.includes(c.id));
+    const conceptosSeleccionados = conceptosCache.filter(c => cobroConceptosSeleccionados.includes(c.id));
     const totalMeses = cobroMesesSeleccionados.length * MENSUALIDAD;
-    const totalConceptos = conceptosSeleccionados.reduce((s, c) => s + c.precio, 0);
+    const totalConceptos = conceptosSeleccionados.reduce((s, c) => s + Number(c.precio), 0);
     const total = totalMeses + totalConceptos;
     if (total === 0) return;
 
-    ensurePagosLedger(alumno);
-    const d = new Date();
-    const fechaCorta = `${d.getDate()} ${MESES[d.getMonth()].substring(0, 3)}`;
-    cobroMesesSeleccionados.forEach(k => {
-        alumno.pagos[k] = { pagado: true, fecha: fechaCorta, metodo };
-    });
-    alumno.metodoPago = metodo;
-    if (cobroMesesSeleccionados.length > 0) alumno.fechaPago = fechaCorta;
-    receiptCounter++;
-    transaccionIdCounter++;
+    const btn = document.getElementById('btn-confirmar-cobro');
+    btn.disabled = true;
+    try {
+        const d = new Date();
+        receiptCounter++;
+        const transaccion = await crearTransaccionDB({
+            alumno_id: alumno.id,
+            alumno_nombre: alumno.nombre,
+            acudiente: alumno.acudiente || '—',
+            categoria: alumno.categoria,
+            fecha: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+            metodo,
+            meses: cobroMesesSeleccionados,
+            conceptos: conceptosSeleccionados.map(c => ({ nombre: c.nombre, precio: c.precio })),
+            total,
+            recibo_numero: receiptCounter
+        });
 
-    const transaccion = {
-        id: transaccionIdCounter,
-        alumnoId: alumno.id,
-        alumnoNombre: alumno.nombre,
-        acudiente: alumno.acudiente || '—',
-        categoria: alumno.categoria,
-        fecha: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-        fechaTexto: `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`,
-        metodo,
-        meses: [...cobroMesesSeleccionados],
-        conceptos: conceptosSeleccionados.map(c => ({ nombre: c.nombre, precio: c.precio })),
-        total,
-        recibo: receiptCounter
-    };
-    transacciones.unshift(transaccion);
+        if (cobroMesesSeleccionados.length > 0) {
+            await registrarPagoMesesDB(alumno.id, cobroMesesSeleccionados, metodo);
+        }
 
-    saveState();
-    const detalle = [
-        cobroMesesSeleccionados.length ? `${cobroMesesSeleccionados.length} mensualidad(es)` : null,
-        conceptosSeleccionados.length ? conceptosSeleccionados.map(c => c.nombre).join(', ') : null
-    ].filter(Boolean).join(' + ');
-    addActivity('check_circle', `Pago registrado — ${alumno.nombre}`, `${detalle} · ${metodo}`);
+        for (const c of conceptosSeleccionados) {
+            await registrarCompraConceptoDB(c.id, alumno.id, transaccion.id, c.precio);
+            if (c.stock_total !== null && c.stock_total !== undefined) {
+                await supabase.from('conceptos').update({ stock_vendido: c.stock_vendido + 1 }).eq('id', c.id);
+            }
+        }
 
-    document.getElementById('modal-cobro').classList.add('hidden');
-    showToast(`Pago de ${alumno.nombre} registrado ✓`);
-    pendingCobroId = null;
-    renderCobros();
-    renderAlumnos();
-    renderInicio();
+        const detalle = [
+            cobroMesesSeleccionados.length ? `${cobroMesesSeleccionados.length} mensualidad(es)` : null,
+            conceptosSeleccionados.length ? conceptosSeleccionados.map(c => c.nombre).join(', ') : null
+        ].filter(Boolean).join(' + ');
+        await addActivity('check_circle', `Pago registrado — ${alumno.nombre}`, `${detalle} · ${metodo}`);
 
-    setTimeout(() => showReciboTransaccion(transaccion.id), 400);
+        document.getElementById('modal-cobro').classList.add('hidden');
+        showToast(`Pago de ${alumno.nombre} registrado ✓`);
+        pendingCobroId = null;
+        transaccionesCache = await cargarTransacciones();
+        await Promise.all([renderCobros(), renderAlumnos(), renderInicio()]);
+
+        setTimeout(() => showReciboTransaccion(transaccion.id), 400);
+    } catch (err) {
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 function showReciboTransaccion(txId) {
-    const tx = transacciones.find(t => t.id === txId);
+    const tx = transaccionesCache.find(t => t.id === txId);
     if (!tx) return;
-    document.getElementById('recibo-numero').textContent = `#${tx.recibo.toString().padStart(4, '0')}`;
-    document.getElementById('recibo-fecha').textContent = tx.fechaTexto;
+    const d = new Date(tx.created_at);
+    document.getElementById('recibo-numero').textContent = `#${tx.recibo_numero.toString().padStart(4, '0')}`;
+    document.getElementById('recibo-fecha').textContent = `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
     document.getElementById('recibo-acudiente').textContent = tx.acudiente || '—';
-    document.getElementById('recibo-alumno').textContent = tx.alumnoNombre;
+    document.getElementById('recibo-alumno').textContent = tx.alumno_nombre;
     document.getElementById('recibo-categoria').textContent = tx.categoria;
     document.getElementById('recibo-metodo').textContent = tx.metodo;
     document.getElementById('recibo-total').textContent = formatMoney(tx.total);
@@ -1733,8 +2109,9 @@ function showReciboTransaccion(txId) {
     document.getElementById('modal-recibo').classList.remove('hidden');
 }
 
-function showUltimoRecibo(alumnoId) {
-    const ultima = transacciones.find(t => t.alumnoId === alumnoId);
+async function showUltimoRecibo(alumnoId) {
+    if (!transaccionesCache.length) transaccionesCache = await cargarTransacciones();
+    const ultima = transaccionesCache.find(t => t.alumno_id === alumnoId);
     if (!ultima) {
         showToast('Este alumno todavía no tiene pagos registrados', 'info');
         return;
@@ -1743,80 +2120,102 @@ function showUltimoRecibo(alumnoId) {
 }
 
 function shareWhatsApp() {
-    const txId = parseInt(document.getElementById('modal-recibo').dataset.txId);
-    const tx = transacciones.find(t => t.id === txId);
+    const txId = document.getElementById('modal-recibo').dataset.txId;
+    const tx = transaccionesCache.find(t => t.id === txId);
     if (!tx) return;
     const items = [
         ...tx.meses.map(k => `• Mensualidad ${getMonthLabel(k)}: ${formatMoney(MENSUALIDAD)}`),
         ...tx.conceptos.map(c => `• ${c.nombre}: ${formatMoney(c.precio)}`)
     ].join('\n');
-    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recibo de Pago*\n\n✅ Alumno: ${tx.alumnoNombre}\n${items}\n\n💰 Total: ${formatMoney(tx.total)}\n💳 Método: ${tx.metodo}\n📅 Fecha: ${tx.fechaTexto}\n\n¡Gracias por confiar en nuestra escuela!`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    const msg = encodeURIComponent(`⚽ *Cancha Directa — Recibo de Pago*\n\n✅ Alumno: ${tx.alumno_nombre}\n${items}\n\n💰 Total: ${formatMoney(tx.total)}\n💳 Método: ${tx.metodo}\n\n¡Gracias por confiar en nuestra escuela!`);
+    const alumno = alumnosCache.find(a => a.id === tx.alumno_id);
+    const url = alumno?.telefono ? `https://wa.me/${alumno.telefono}?text=${msg}` : `https://wa.me/?text=${msg}`;
+    window.open(url, '_blank');
     document.getElementById('modal-recibo').classList.add('hidden');
 }
 
 function sendWhatsApp(tel, nombre) {
-    const phone = tel.replace(/\s/g, '');
     const msg = encodeURIComponent(`Hola, este es un mensaje de la escuela de fútbol Cancha Directa sobre ${nombre}.`);
-    window.open(`https://wa.me/57${phone}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${normalizePhone(tel)}?text=${msg}`, '_blank');
 }
 
-function sendReminders() {
-    const pendientes = alumnos.filter(a => !estaAlDia(a));
+async function sendReminders() {
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a));
     if (pendientes.length === 0) {
         showToast('¡Todos los alumnos están al día! 🎉', 'celebration');
         return;
     }
+    const list = document.getElementById('recordatorios-list');
+    if (list) {
+        list.innerHTML = pendientes.map(a => {
+            const mensaje = buildReminderMessage({
+                padre: a.acudiente,
+                alumno: a.nombre,
+                deuda: formatMoney(getDeudaTotal(a)),
+                meses: getPendingMonths(a).length
+            });
+            return `
+            <div class="bg-surface-container-lowest rounded-xl p-sm flex items-center justify-between border border-surface-variant">
+                <div>
+                    <h4 class="font-body-lg text-body-lg font-semibold text-on-surface">${a.nombre}</h4>
+                    <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.acudiente} · Cat. ${a.categoria} · Debe ${getPendingMonths(a).length} mes(es)</p>
+                </div>
+                <a href="https://wa.me/${normalizePhone(a.telefono)}?text=${encodeURIComponent(mensaje)}" target="_blank" onclick="markRecordatorioEnviado('${a.id}')" class="w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-[20px]">forum</span>
+                </a>
+            </div>`;
+        }).join('');
+        document.getElementById('modal-recordatorios').classList.remove('hidden');
+        return;
+    }
+    // Fallback (por si el modal aún no existe en el DOM): un solo mensaje genérico
     const deudaTotal = pendientes.reduce((s, a) => s + getDeudaTotal(a), 0);
-    const mensaje = buildReminderMessage({
-        padre: 'estimado padre de familia',
-        alumno: `${pendientes.length} alumnos`,
-        deuda: formatMoney(deudaTotal),
-        meses: 'una o más'
-    });
+    const mensaje = buildReminderMessage({ padre: 'estimado padre de familia', alumno: `${pendientes.length} alumnos`, deuda: formatMoney(deudaTotal), meses: 'una o más' });
     window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
-    showToast(`Recordatorio enviado a ${pendientes.length} familias`, 'send');
-    addActivity('forward_to_inbox', `Recordatorio enviado — ${pendientes.length} padres`, 'Pendientes de pago');
+}
+
+async function markRecordatorioEnviado(alumnoId) {
+    const a = alumnosCache.find(al => al.id === alumnoId);
+    if (!a) return;
+    await addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})`);
 }
 
 // ===========================
 // CALENDARIO
 // ===========================
-function renderCalendar() {
+async function renderCalendar() {
+    document.getElementById('partidos-list').innerHTML = spinnerBlock();
     const d = new Date();
     document.getElementById('cal-month-display').textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
 
-    // Mini calendar
+    partidosCache = await cargarPartidos();
+    if (!alumnosCache.length) alumnosCache = await cargarAlumnos();
+
     const cal = document.getElementById('mini-calendar');
     const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
     const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     const prevDays = new Date(d.getFullYear(), d.getMonth(), 0).getDate();
 
-    // Match dates
-    const matchDates = partidos.filter(p => {
+    const matchDates = partidosCache.filter(p => {
         const pd = new Date(p.fecha + 'T12:00:00');
         return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
     }).map(p => new Date(p.fecha + 'T12:00:00').getDate());
 
     let html = DIAS_SEMANA.map(dia => `<div class="font-label-sm text-label-sm text-secondary py-1">${dia}</div>`).join('');
 
-    // Previous month days
     for (let i = firstDay - 1; i >= 0; i--) {
         html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${prevDays - i}</div>`;
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
         const isToday = day === d.getDate();
         const hasMatch = matchDates.includes(day);
         let classes = 'p-1 font-body-md text-body-md';
         if (isToday) classes += ' bg-primary text-on-primary rounded-full font-bold';
         if (hasMatch && !isToday) classes += ' relative flex flex-col items-center';
-
         html += `<div class="${classes}">${hasMatch && !isToday ? `<span>${day}</span><div class="w-1.5 h-1.5 rounded-full bg-primary mt-0.5"></div>` : day}</div>`;
     }
 
-    // Next month days
     const remaining = 42 - (firstDay + daysInMonth);
     for (let i = 1; i <= remaining; i++) {
         html += `<div class="text-outline-variant p-1 font-body-md text-body-md">${i}</div>`;
@@ -1824,13 +2223,16 @@ function renderCalendar() {
 
     cal.innerHTML = html;
 
-    // Match list
     const list = document.getElementById('partidos-list');
-    const filteredPartidos = calendarCategory === 'todas' ? partidos : partidos.filter(p => p.categoria === calendarCategory);
+    const filteredPartidos = calendarCategory === 'todas' ? partidosCache : partidosCache.filter(p => p.categoria === calendarCategory);
     const sortedPartidos = [...filteredPartidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    if (sortedPartidos.length === 0) {
+        list.innerHTML = emptyState('No hay partidos programados');
+        return;
+    }
     list.innerHTML = sortedPartidos.map(p => {
         const pd = new Date(p.fecha + 'T12:00:00');
-        const nConvocados = (p.convocadosIds || []).length;
+        const nConvocados = (p.convocatorias || []).length;
         const costPerKid = nConvocados > 0 ? Math.round(p.arbitraje / nConvocados) : 0;
         return `
         <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30 flex gap-4 ${p.completado ? 'opacity-60' : ''}">
@@ -1848,7 +2250,7 @@ function renderCalendar() {
                                Arbitraje: ${formatMoney(p.arbitraje)} · ${nConvocados} convocados · ${formatMoney(costPerKid)}/niño
                            </p>
                        </div>
-                       <button onclick="openConvocadosModal(${p.id})" class="mt-2 bg-surface-container-high text-on-surface font-label-sm text-label-sm px-3 py-1.5 rounded-md self-start active:scale-95 transition-transform hover:bg-surface-variant">Ver convocados</button>`
+                       <button onclick="openConvocadosModal('${p.id}')" class="mt-2 bg-surface-container-high text-on-surface font-label-sm text-label-sm px-3 py-1.5 rounded-md self-start active:scale-95 transition-transform hover:bg-surface-variant">Ver convocados</button>`
                 }
             </div>
         </div>`;
@@ -1861,7 +2263,7 @@ function filterCalendarCategory(cat) {
     renderCalendar();
 }
 
-function addPartido(e) {
+async function addPartido(e) {
     e.preventDefault();
     const rival = document.getElementById('inp-rival').value;
     const fecha = document.getElementById('inp-fecha-partido').value;
@@ -1870,67 +2272,83 @@ function addPartido(e) {
     const categoria = document.querySelector('input[name="cat-partido"]:checked').value;
     const arbitraje = parseInt(document.getElementById('inp-arbitraje').value) || 0;
 
-    const newId = partidos.reduce((max, p) => Math.max(max, p.id), 0) + 1;
-    partidos.push({
-        id: newId,
-        rival, fecha, hora, cancha, categoria, arbitraje,
-        convocadosIds: [], completado: false
-    });
-
-    document.getElementById('modal-nuevo-partido').classList.add('hidden');
-    showToast(`Partido vs ${rival} creado ⚽`);
-    saveState();
-    addActivity('sports_soccer', `Partido creado — ${categoria}`, `vs ${rival}`);
-    renderCalendar();
-    renderInicio();
+    try {
+        await crearPartidoDB({ rival, fecha, hora, cancha, categoria, arbitraje, completado: false });
+        document.getElementById('modal-nuevo-partido').classList.add('hidden');
+        showToast(`Partido vs ${rival} creado ⚽`);
+        await addActivity('sports_soccer', `Partido creado — ${categoria}`, `vs ${rival}`);
+        await Promise.all([renderCalendar(), renderInicio()]);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // ===========================
 // MÁS (Settings & Inventory)
 // ===========================
-function renderMas() {
+async function renderMas() {
     document.getElementById('config-num-categorias').textContent = `${CATEGORIAS.length} categorías`;
-    document.getElementById('config-num-transacciones').textContent = transacciones.length;
+    document.getElementById('inventario-cards').innerHTML = spinnerBlock();
+    document.getElementById('conceptos-list').innerHTML = spinnerBlock();
+    document.getElementById('respuestas-list').innerHTML = spinnerBlock();
+
+    if (!alumnosCache.length) alumnosCache = await cargarAlumnos();
+    const [inventarioData, conceptos, respuestas, transacciones] = await Promise.all([
+        cargarInventario(), cargarConceptos(), cargarRespuestasRapidas(), cargarTransacciones()
+    ]);
+    inventarioCache = inventarioData;
+    conceptosCache = conceptos;
+    respuestasCache = respuestas;
+    transaccionesCache = transacciones;
+
+    document.getElementById('config-num-transacciones').textContent = transaccionesCache.length;
     renderConceptos();
+    renderInventarioCards();
 
-    // Inventory cards — solo categorías con alumnos o stock cargado (evita tarjetas vacías por las 8 categorías)
-    const container = document.getElementById('inventario-cards');
-    const categoriasConDatos = CATEGORIAS.filter(cat =>
-        alumnos.some(a => a.categoria === cat) ||
-        (inventario[cat] && (inventario[cat].local.total > 0 || inventario[cat].visitante.total > 0 || inventario[cat].torneo.total > 0))
-    );
-    container.innerHTML = categoriasConDatos.map(cat => {
-        const inv = inventario[cat];
-        return `
-        <div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)] p-md border border-surface-container-highest">
-            <h3 class="font-headline-md text-headline-md text-on-surface mb-3 border-b border-surface-variant pb-2 text-[16px]">Categoría ${cat}</h3>
-            <div class="space-y-3">
-                ${renderInvBar('Local (Verde)', inv.local, 'bg-primary', 'text-primary')}
-                ${renderInvBar('Visitante (Blanca)', inv.visitante, 'bg-secondary', 'text-secondary')}
-                ${renderInvBar('Kit Torneo (Ed. Esp.)', inv.torneo, 'bg-tertiary', 'text-tertiary')}
-            </div>
-        </div>`;
-    }).join('');
-
-    // Quick responses
     const respContainer = document.getElementById('respuestas-list');
-    respContainer.innerHTML = respuestasRapidas.map(r => `
+    respContainer.innerHTML = respuestasCache.length ? respuestasCache.map(r => `
         <div class="bg-surface-container-lowest rounded-xl p-md border border-surface-variant shadow-sm flex flex-col gap-sm">
             <h4 class="font-body-lg text-body-lg font-bold">${r.titulo}</h4>
             <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"${r.texto}"</p>
             <div class="flex justify-end mt-xs">
-                <button onclick="copyText('${r.texto.replace(/'/g, "\\'")}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
+                <button onclick="copyText('${escJs(r.texto)}')" class="flex items-center gap-xs px-sm py-xs border border-outline rounded-lg text-primary hover:bg-surface-container h-[40px] active:scale-95 transition-transform">
                     <span class="material-symbols-outlined text-[20px]">content_copy</span>
                     <span class="font-label-sm text-label-sm">Copiar</span>
                 </button>
             </div>
         </div>
-    `).join('');
+    `).join('') : emptyState('Sin respuestas rápidas configuradas');
 }
 
-function renderInvBar(label, data, barColor, textColor) {
+function renderInventarioCards() {
+    const container = document.getElementById('inventario-cards');
+    const categoriasSet = new Set(inventarioCache.map(i => i.categoria));
+    alumnosCache.forEach(a => categoriasSet.add(a.categoria));
+    const categorias = [...categoriasSet].sort();
+
+    if (categorias.length === 0) {
+        container.innerHTML = emptyState('Agrega una categoría para empezar a controlar el stock');
+        return;
+    }
+
+    container.innerHTML = categorias.map(cat => {
+        const local = inventarioCache.find(i => i.categoria === cat && i.tipo === 'local') || { total: 0, entregados: 0 };
+        const visitante = inventarioCache.find(i => i.categoria === cat && i.tipo === 'visitante') || { total: 0, entregados: 0 };
+        const torneo = inventarioCache.find(i => i.categoria === cat && i.tipo === 'torneo') || { total: 0, entregados: 0 };
+        return `
+        <div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)] p-md border border-surface-container-highest">
+            <h3 class="font-headline-md text-headline-md text-on-surface mb-3 border-b border-surface-variant pb-2 text-[16px]">Categoría ${cat}</h3>
+            <div class="space-y-3">
+                ${renderInvBar(cat, 'local', 'Local (Verde)', local, 'bg-primary', 'text-primary')}
+                ${renderInvBar(cat, 'visitante', 'Visitante (Blanca)', visitante, 'bg-secondary', 'text-secondary')}
+                ${renderInvBar(cat, 'torneo', 'Kit Torneo (Ed. Esp.)', torneo, 'bg-tertiary', 'text-tertiary')}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderInvBar(categoria, tipo, label, data, barColor, textColor) {
     const pct = data.total > 0 ? Math.round((data.entregados / data.total) * 100) : 0;
-    const isLow = pct < 30;
     return `
     <div>
         <div class="flex justify-between items-center mb-1">
@@ -1939,10 +2357,48 @@ function renderInvBar(label, data, barColor, textColor) {
             </span>
             <span class="font-label-sm text-label-sm ${textColor} font-bold">${data.entregados}/${data.total}</span>
         </div>
-        <div class="w-full bg-surface-variant rounded-full h-2">
+        <div class="w-full bg-surface-variant rounded-full h-2 mb-1">
             <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
         </div>
+        <div class="flex items-center justify-between gap-2 text-[11px]">
+            <div class="flex items-center gap-1">
+                <span class="text-on-surface-variant">Stock total:</span>
+                <button onclick="ajustarInventario('${categoria}','${tipo}','total',-1)" class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center active:scale-90"><span class="material-symbols-outlined text-[14px]">remove</span></button>
+                <button onclick="ajustarInventario('${categoria}','${tipo}','total',1)" class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center active:scale-90"><span class="material-symbols-outlined text-[14px]">add</span></button>
+            </div>
+            <div class="flex items-center gap-1">
+                <span class="text-on-surface-variant">Entregados:</span>
+                <button onclick="ajustarInventario('${categoria}','${tipo}','entregados',-1)" class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center active:scale-90"><span class="material-symbols-outlined text-[14px]">remove</span></button>
+                <button onclick="ajustarInventario('${categoria}','${tipo}','entregados',1)" class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center active:scale-90"><span class="material-symbols-outlined text-[14px]">add</span></button>
+            </div>
+        </div>
     </div>`;
+}
+
+async function ajustarInventario(categoria, tipo, campo, delta) {
+    try {
+        await ajustarInventarioDB(categoria, tipo, campo, delta);
+        inventarioCache = await cargarInventario();
+        renderInventarioCards();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function agregarCategoriaInventario(e) {
+    e.preventDefault();
+    const inp = document.getElementById('inp-nueva-cat-inventario');
+    const categoria = inp.value.trim();
+    if (!categoria) return;
+    try {
+        await agregarCategoriaInventarioDB(categoria);
+        inp.value = '';
+        inventarioCache = await cargarInventario();
+        renderInventarioCards();
+        showToast(`Categoría "${categoria}" agregada al inventario`);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 function copyText(text) {
@@ -1956,11 +2412,12 @@ function copyText(text) {
 // ===========================
 // CONVOCATORIA (Torneos / Barra Dorada)
 // ===========================
-function openConvocadosModal(partidoId) {
-    const p = partidos.find(pt => pt.id === partidoId);
+async function openConvocadosModal(partidoId) {
+    const p = partidosCache.find(pt => pt.id === partidoId);
     if (!p) return;
     currentConvocadosPartidoId = partidoId;
-    tempConvocadosIds = [...(p.convocadosIds || [])];
+    tempConvocadosIds = (p.convocatorias || []).map(c => c.alumno_id);
+    if (!alumnosCache.length) alumnosCache = await cargarAlumnos();
     const pd = new Date(p.fecha + 'T12:00:00');
     document.getElementById('convocados-partido-info').textContent = `${p.categoria} vs ${p.rival} · ${pd.getDate()} ${MESES[pd.getMonth()].substring(0,3)}`;
     renderConvocadosChecklist();
@@ -1968,9 +2425,9 @@ function openConvocadosModal(partidoId) {
 }
 
 function renderConvocadosChecklist() {
-    const p = partidos.find(pt => pt.id === currentConvocadosPartidoId);
+    const p = partidosCache.find(pt => pt.id === currentConvocadosPartidoId);
     if (!p) return;
-    const candidatos = alumnos.filter(a => a.categoria === p.categoria);
+    const candidatos = alumnosCache.filter(a => a.categoria === p.categoria);
     const list = document.getElementById('convocados-checklist');
     list.innerHTML = candidatos.length
         ? candidatos.map(a => {
@@ -1978,7 +2435,7 @@ function renderConvocadosChecklist() {
             return `
             <li class="py-sm">
                 <label class="flex items-center gap-sm cursor-pointer rounded-lg p-sm -mx-sm ${checked ? 'convocado-gold' : ''} transition-all">
-                    <input type="checkbox" onchange="toggleConvocado(${a.id})" ${checked ? 'checked' : ''} class="w-5 h-5 accent-primary flex-shrink-0"/>
+                    <input type="checkbox" onchange="toggleConvocado('${a.id}')" ${checked ? 'checked' : ''} class="w-5 h-5 accent-primary flex-shrink-0"/>
                     <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold flex-shrink-0">${getInitials(a.nombre)}</div>
                     <div class="flex-1">
                         <p class="font-body-md text-body-md text-on-surface font-semibold">${a.nombre}</p>
@@ -1993,11 +2450,9 @@ function renderConvocadosChecklist() {
 }
 
 function toggleConvocado(alumnoId) {
-    if (tempConvocadosIds.includes(alumnoId)) {
-        tempConvocadosIds = tempConvocadosIds.filter(id => id !== alumnoId);
-    } else {
-        tempConvocadosIds.push(alumnoId);
-    }
+    tempConvocadosIds = tempConvocadosIds.includes(alumnoId)
+        ? tempConvocadosIds.filter(id => id !== alumnoId)
+        : [...tempConvocadosIds, alumnoId];
     renderConvocadosChecklist();
 }
 
@@ -2007,24 +2462,26 @@ function updateConvocadosSummary(p) {
     document.getElementById('convocados-costo').textContent = formatMoney(cost);
 }
 
-function guardarConvocados() {
-    const p = partidos.find(pt => pt.id === currentConvocadosPartidoId);
+async function guardarConvocados() {
+    const p = partidosCache.find(pt => pt.id === currentConvocadosPartidoId);
     if (!p) return;
-    p.convocadosIds = [...tempConvocadosIds];
-    saveState();
-    addActivity('groups', `Convocatoria actualizada — ${p.categoria}`, `vs ${p.rival} · ${p.convocadosIds.length} convocados`);
-    showToast(`Convocatoria de ${p.rival} guardada`);
-    document.getElementById('modal-convocados').classList.add('hidden');
-    renderCalendar();
-    renderAlumnos();
+    try {
+        await guardarConvocadosDB(p.id, tempConvocadosIds);
+        await addActivity('groups', `Convocatoria actualizada — ${p.categoria}`, `vs ${p.rival} · ${tempConvocadosIds.length} convocados`);
+        showToast(`Convocatoria de ${p.rival} guardada`);
+        document.getElementById('modal-convocados').classList.add('hidden');
+        await Promise.all([renderCalendar(), renderAlumnos()]);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 function openConvocatoriaMsg() {
-    const p = partidos.find(pt => pt.id === currentConvocadosPartidoId);
+    const p = partidosCache.find(pt => pt.id === currentConvocadosPartidoId);
     if (!p) return;
     const pd = new Date(p.fecha + 'T12:00:00');
     const fechaTexto = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} de ${MESES[pd.getMonth()]}`;
-    const convocados = alumnos.filter(a => tempConvocadosIds.includes(a.id));
+    const convocados = alumnosCache.filter(a => tempConvocadosIds.includes(a.id));
     const plantilla = `⚽ *Cancha Directa — Convocatoria*\n\n¡Hola! Tu hijo/a ha sido convocado/a para el partido:\n\n🆚 Rival: ${p.rival}\n📅 Fecha: ${fechaTexto}\n⏰ Hora: ${p.hora}\n📍 Lugar: ${p.cancha}\n\nPor favor llegar 30 minutos antes con el uniforme completo. ¡Vamos con toda! 💪`;
     document.getElementById('convocatoria-texto').value = plantilla;
 
@@ -2036,7 +2493,7 @@ function openConvocatoriaMsg() {
                     <div class="w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant font-bold">${getInitials(a.nombre)}</div>
                     <span class="font-body-md text-body-md text-on-surface">${a.nombre}</span>
                 </div>
-                <button onclick="sendConvocatoriaWhatsApp(${a.id})" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                <button onclick="sendConvocatoriaWhatsApp('${a.id}')" class="w-9 h-9 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
             </div>`).join('')
         : `<p class="font-body-md text-body-md text-on-surface-variant text-center py-md">Selecciona convocados primero</p>`;
 
@@ -2044,11 +2501,10 @@ function openConvocatoriaMsg() {
 }
 
 function sendConvocatoriaWhatsApp(alumnoId) {
-    const a = alumnos.find(al => al.id === alumnoId);
+    const a = alumnosCache.find(al => al.id === alumnoId);
     if (!a) return;
     const texto = document.getElementById('convocatoria-texto').value;
-    const phone = a.telefono.replace(/\s/g, '');
-    window.open(`https://wa.me/57${phone}?text=${encodeURIComponent(texto)}`, '_blank');
+    window.open(`https://wa.me/${normalizePhone(a.telefono)}?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
 // ===========================
@@ -2070,10 +2526,10 @@ function renderTemplateEditor() {
     document.getElementById('inp-reminder-template').value = reminderTemplate || DEFAULT_REMINDER_TEMPLATE;
 }
 
-function saveReminderTemplate() {
+async function saveReminderTemplate() {
     const texto = document.getElementById('inp-reminder-template').value.trim();
     reminderTemplate = texto || DEFAULT_REMINDER_TEMPLATE;
-    saveState();
+    await supabase.from('ajustes').update({ reminder_template: reminderTemplate }).eq('id', 1);
     showToast('Plantilla de WhatsApp guardada ✓');
     renderAutomationPreview(DIAS_RECORDATORIO.includes(new Date().getDate()) ? new Date().getDate() : 3);
 }
@@ -2083,8 +2539,8 @@ function restoreDefaultTemplate() {
     showToast('Plantilla restaurada — recuerda guardar los cambios');
 }
 
-function sendReminderTo(alumnoId) {
-    const a = alumnos.find(al => al.id === alumnoId);
+async function sendReminderTo(alumnoId) {
+    const a = alumnosCache.find(al => al.id === alumnoId);
     if (!a) return;
     const mensaje = buildReminderMessage({
         padre: a.acudiente,
@@ -2092,16 +2548,18 @@ function sendReminderTo(alumnoId) {
         deuda: formatMoney(getDeudaTotal(a)),
         meses: getPendingMonths(a).length
     });
-    const phone = a.telefono.replace(/\s/g, '');
-    window.open(`https://wa.me/57${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
-    addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})`);
+    window.open(`https://wa.me/${normalizePhone(a.telefono)}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    await addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})`);
 }
 
 // ===========================
 // AUTOMATIZACIÓN — WEBHOOKS n8n (recordatorios WhatsApp)
+// Nota: esto arma los enlaces wa.me listos para enviar (gratis).
+// El envío 100% automático sin clic requeriría la API oficial de
+// WhatsApp Business de Meta, que exige cuenta propia y verificación.
 // ===========================
 function buildReminderPayload(day) {
-    const pendientes = alumnos.filter(a => !estaAlDia(a) && a.activo !== false);
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a) && a.activo !== false);
     return {
         evento: 'recordatorio_pago',
         dia_disparo: day,
@@ -2112,33 +2570,20 @@ function buildReminderPayload(day) {
         alumnos: pendientes.map(a => {
             const nMeses = getPendingMonths(a).length;
             const deuda = getDeudaTotal(a);
-            const mensaje = buildReminderMessage({
-                padre: a.acudiente,
-                alumno: a.nombre,
-                deuda: formatMoney(deuda),
-                meses: nMeses
-            });
-            const telefonoWa = '57' + a.telefono.replace(/\s/g, '');
+            const mensaje = buildReminderMessage({ padre: a.acudiente, alumno: a.nombre, deuda: formatMoney(deuda), meses: nMeses });
+            const telefonoWa = normalizePhone(a.telefono);
             return {
-                id: a.id,
-                nombre: a.nombre,
-                acudiente: a.acudiente || '',
-                categoria: a.categoria,
-                telefono: telefonoWa,
-                estado: 'Pendiente',
-                meses_pendientes: nMeses,
-                deuda_total: deuda,
-                mensaje: mensaje,
-                mensaje_codificado: encodeURIComponent(mensaje),
+                id: a.id, nombre: a.nombre, acudiente: a.acudiente || '', categoria: a.categoria,
+                telefono: telefonoWa, estado: 'Pendiente', meses_pendientes: nMeses, deuda_total: deuda,
+                mensaje, mensaje_codificado: encodeURIComponent(mensaje),
                 whatsapp_link: `https://wa.me/${telefonoWa}?text=${encodeURIComponent(mensaje)}`
             };
         })
     };
 }
 
-function openAutomationModal() {
-    const saved = localStorage.getItem(WEBHOOK_KEY) || '';
-    document.getElementById('inp-webhook-url').value = saved;
+async function openAutomationModal() {
+    document.getElementById('inp-webhook-url').value = webhookUrl || '';
     renderTemplateEditor();
     renderAutomationPreview(DIAS_RECORDATORIO.includes(new Date().getDate()) ? new Date().getDate() : 3);
     document.getElementById('modal-automatizacion').classList.remove('hidden');
@@ -2151,27 +2596,27 @@ function renderAutomationPreview(day) {
     document.getElementById('automation-preview').textContent = JSON.stringify(buildReminderPayload(day), null, 2);
 }
 
-function saveWebhookUrl() {
+async function saveWebhookUrl() {
     const url = document.getElementById('inp-webhook-url').value.trim();
-    localStorage.setItem(WEBHOOK_KEY, url);
+    webhookUrl = url;
+    await supabase.from('ajustes').update({ webhook_url: url }).eq('id', 1);
     showToast(url ? 'URL de webhook guardada' : 'URL de webhook borrada');
 }
 
 function testWebhook() {
-    const url = localStorage.getItem(WEBHOOK_KEY);
-    if (!url) {
+    if (!webhookUrl) {
         showToast('Primero guarda la URL del webhook', 'error');
         return;
     }
     const activeDayBtn = document.querySelector('.preview-day-btn.chip-active');
     const day = activeDayBtn ? parseInt(activeDayBtn.dataset.day) : 3;
-    fetch(url, {
+    fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildReminderPayload(day))
-    }).then(() => {
+    }).then(async () => {
         showToast('Payload enviado a n8n ✓', 'send');
-        addActivity('bolt', 'Automatización n8n ejecutada', `Recordatorio día ${day}`);
+        await addActivity('bolt', 'Automatización n8n ejecutada', `Recordatorio día ${day}`);
     }).catch(() => {
         showToast('No se pudo contactar el webhook', 'error');
     });
@@ -2180,7 +2625,7 @@ function testWebhook() {
 function checkAutoReminderToday() {
     const day = new Date().getDate();
     if (!DIAS_RECORDATORIO.includes(day)) return;
-    const pendientes = alumnos.filter(a => !estaAlDia(a)).length;
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a)).length;
     if (pendientes > 0) {
         showToast(`Hoy es día de recordatorio automático (${day}) — ${pendientes} pendientes`, 'notifications_active');
     }
@@ -2199,21 +2644,29 @@ function formatPlazo(plazo) {
 function renderConceptos() {
     const container = document.getElementById('conceptos-list');
     if (!container) return;
-    container.innerHTML = conceptos.length
-        ? conceptos.map(c => {
+    container.innerHTML = conceptosCache.length
+        ? conceptosCache.map(c => {
             const plazoInfo = formatPlazo(c.plazo);
+            const tieneStock = c.stock_total !== null && c.stock_total !== undefined;
             return `
             <div class="flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm">
                 <div class="flex-1">
                     <p class="font-body-md text-body-md text-on-surface font-semibold">${c.nombre}</p>
                     <p class="font-label-sm text-label-sm text-on-surface-variant">${formatMoney(c.precio)}</p>
                     ${plazoInfo ? `<p class="font-label-sm text-label-sm ${plazoInfo.vencido ? 'text-error' : 'text-primary'} flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-[14px]">event</span>${plazoInfo.texto}${plazoInfo.vencido ? ' (vencido)' : ''}</p>` : ''}
+                    ${tieneStock ? `
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">Stock: ${c.stock_vendido}/${c.stock_total} vendidos</span>
+                        <button onclick="ajustarStockConcepto('${c.id}',-1)" class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center active:scale-90"><span class="material-symbols-outlined text-[14px]">remove</span></button>
+                        <button onclick="ajustarStockConcepto('${c.id}',1)" class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center active:scale-90"><span class="material-symbols-outlined text-[14px]">add</span></button>
+                    </div>` : ''}
+                    ${plazoInfo && plazoInfo.vencido ? `<button onclick="verCompradoresYCerrar('${c.id}')" class="mt-1 font-label-sm text-label-sm text-error underline">Este evento ya terminó — quitar del catálogo y de quienes lo pagaron</button>` : ''}
                 </div>
                 <div class="flex gap-1">
-                    <button onclick="editConcepto(${c.id})" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar">
+                    <button onclick="editConcepto('${c.id}')" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar">
                         <span class="material-symbols-outlined text-[18px]">edit</span>
                     </button>
-                    <button onclick="deleteConcepto(${c.id})" class="w-9 h-9 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar">
+                    <button onclick="deleteConcepto('${c.id}')" class="w-9 h-9 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar">
                         <span class="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                 </div>
@@ -2222,37 +2675,41 @@ function renderConceptos() {
         : `<p class="font-body-md text-body-md text-on-surface-variant">Sin conceptos todavía.</p>`;
 }
 
-function submitConcepto(e) {
+async function submitConcepto(e) {
     e.preventDefault();
     const editingId = document.getElementById('editing-concepto-id').value;
     const nombre = document.getElementById('inp-concepto-nombre').value;
     const precio = parseInt(document.getElementById('inp-concepto-precio').value) || 0;
     const plazo = document.getElementById('inp-concepto-plazo').value || null;
+    const stockInput = document.getElementById('inp-concepto-stock').value;
+    const stock_total = stockInput ? parseInt(stockInput) : null;
 
-    if (editingId) {
-        const c = conceptos.find(co => co.id === parseInt(editingId));
-        if (c) { c.nombre = nombre; c.precio = precio; c.plazo = plazo; }
-        showToast(`"${nombre}" actualizado`);
-        addActivity('sell', `Concepto actualizado — ${nombre}`, formatMoney(precio));
-    } else {
-        const newId = conceptos.reduce((max, c) => Math.max(max, c.id), 0) + 1;
-        conceptos.push({ id: newId, nombre, precio, tipo: 'otro', plazo });
-        showToast(`"${nombre}" agregado al catálogo de cobros`);
-        addActivity('sell', `Concepto agregado al catálogo — ${nombre}`, formatMoney(precio));
+    try {
+        if (editingId) {
+            await actualizarConceptoDB(editingId, { nombre, precio, plazo, ...(stockInput ? { stock_total } : {}) });
+            showToast(`"${nombre}" actualizado`);
+            await addActivity('sell', `Concepto actualizado — ${nombre}`, formatMoney(precio));
+        } else {
+            await crearConceptoDB({ nombre, precio, tipo: 'otro', plazo, stock_total, stock_vendido: 0, activo: true });
+            showToast(`"${nombre}" agregado al catálogo de cobros`);
+            await addActivity('sell', `Concepto agregado al catálogo — ${nombre}`, formatMoney(precio));
+        }
+        cancelarEdicionConcepto();
+        conceptosCache = await cargarConceptos();
+        renderConceptos();
+    } catch (err) {
+        console.error(err);
     }
-
-    cancelarEdicionConcepto();
-    saveState();
-    renderConceptos();
 }
 
 function editConcepto(id) {
-    const c = conceptos.find(co => co.id === id);
+    const c = conceptosCache.find(co => co.id === id);
     if (!c) return;
     document.getElementById('editing-concepto-id').value = c.id;
     document.getElementById('inp-concepto-nombre').value = c.nombre;
     document.getElementById('inp-concepto-precio').value = c.precio;
     document.getElementById('inp-concepto-plazo').value = c.plazo || '';
+    document.getElementById('inp-concepto-stock').value = c.stock_total ?? '';
     document.getElementById('btn-concepto-submit-label').textContent = 'Guardar cambios';
     document.getElementById('btn-concepto-cancelar').classList.remove('hidden');
     document.getElementById('form-concepto').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2265,35 +2722,111 @@ function cancelarEdicionConcepto() {
     document.getElementById('btn-concepto-cancelar').classList.add('hidden');
 }
 
-function deleteConcepto(id) {
-    const c = conceptos.find(co => co.id === id);
+async function ajustarStockConcepto(id, delta) {
+    const c = conceptosCache.find(co => co.id === id);
     if (!c) return;
-    if (!confirm(`¿Eliminar "${c.nombre}" del catálogo de cobros?`)) return;
-    conceptos = conceptos.filter(co => co.id !== id);
-    saveState();
-    showToast(`"${c.nombre}" eliminado del catálogo`);
-    if (document.getElementById('editing-concepto-id').value === String(id)) cancelarEdicionConcepto();
-    renderConceptos();
+    try {
+        await ajustarStockConceptoDB(c, delta);
+        conceptosCache = await cargarConceptos();
+        renderConceptos();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// Ciclo de vida: cuando un torneo/artículo con plazo ya terminó, esto lo
+// quita del catálogo activo Y de la lista de quienes lo compraron —
+// pero el dinero ya cobrado sigue intacto en el Historial/Excel.
+async function deleteConcepto(id) {
+    const c = conceptosCache.find(co => co.id === id);
+    if (!c) return;
+    if (!confirm(`¿Eliminar "${c.nombre}" del catálogo de cobros? También se quitará de la lista de quienes lo compraron (el historial financiero NO se borra).`)) return;
+    try {
+        await eliminarConceptoDB(id);
+        showToast(`"${c.nombre}" eliminado del catálogo`);
+        if (document.getElementById('editing-concepto-id').value === id) cancelarEdicionConcepto();
+        conceptosCache = await cargarConceptos();
+        renderConceptos();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function verCompradoresYCerrar(id) {
+    const compradores = await cargarCompradoresConcepto(id);
+    const nombres = compradores.map(c => c.alumnos?.nombre || c.alumnos?.acudiente).filter(Boolean).join(', ') || 'nadie registrado';
+    if (confirm(`Lo compraron: ${nombres}.\n\n¿Quitar este artículo del catálogo y de la lista de compradores ahora que el evento terminó?`)) {
+        await deleteConcepto(id);
+    }
 }
 
 // ===========================
-// EXPORTAR HISTORIAL A CSV (Excel)
+// PERFIL (foto, colores, datos de la escuela)
+// ===========================
+function abrirModalPerfil() {
+    if (perfilCache) {
+        document.getElementById('inp-perfil-nombre').value = perfilCache.nombre_escuela || '';
+        document.getElementById('inp-perfil-ciudad').value = perfilCache.ciudad || '';
+        document.getElementById('inp-perfil-color-primario').value = perfilCache.color_primario || '#0d631b';
+        document.getElementById('inp-perfil-color-container').value = perfilCache.color_primario_container || '#2e7d32';
+        if (perfilCache.foto_url) {
+            document.getElementById('perfil-foto-preview').innerHTML = `<img src="${perfilCache.foto_url}" class="w-full h-full object-cover"/>`;
+        }
+    }
+    perfilFotoFile = null;
+    document.getElementById('modal-perfil').classList.remove('hidden');
+}
+
+function previsualizarFotoPerfil(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    perfilFotoFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        document.getElementById('perfil-foto-preview').innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover"/>`;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function guardarPerfil(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+        const cambios = {
+            nombre_escuela: document.getElementById('inp-perfil-nombre').value.trim(),
+            ciudad: document.getElementById('inp-perfil-ciudad').value.trim(),
+            color_primario: document.getElementById('inp-perfil-color-primario').value,
+            color_primario_container: document.getElementById('inp-perfil-color-container').value
+        };
+        if (perfilFotoFile) {
+            cambios.foto_url = await subirFotoPerfil(perfilFotoFile);
+        }
+        await guardarPerfilDB(cambios);
+        aplicarPerfilEnUI();
+        document.getElementById('modal-perfil').classList.add('hidden');
+        showToast('Perfil actualizado ✓');
+    } catch (err) {
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ===========================
+// EXPORTAR (CSV rápido y Excel completo con SheetJS)
 // ===========================
 function exportarHistorialCSV() {
-    if (transacciones.length === 0) {
+    if (transaccionesCache.length === 0) {
         showToast('Todavía no hay transacciones para exportar', 'info');
         return;
     }
     const headers = ['Recibo', 'Fecha', 'Alumno', 'Categoría', 'Meses pagados', 'Conceptos', 'Método de pago', 'Total'];
-    const rows = transacciones.map(t => [
-        `#${t.recibo}`,
-        t.fecha,
-        t.alumnoNombre,
-        t.categoria,
-        t.meses.map(getMonthLabel).join(' | '),
-        t.conceptos.map(c => c.nombre).join(' | '),
-        t.metodo,
-        t.total
+    const rows = transaccionesCache.map(t => [
+        `#${t.recibo_numero}`, t.fecha, t.alumno_nombre, t.categoria,
+        (t.meses || []).map(getMonthLabel).join(' | '),
+        (t.conceptos || []).map(c => c.nombre).join(' | '),
+        t.metodo, t.total
     ]);
     const csvEscape = (v) => `"${String(v).replace(/"/g, '""')}"`;
     const csv = [headers, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
@@ -2306,28 +2839,79 @@ function exportarHistorialCSV() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast(`Historial exportado (${transacciones.length} transacciones)`, 'download');
+    showToast(`Historial exportado (${transaccionesCache.length} transacciones)`, 'download');
+}
+
+async function exportarReporteExcel() {
+    showToast('Generando reporte con los datos más recientes...', 'hourglass_top');
+    try {
+        const [alumnos, ledger, conceptos, transacciones] = await Promise.all([
+            cargarAlumnos(), cargarLedger(), cargarConceptos(), cargarTransacciones()
+        ]);
+
+        const hojaAlumnos = alumnos.map(a => {
+            const pendientes = getActiveMonthKeys().filter(k => !ledger[a.id]?.[k]?.pagado);
+            return {
+                'Acudiente': a.acudiente,
+                'Teléfono': a.telefono,
+                'Jugador': a.nombre,
+                'Categoría': a.categoria,
+                'Talla': a.talla,
+                'Estado': pendientes.length === 0 ? 'Al día' : `Debe ${pendientes.length} mes(es)`,
+                'Meses que debe': pendientes.map(getMonthLabel).join(', '),
+                'Deuda total': pendientes.length * MENSUALIDAD
+            };
+        });
+
+        const comprasPorConcepto = await Promise.all(conceptos.map(async c => {
+            const compras = await cargarCompradoresConcepto(c.id);
+            return compras.map(cp => ({
+                'Artículo': c.nombre,
+                'Precio': c.precio,
+                'Comprado por (acudiente)': cp.alumnos?.acudiente || '',
+                'Jugador': cp.alumnos?.nombre || '',
+                'Teléfono': cp.alumnos?.telefono || '',
+                'Precio pagado': cp.precio_pagado,
+                'Fecha': cp.created_at ? cp.created_at.slice(0, 10) : ''
+            }));
+        }));
+        const hojaArticulos = comprasPorConcepto.flat();
+
+        const hojaHistorial = transacciones.map(t => ({
+            'Recibo': `#${t.recibo_numero}`,
+            'Fecha': t.fecha,
+            'Acudiente': t.acudiente,
+            'Alumno': t.alumno_nombre,
+            'Categoría': t.categoria,
+            'Meses pagados': (t.meses || []).map(getMonthLabel).join(', '),
+            'Artículos': (t.conceptos || []).map(c => c.nombre).join(', '),
+            'Método de pago': t.metodo,
+            'Total': t.total
+        }));
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaAlumnos), 'Alumnos');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaArticulos.length ? hojaArticulos : [{ 'Sin datos': 'Todavía no se ha vendido ningún artículo' }]), 'Artículos vendidos');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaHistorial.length ? hojaHistorial : [{ 'Sin datos': 'Todavía no hay transacciones' }]), 'Historial');
+        XLSX.writeFile(wb, `reporte_cancha_directa_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        showToast('Reporte Excel descargado ✓', 'download');
+    } catch (err) {
+        console.error(err);
+        showToast('No se pudo generar el reporte', 'error');
+    }
 }
 
 // ===========================
 // INIT
 // ===========================
-function init() {
-    loadState();
-    seedDemoDebt();
-    alumnos.forEach(ensurePagosLedger);
+async function init() {
+    await Promise.all([cargarAjustes(), cargarPerfil()]);
+    activityCache = await cargarActivity();
     renderCategoryChips();
     renderTallaSelects();
-    renderInicio();
-    renderAlumnos();
-    renderCobros();
-    renderCalendar();
-    renderMas();
-    updateNotifBadge();
+    await renderInicio();
     checkAutoReminderToday();
 }
-
-document.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>

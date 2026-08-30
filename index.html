@@ -579,7 +579,7 @@
                             <span class="material-symbols-outlined text-on-surface-variant">event</span>
                             <span class="font-body-md text-body-md">Fecha de corte</span>
                         </div>
-                        <span class="font-body-md text-body-md font-semibold">Día 30</span>
+                        <span class="font-body-md text-body-md font-semibold">Día 29</span>
                     </div>
                     <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
                         <div class="flex items-center gap-md">
@@ -1154,7 +1154,7 @@ supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // CONSTANTS
 // ===========================
 let MENSUALIDAD = 80000;
-let FECHA_CORTE = 30;
+let FECHA_CORTE = 29; // TEMP: prueba de ciclo de mora — ver CLAUDE.md (regla estricta: 30)
 const DIAS_RECORDATORIO = [3, 7, 12];
 // Categorías individuales por año de nacimiento (ver CLAUDE.md)
 const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'];
@@ -1199,7 +1199,13 @@ let appInitialized = false;
 // DATA LAYER (Supabase)
 // ===========================
 function dbError(err, msg) {
-    console.error(err);
+    console.error(`[Supabase] ${msg}:`, {
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        code: err?.code,
+        raw: err
+    });
     showToast(msg, 'error');
 }
 
@@ -1208,7 +1214,7 @@ async function cargarAjustes() {
     if (error) { dbError(error, 'Error al cargar ajustes'); return; }
     if (data) {
         MENSUALIDAD = Number(data.mensualidad) || 80000;
-        FECHA_CORTE = data.fecha_corte || 30;
+        FECHA_CORTE = data.fecha_corte || 29;
         reminderTemplate = data.reminder_template || DEFAULT_REMINDER_TEMPLATE;
         webhookUrl = data.webhook_url || '';
     }

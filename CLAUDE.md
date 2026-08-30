@@ -15,7 +15,7 @@
 
 ### Lógica Financiera
 - Valor de mensualidad: **$80.000 COP**
-- Fecha de corte: **30 de cada mes**
+- Fecha de corte: **29 de cada mes** (TEMP: cambiado de 30 → 29 el 2026-08-30 para probar el ciclo de mora; revertir a 30 cuando termine la prueba)
 - Estados de pago: `pagado` | `pendiente`
 - El sistema controla mora por mes individual: un acudiente puede deber varios meses a la vez, y se debe poder elegir manualmente qué mes(es) específico(s) cobrar, calculando el total acumulado.
 - Los recibos digitales deben poder compartirse por **WhatsApp**

@@ -158,7 +158,7 @@ create table if not exists activity_log (
 create table if not exists ajustes (
     id int primary key default 1,
     mensualidad numeric not null default 80000,
-    fecha_corte int not null default 30,
+    fecha_corte int not null default 29, -- TEMP: prueba de ciclo de mora (regla estricta original: 30)
     reminder_template text,
     webhook_url text,
     constraint ajustes_single_row check (id = 1)
@@ -180,8 +180,12 @@ create table if not exists perfil (
 insert into perfil (id) values (1) on conflict (id) do nothing;
 
 -- ------------------------------------------------------------
--- Row Level Security: solo usuarios autenticados (el Míster y su
--- equipo) pueden leer/escribir.
+-- Row Level Security: la app no tiene pantalla de login (se abre
+-- directo con la anon/publishable key), así que las políticas
+-- permiten acceso completo con esa key. La anon key es pública
+-- por diseño (viaja en el código del cliente) — esto asume que la
+-- app no es de acceso público sin control (ej. solo el Míster y su
+-- equipo conocen la URL/instalación).
 -- ------------------------------------------------------------
 alter table alumnos enable row level security;
 alter table pagos_mensuales enable row level security;
@@ -206,8 +210,10 @@ begin
         'activity_log','ajustes','perfil'
     ])
     loop
+        execute format('drop policy if exists "authenticated_full_access" on %I;', t);
+        execute format('drop policy if exists "anon_full_access" on %I;', t);
         execute format(
-            'create policy if not exists "authenticated_full_access" on %I for all using (auth.role() = ''authenticated'') with check (auth.role() = ''authenticated'');',
+            'create policy "anon_full_access" on %I for all using (true) with check (true);',
             t
         );
     end loop;
@@ -222,21 +228,25 @@ insert into storage.buckets (id, name, public)
 values ('perfil', 'perfil', true)
 on conflict (id) do nothing;
 
+drop policy if exists "perfil_escritura_autenticada" on storage.objects;
+drop policy if exists "perfil_actualizacion_autenticada" on storage.objects;
+drop policy if exists "perfil_borrado_autenticado" on storage.objects;
+
 create policy if not exists "perfil_lectura_publica"
     on storage.objects for select
     using (bucket_id = 'perfil');
 
-create policy if not exists "perfil_escritura_autenticada"
+create policy if not exists "perfil_escritura_anon"
     on storage.objects for insert
-    with check (bucket_id = 'perfil' and auth.role() = 'authenticated');
+    with check (bucket_id = 'perfil');
 
-create policy if not exists "perfil_actualizacion_autenticada"
+create policy if not exists "perfil_actualizacion_anon"
     on storage.objects for update
-    using (bucket_id = 'perfil' and auth.role() = 'authenticated');
+    using (bucket_id = 'perfil');
 
-create policy if not exists "perfil_borrado_autenticado"
+create policy if not exists "perfil_borrado_anon"
     on storage.objects for delete
-    using (bucket_id = 'perfil' and auth.role() = 'authenticated');
+    using (bucket_id = 'perfil');
 
 -- ------------------------------------------------------------
 -- Datos semilla (inventario base + respuestas rápidas + catálogo)
@@ -248,7 +258,7 @@ on conflict (categoria, tipo) do nothing;
 
 insert into respuestas_rapidas (titulo, texto, orden) values
     ('Información general', '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.', 1),
-    ('Costos y mensualidad', 'La mensualidad es de $80.000 con fecha de corte el 30 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.', 2),
+    ('Costos y mensualidad', 'La mensualidad es de $80.000 con fecha de corte el 29 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.', 2),
     ('Horarios de entrenamiento', 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM', 3),
     ('Requisitos de inscripción', 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.', 4)
 on conflict do nothing;

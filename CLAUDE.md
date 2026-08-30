@@ -10,14 +10,14 @@
 ## Reglas de Negocio Estrictas
 
 ### Categorías por Año de Nacimiento
-- **Categoría 2011-2013**: Corresponde a Sub-12/Sub-14
-- **Categoría 2014-2015**: Corresponde a Sub-10/Sub-11
-- **Categoría 2016-2018**: Corresponde a Sub-7/Sub-9
+- Las categorías se manejan de forma **individual por año de nacimiento** (2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018), no por rangos agrupados.
+- Referencia orientativa de sub-categoría por edad: 2011-2013 ≈ Sub-12/Sub-14 · 2014-2015 ≈ Sub-10/Sub-11 · 2016-2018 ≈ Sub-7/Sub-9.
 
 ### Lógica Financiera
 - Valor de mensualidad: **$80.000 COP**
-- Fecha de corte: **15 de cada mes**
+- Fecha de corte: **30 de cada mes**
 - Estados de pago: `pagado` | `pendiente`
+- El sistema controla mora por mes individual: un acudiente puede deber varios meses a la vez, y se debe poder elegir manualmente qué mes(es) específico(s) cobrar, calculando el total acumulado.
 - Los recibos digitales deben poder compartirse por **WhatsApp**
 - Formato de moneda: Pesos colombianos con separador de miles (punto)
 

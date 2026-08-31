@@ -251,6 +251,8 @@
             </button>
         </header>
 
+        <div id="reminder-banner-container" class="hidden"></div>
+
         <main class="px-grid-margin py-md flex flex-col gap-lg">
             <!-- Summary Cards (Horizontal Scroll) -->
             <section class="flex overflow-x-auto no-scrollbar -mx-grid-margin px-grid-margin snap-x pb-2 gap-md">
@@ -1165,7 +1167,7 @@ supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ===========================
 let MENSUALIDAD = 80000;
 let FECHA_CORTE = 29; // TEMP: prueba de ciclo de mora — ver CLAUDE.md (regla estricta: 30)
-const DIAS_RECORDATORIO = [3, 7, 12];
+const DIAS_RECORDATORIO = [5, 10, 15, 20, 25, 30]; // cada 5 días
 // Categorías individuales por año de nacimiento (ver CLAUDE.md)
 const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'];
 const TALLAS_INFANTIL = ['6', '8', '10', '12', '14', '16'];
@@ -1792,6 +1794,7 @@ async function renderInicio() {
     }
 
     renderActivityWidgets();
+    checkAutoReminderToday();
 }
 
 // ===========================
@@ -2140,32 +2143,46 @@ async function confirmarCobro() {
             recibo_numero: receiptCounter
         });
 
+        // Crítico: registrar meses pagados
         if (cobroMesesSeleccionados.length > 0) {
             await registrarPagoMesesDB(alumno.id, cobroMesesSeleccionados, metodo);
         }
 
+        // No crítico: registro de compra de conceptos y stock — un fallo aquí no debe bloquear el recibo
         for (const c of conceptosSeleccionados) {
-            await registrarCompraConceptoDB(c.id, alumno.id, transaccion.id, c.precio);
-            if (c.stock_total !== null && c.stock_total !== undefined) {
-                await supabase.from('conceptos').update({ stock_vendido: c.stock_vendido + 1 }).eq('id', c.id);
+            try {
+                await registrarCompraConceptoDB(c.id, alumno.id, transaccion.id, c.precio);
+                if (c.stock_total !== null && c.stock_total !== undefined) {
+                    await supabase.from('conceptos').update({ stock_vendido: c.stock_vendido + 1 }).eq('id', c.id);
+                }
+            } catch (e) {
+                console.warn('Compra de concepto no registrada (no crítico):', e.message);
             }
         }
 
-        const detalle = [
-            cobroMesesSeleccionados.length ? `${cobroMesesSeleccionados.length} mensualidad(es)` : null,
-            conceptosSeleccionados.length ? conceptosSeleccionados.map(c => c.nombre).join(', ') : null
-        ].filter(Boolean).join(' + ');
-        await addActivity('check_circle', `Pago registrado — ${alumno.nombre}`, `${detalle} · ${metodo}`);
+        // No crítico: registro de actividad
+        try {
+            const detalle = [
+                cobroMesesSeleccionados.length ? `${cobroMesesSeleccionados.length} mensualidad(es)` : null,
+                conceptosSeleccionados.length ? conceptosSeleccionados.map(c => c.nombre).join(', ') : null
+            ].filter(Boolean).join(' + ');
+            await addActivity('check_circle', `Pago registrado — ${alumno.nombre}`, `${detalle} · ${metodo}`);
+        } catch (e) {
+            console.warn('Actividad no registrada (no crítico):', e.message);
+        }
 
+        // Siempre: cerrar modal de cobro, avisar, refrescar vistas
         document.getElementById('modal-cobro').classList.add('hidden');
         showToast(`Pago de ${alumno.nombre} registrado ✓`);
         pendingCobroId = null;
         transaccionesCache = await cargarTransacciones();
         await Promise.all([renderCobros(), renderAlumnos(), renderInicio()]);
 
+        // Siempre: mostrar el recibo visual
         setTimeout(() => showReciboTransaccion(transaccion.id), 400);
     } catch (err) {
-        console.error(err);
+        console.error('Error en cobro:', err);
+        showToast('Error al registrar el pago', 'error');
     } finally {
         btn.disabled = false;
     }
@@ -2759,10 +2776,36 @@ function testWebhook() {
 
 function checkAutoReminderToday() {
     const day = new Date().getDate();
-    if (!DIAS_RECORDATORIO.includes(day)) return;
-    const pendientes = alumnosCache.filter(a => !estaAlDia(a)).length;
-    if (pendientes > 0) {
-        showToast(`Hoy es día de recordatorio automático (${day}) — ${pendientes} pendientes`, 'notifications_active');
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a) && a.activo !== false);
+
+    // Mostrar banner de cobro en Inicio si hay morosos (siempre, no solo días de recordatorio)
+    const bannerContainer = document.getElementById('reminder-banner-container');
+    if (bannerContainer) {
+        if (pendientes.length > 0) {
+            const esDiaRecordatorio = DIAS_RECORDATORIO.includes(day);
+            bannerContainer.innerHTML = `
+                <div onclick="sendReminders()" class="mx-4 mt-3 p-3 rounded-xl cursor-pointer active:scale-[0.98] transition-transform ${esDiaRecordatorio ? 'bg-error/15 border border-error/30' : 'bg-amber-500/10 border border-amber-500/30'}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${esDiaRecordatorio ? 'bg-error/20' : 'bg-amber-500/20'} flex items-center justify-center">
+                            <span class="material-symbols-outlined ${esDiaRecordatorio ? 'text-error' : 'text-amber-600'}" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-body-md text-body-md font-semibold ${esDiaRecordatorio ? 'text-error' : 'text-amber-700'}">${esDiaRecordatorio ? '🔔 Hoy es día de recordatorio' : '⚠️ Alumnos con pagos pendientes'}</p>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant">${pendientes.length} alumno(s) en mora — toca para enviar recordatorios</p>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </div>
+                </div>`;
+            bannerContainer.classList.remove('hidden');
+        } else {
+            bannerContainer.innerHTML = '';
+            bannerContainer.classList.add('hidden');
+        }
+    }
+
+    // Toast solo los días de recordatorio
+    if (DIAS_RECORDATORIO.includes(day) && pendientes.length > 0) {
+        showToast(`🔔 Día de recordatorio — ${pendientes.length} pendientes. Toca la campana para enviar.`, 'notifications_active');
     }
 }
 
@@ -3046,7 +3089,6 @@ async function init() {
     renderCategoryChips();
     renderTallaSelects();
     await renderInicio();
-    checkAutoReminderToday();
 }
 
 // ===========================

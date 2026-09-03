@@ -893,6 +893,10 @@
                     <span class="material-symbols-outlined">save</span>
                     Guardar cambios
                 </button>
+                <button type="button" onclick="abrirModalCondonar(document.getElementById('edit-id').value)" class="w-full h-touch-target-min bg-error/10 text-error rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">money_off</span>
+                    Eliminar deudas
+                </button>
                 <button type="button" onclick="deleteAlumno()" class="w-full h-touch-target-min bg-error/10 text-error rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                     <span class="material-symbols-outlined">person_remove</span>
                     Eliminar por retiro
@@ -1122,6 +1126,34 @@
         </div>
     </div>
 
+    <!-- ===== MODAL: Eliminar / Condonar Deuda ===== -->
+    <div id="modal-condonar" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-condonar').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <div class="flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-error text-2xl" style="font-variation-settings: 'FILL' 1;">money_off</span>
+                    <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Eliminar deudas</h2>
+                </div>
+                <button onclick="document.getElementById('modal-condonar').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-md">Selecciona los meses que quieres eliminar de la deuda de este alumno (por ejemplo, si estuvo retirado y no debe pagarlos). Quedan marcados como "Condonado" — el dinero no se cobra, pero el mes ya no aparece pendiente.</p>
+            <div id="condonar-alumno-nombre" class="font-body-lg text-body-lg font-semibold text-on-surface mb-sm"></div>
+            <div id="condonar-meses-list" class="flex flex-col gap-xs mb-md"></div>
+            <div class="flex gap-sm">
+                <button onclick="document.getElementById('modal-condonar').classList.add('hidden')" class="flex-1 h-touch-target-min rounded-xl border border-outline-variant font-label-sm text-label-sm text-on-surface active:scale-95 transition-transform">
+                    Cancelar
+                </button>
+                <button id="btn-confirmar-condonar" onclick="confirmarCondonacion()" disabled class="flex-1 h-touch-target-min rounded-xl bg-error text-white font-label-sm text-label-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-40">
+                    <span class="material-symbols-outlined text-[18px]">money_off</span>
+                    Eliminar deudas
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== TOAST NOTIFICATION ===== -->
     <div id="toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-inverse-surface text-inverse-on-surface px-lg py-sm rounded-xl shadow-lg font-body-md text-body-md flex items-center gap-sm max-w-[350px]" style="animation: fadeIn 0.3s ease-out;">
         <span class="material-symbols-outlined text-inverse-primary" id="toast-icon">check_circle</span>
@@ -1192,6 +1224,8 @@ let tempConvocadosIds = [];
 let cobroMesesSeleccionados = [];
 let cobroConceptosSeleccionados = [];
 let perfilFotoFile = null;
+let pendingCondonarId = null;
+let condonarMesesSeleccionados = [];
 
 // Local caches populated from Supabase on each render
 let alumnosCache = [];
@@ -1380,6 +1414,18 @@ async function registrarPagoMesesDB(alumnoId, mesKeys, metodo) {
     }));
     const { data, error } = await supabase.from('pagos_mensuales').upsert(rows, { onConflict: 'alumno_id,mes_key' }).select();
     if (error) { dbError(error, 'Error al registrar el pago'); throw error; }
+    return data;
+}
+
+async function condonarMesesDB(alumnoId, mesKeys) {
+    if (!mesKeys.length) return [];
+    const nowIso = new Date().toISOString();
+    const rows = mesKeys.map(mes_key => ({
+        alumno_id: alumnoId, mes_key, pagado: true,
+        fecha_pago: nowIso, metodo_pago: 'Condonado', monto: 0
+    }));
+    const { data, error } = await supabase.from('pagos_mensuales').upsert(rows, { onConflict: 'alumno_id,mes_key' }).select();
+    if (error) { dbError(error, 'Error al condonar deuda'); throw error; }
     return data;
 }
 
@@ -2023,6 +2069,7 @@ async function renderCobros() {
                         ? `<span class="font-label-sm text-label-sm text-primary flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-primary"></span> Pagado ✓ • ${getUltimaFechaPago(a)}</span>`
                         : `<span class="font-label-sm text-label-sm text-error flex items-center gap-base"><span class="w-2 h-2 rounded-full bg-error"></span> Debe ${nMeses} mes${nMeses > 1 ? 'es' : ''}</span>
                            <button onclick="sendReminderTo('${a.id}')" class="w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 transition-colors" title="Enviar recordatorio"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">chat</span></button>
+                           <button onclick="abrirModalCondonar('${a.id}')" class="w-8 h-8 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar deuda"><span class="material-symbols-outlined text-[16px]">money_off</span></button>
                            <button onclick="abrirModalCobro('${a.id}')" class="bg-[#FF9800] text-white px-3 py-1 rounded-full font-label-sm text-label-sm active:opacity-80 transition-opacity">Registrar pago</button>`
                     }
                 </div>
@@ -2112,6 +2159,79 @@ function updateCobroTotal() {
 function cerrarModalCobro() {
     pendingCobroId = null;
     document.getElementById('modal-cobro').classList.add('hidden');
+}
+
+// ===========================
+// ELIMINAR / CONDONAR DEUDA
+// ===========================
+function abrirModalCondonar(alumnoId) {
+    const alumno = alumnosCache.find(a => a.id === alumnoId);
+    if (!alumno) return;
+    pendingCondonarId = alumnoId;
+    condonarMesesSeleccionados = [];
+
+    const pendientes = getPendingMonths(alumno);
+    document.getElementById('condonar-alumno-nombre').textContent = `${alumno.acudiente || 'Sin acudiente'} — Jugador: ${alumno.nombre}`;
+
+    document.getElementById('condonar-meses-list').innerHTML = pendientes.length
+        ? pendientes.map(k => `
+            <label class="cursor-pointer flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-sm h-touch-target-min">
+                <input type="checkbox" onchange="toggleCondonarMes('${k}')" class="w-5 h-5 accent-error flex-shrink-0"/>
+                <span class="font-body-md text-body-md text-on-surface flex-1">${getMonthLabel(k)}</span>
+                <span class="font-body-md text-body-md text-on-surface-variant">${formatMoney(MENSUALIDAD)}</span>
+            </label>`).join('')
+        : `<p class="font-body-md text-body-md text-on-surface-variant text-center py-4">Este alumno no tiene deudas pendientes</p>`;
+
+    const btn = document.getElementById('btn-confirmar-condonar');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">money_off</span> Eliminar deudas`;
+    document.getElementById('modal-condonar').classList.remove('hidden');
+}
+
+function toggleCondonarMes(mesKey) {
+    condonarMesesSeleccionados = condonarMesesSeleccionados.includes(mesKey)
+        ? condonarMesesSeleccionados.filter(k => k !== mesKey)
+        : [...condonarMesesSeleccionados, mesKey];
+
+    const btn = document.getElementById('btn-confirmar-condonar');
+    const n = condonarMesesSeleccionados.length;
+    btn.disabled = n === 0;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">money_off</span> ${n > 0 ? `Eliminar ${n} mes${n > 1 ? 'es' : ''}` : 'Eliminar deudas'}`;
+}
+
+async function confirmarCondonacion() {
+    if (!pendingCondonarId || condonarMesesSeleccionados.length === 0) return;
+    const alumno = alumnosCache.find(a => a.id === pendingCondonarId);
+    if (!alumno) return;
+
+    const btn = document.getElementById('btn-confirmar-condonar');
+    btn.disabled = true;
+    btn.textContent = 'Eliminando...';
+
+    try {
+        await condonarMesesDB(pendingCondonarId, condonarMesesSeleccionados);
+
+        try {
+            const mesesNombres = condonarMesesSeleccionados.map(getMonthLabel).join(', ');
+            await addActivity('money_off', `Deuda eliminada — ${alumno.nombre}`, `${condonarMesesSeleccionados.length} mes(es): ${mesesNombres}`);
+        } catch (e) {
+            console.warn('Actividad no registrada (no crítico):', e.message);
+        }
+
+        const nMeses = condonarMesesSeleccionados.length;
+        document.getElementById('modal-condonar').classList.add('hidden');
+        showToast(`${nMeses} mes${nMeses > 1 ? 'es' : ''} eliminado${nMeses > 1 ? 's' : ''} de la deuda de ${alumno.nombre}`);
+        pendingCondonarId = null;
+        condonarMesesSeleccionados = [];
+
+        ledgerMap = await cargarLedger();
+        await Promise.all([renderCobros(), renderAlumnos(), renderInicio()]);
+    } catch (err) {
+        console.error('Error al condonar:', err);
+        showToast('Error al eliminar las deudas', 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">money_off</span> Eliminar ${condonarMesesSeleccionados.length} mes(es)`;
+    }
 }
 
 async function confirmarCobro() {

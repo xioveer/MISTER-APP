@@ -1,0 +1,25 @@
+{
+  "name": "Mister App - Cancha Directa Barranquilla",
+  "short_name": "Mister App",
+  "description": "Gestion de la escuela de futbol Cancha Directa. Alumnos, cobros, calendario y uniformes.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1c1c",
+  "theme_color": "#2e7d32",
+  "categories": ["sports", "business", "finance"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

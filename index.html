@@ -809,7 +809,7 @@
                     <span class="material-symbols-outlined">forum</span>
                     <span id="btn-enviar-recibo-label">Enviar Recibo por WhatsApp</span>
                 </button>
-                <button onclick="descargarElementoComoImagen(document.getElementById('recibo-card'), 'recibo-cancha-directa.png')" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant hover:bg-surface-container active:scale-95 transition-all text-on-surface rounded-xl flex items-center justify-center gap-sm font-label-sm text-label-sm">
+                <button onclick="descargarComoImagen(document.getElementById('recibo-card'), 'recibo-cancha-directa.png')" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant hover:bg-surface-container active:scale-95 transition-all text-on-surface rounded-xl flex items-center justify-center gap-sm font-label-sm text-label-sm">
                     <span class="material-symbols-outlined">download</span>
                     Descargar imagen
                 </button>
@@ -909,7 +909,7 @@
                     <input required id="inp-cancha" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Cancha La Castellana"/>
                 </div>
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categoría (año de nacimiento)</label>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Categorías (año de nacimiento) — puedes marcar varias</label>
                     <div id="inp-cat-partido-group" class="flex flex-wrap gap-2"></div>
                 </div>
                 <div>
@@ -1782,6 +1782,22 @@ function categoryRadioHtml(name, cat, checked) {
     return `<label class="cursor-pointer"><input type="radio" name="${name}" value="${cat}" class="sr-only peer" ${checked ? 'checked' : ''}/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">${cat}</span></label>`;
 }
 
+// Chip toggeable (checkbox) — para selección MÚLTIPLE de categorías, ej. un
+// partido que junta varios años de nacimiento en una sola convocatoria.
+function categoryCheckboxHtml(name, cat, checked) {
+    return `<label class="cursor-pointer"><input type="checkbox" name="${name}" value="${cat}" class="sr-only peer" ${checked ? 'checked' : ''}/><span class="h-8 px-4 rounded-full bg-surface-container border border-outline-variant font-label-sm text-label-sm flex items-center peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-transparent transition-all">${cat}</span></label>`;
+}
+
+// Un partido puede tener varias categorías (p.categorias, array). Los
+// partidos creados antes de ese cambio solo tienen p.categoria (string).
+function partidoCategoriasLabel(p) {
+    return (p.categorias && p.categorias.length) ? p.categorias.join(', ') : (p.categoria || '—');
+}
+
+function partidoTieneCategoria(p, cat) {
+    return (p.categorias && p.categorias.length) ? p.categorias.includes(cat) : p.categoria === cat;
+}
+
 function renderCategoryChips() {
     const alumnosFilter = document.getElementById('alumnos-cat-filters');
     if (alumnosFilter) {
@@ -1796,7 +1812,7 @@ function renderCategoryChips() {
     const nuevoAlumnoGroup = document.getElementById('inp-categoria-group');
     if (nuevoAlumnoGroup) nuevoAlumnoGroup.innerHTML = CATEGORIAS.map(cat => categoryRadioHtml('categoria', cat, cat === '2015')).join('');
     const nuevoPartidoGroup = document.getElementById('inp-cat-partido-group');
-    if (nuevoPartidoGroup) nuevoPartidoGroup.innerHTML = CATEGORIAS.map(cat => categoryRadioHtml('cat-partido', cat, cat === '2015')).join('');
+    if (nuevoPartidoGroup) nuevoPartidoGroup.innerHTML = CATEGORIAS.map(cat => categoryCheckboxHtml('cat-partido', cat, cat === '2015')).join('');
 }
 
 // ===========================
@@ -1900,7 +1916,7 @@ async function renderInicio() {
         if (proximo) {
             const pd = new Date(proximo.fecha + 'T12:00:00');
             statPartido.textContent = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} ${MESES[pd.getMonth()].substring(0, 3)}`;
-            statPartido.nextElementSibling.lastChild.textContent = ` ${proximo.categoria} vs ${proximo.rival}`;
+            statPartido.nextElementSibling.lastChild.textContent = ` ${partidoCategoriasLabel(proximo)} vs ${proximo.rival}`;
         } else {
             statPartido.textContent = 'Sin partidos';
         }
@@ -2459,23 +2475,36 @@ async function compartirElementoComoImagen(elemento, telefonoPadre, mensajeTexto
 
 // Descarga directa (sin pasar por navigator.share) — el respaldo confiable
 // cuando "Compartir" falla o el Mister prefiere guardar en la galería.
-async function descargarElementoComoImagen(elemento, nombreArchivo) {
+// Descarga directa (sin pasar por navigator.share) — a prueba de fallos:
+// espera a que carguen las fuentes de los íconos antes de capturar (si no,
+// html2canvas puede generar el PNG con íconos rotos), y el <a download>
+// se agrega y quita del DOM para que la descarga dispare igual en PC y
+// en celular.
+async function descargarComoImagen(elemento, nombreArchivo) {
     try {
+        if (document.fonts && document.fonts.ready) {
+            try { await document.fonts.ready; } catch (e) { /* sigue igual sin bloquear */ }
+        }
         const canvas = await html2canvas(elemento, {
             scale: 2,
             backgroundColor: '#ffffff',
             useCORS: true,
+            allowTaint: true,
             logging: false
         });
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = nombreArchivo;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        await new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nombreArchivo || 'imagen.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                resolve();
+            }, 'image/png');
+        });
         showToast('Imagen descargada ✓', 'download');
         return true;
     } catch (error) {
@@ -2549,7 +2578,7 @@ async function descargarBolanteImagen(alumnoId) {
     const alumno = alumnosCache.find(a => a.id === alumnoId);
     if (!alumno) return;
     rellenarBolante(alumno);
-    await descargarElementoComoImagen(document.getElementById('bolante-card'), 'recordatorio-cancha-directa.png');
+    await descargarComoImagen(document.getElementById('bolante-card'), 'recordatorio-cancha-directa.png');
 }
 
 function sendWhatsApp(tel, nombre) {
@@ -2650,7 +2679,7 @@ async function renderCalendar() {
     cal.innerHTML = html;
 
     const list = document.getElementById('partidos-list');
-    const filteredPartidos = calendarCategory === 'todas' ? partidosCache : partidosCache.filter(p => p.categoria === calendarCategory);
+    const filteredPartidos = calendarCategory === 'todas' ? partidosCache : partidosCache.filter(p => partidoTieneCategoria(p, calendarCategory));
     const sortedPartidos = [...filteredPartidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
     if (sortedPartidos.length === 0) {
         list.innerHTML = emptyState('No hay partidos programados');
@@ -2667,7 +2696,7 @@ async function renderCalendar() {
                 <span class="font-headline-md text-headline-md font-bold ${p.completado ? 'text-secondary' : 'text-on-primary'} leading-none mt-1">${pd.getDate()}</span>
             </div>
             <div class="flex flex-col flex-1 gap-1">
-                <h4 class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-surface'} font-bold">${p.categoria} vs ${p.rival}</h4>
+                <h4 class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-surface'} font-bold">${partidoCategoriasLabel(p)} vs ${p.rival}</h4>
                 ${p.completado
                     ? `<div class="flex items-center gap-1 mt-1 text-primary"><span class="material-symbols-outlined text-[16px]">check_circle</span><span class="font-body-md text-body-md text-[13px]">Completado</span></div>`
                     : `<p class="font-body-md text-body-md text-on-surface-variant text-[13px]">${p.cancha}, ${p.hora}</p>
@@ -2695,14 +2724,19 @@ async function addPartido(e) {
     const fecha = document.getElementById('inp-fecha-partido').value;
     const hora = document.getElementById('inp-hora-partido').value;
     const cancha = document.getElementById('inp-cancha').value;
-    const categoria = document.querySelector('input[name="cat-partido"]:checked').value;
+    const categorias = [...document.querySelectorAll('input[name="cat-partido"]:checked')].map(el => el.value);
     const arbitraje = parseInt(document.getElementById('inp-arbitraje').value) || 0;
 
+    if (categorias.length === 0) {
+        showToast('Selecciona al menos una categoría', 'error');
+        return;
+    }
+
     try {
-        await crearPartidoDB({ rival, fecha, hora, cancha, categoria, arbitraje, completado: false });
+        await crearPartidoDB({ rival, fecha, hora, cancha, categorias, categoria: categorias[0], arbitraje, completado: false });
         document.getElementById('modal-nuevo-partido').classList.add('hidden');
         showToast(`Partido vs ${rival} creado ⚽`);
-        await addActivity('sports_soccer', `Partido creado — ${categoria}`, `vs ${rival}`);
+        await addActivity('sports_soccer', `Partido creado — ${categorias.join(', ')}`, `vs ${rival}`);
         await Promise.all([renderCalendar(), renderInicio()]);
     } catch (err) {
         console.error(err);
@@ -2853,7 +2887,7 @@ async function openConvocadosModal(partidoId) {
     tempConvocadosIds = (p.convocatorias || []).map(c => c.alumno_id);
     if (!alumnosCache.length) alumnosCache = await cargarAlumnos();
     const pd = new Date(p.fecha + 'T12:00:00');
-    document.getElementById('convocados-partido-info').textContent = `${p.categoria} vs ${p.rival} · ${pd.getDate()} ${MESES[pd.getMonth()].substring(0,3)}`;
+    document.getElementById('convocados-partido-info').textContent = `${partidoCategoriasLabel(p)} vs ${p.rival} · ${pd.getDate()} ${MESES[pd.getMonth()].substring(0,3)}`;
     renderConvocadosChecklist();
     document.getElementById('modal-convocados').classList.remove('hidden');
 }
@@ -2861,7 +2895,7 @@ async function openConvocadosModal(partidoId) {
 function renderConvocadosChecklist() {
     const p = partidosCache.find(pt => pt.id === currentConvocadosPartidoId);
     if (!p) return;
-    const candidatos = alumnosCache.filter(a => a.categoria === p.categoria);
+    const candidatos = alumnosCache.filter(a => partidoTieneCategoria(p, a.categoria));
     const list = document.getElementById('convocados-checklist');
     list.innerHTML = candidatos.length
         ? candidatos.map(a => {
@@ -2901,7 +2935,7 @@ async function guardarConvocados() {
     if (!p) return;
     try {
         await guardarConvocadosDB(p.id, tempConvocadosIds);
-        await addActivity('groups', `Convocatoria actualizada — ${p.categoria}`, `vs ${p.rival} · ${tempConvocadosIds.length} convocados`);
+        await addActivity('groups', `Convocatoria actualizada — ${partidoCategoriasLabel(p)}`, `vs ${p.rival} · ${tempConvocadosIds.length} convocados`);
         showToast(`Convocatoria de ${p.rival} guardada`);
         document.getElementById('modal-convocados').classList.add('hidden');
         await Promise.all([renderCalendar(), renderAlumnos()]);

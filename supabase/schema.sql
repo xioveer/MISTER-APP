@@ -102,7 +102,8 @@ create table if not exists partidos (
     fecha date not null,
     hora time not null,
     cancha text not null,
-    categoria text not null,
+    categoria text,                      -- compat: primera de categorias[], puede ser null
+    categorias jsonb not null default '[]', -- un partido puede juntar varias categorías/años
     arbitraje numeric not null default 0,
     completado boolean not null default false,
     created_at timestamptz not null default now()
@@ -268,9 +269,25 @@ alter table partidos
     add column if not exists hora time,
     add column if not exists cancha text,
     add column if not exists categoria text,
+    add column if not exists categorias jsonb not null default '[]',
     add column if not exists arbitraje numeric default 0,
     add column if not exists completado boolean default false,
     add column if not exists created_at timestamptz default now();
+
+-- Fix: en instalaciones creadas antes de categorias[], categoria era
+-- NOT NULL. Ahora la fuente de verdad es categorias[], así que se
+-- libera esa restricción para no romper los inserts que solo mandan
+-- categorias (ver supabase/fix-partidos-categorias.sql para más detalle).
+alter table partidos
+    alter column categoria drop not null;
+
+-- Backfill: copia la categoría única de partidos viejos dentro del
+-- array, para que no queden "huérfanos" sin categorias[].
+update partidos
+set categorias = to_jsonb(array[categoria])
+where (categorias is null or categorias = '[]'::jsonb)
+  and categoria is not null
+  and categoria <> '';
 
 alter table convocatorias
     add column if not exists partido_id uuid references partidos(id) on delete cascade,

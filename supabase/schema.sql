@@ -208,6 +208,30 @@ alter table pagos_mensuales
     add column if not exists monto numeric default 80000,
     add column if not exists created_at timestamptz default now();
 
+-- Fix: en instalaciones creadas antes de que esta tabla tuviera el
+-- "unique (alumno_id, mes_key)" de arriba, el upsert con onConflict
+-- de la app falla con 42P10 ("no unique or exclusion constraint
+-- matching"). Se limpia cualquier duplicado (deja el más reciente)
+-- y luego se agrega la restricción si todavía no existe.
+delete from pagos_mensuales a
+using pagos_mensuales b
+where a.alumno_id = b.alumno_id
+  and a.mes_key = b.mes_key
+  and a.ctid < b.ctid;
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conrelid = 'pagos_mensuales'::regclass
+          and contype = 'u'
+    ) then
+        alter table pagos_mensuales
+            add constraint pagos_mensuales_alumno_id_mes_key_key
+            unique (alumno_id, mes_key);
+    end if;
+end $$;
+
 alter table conceptos
     add column if not exists nombre text,
     add column if not exists precio numeric default 0,

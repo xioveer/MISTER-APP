@@ -2378,7 +2378,10 @@ async function confirmarCobro() {
         document.getElementById('modal-cobro').classList.add('hidden');
         showToast(`Pago de ${alumno.nombre} registrado ✓`);
         pendingCobroId = null;
+        // Recargar datos frescos UNA vez antes de pintar, para que la deuda
+        // recalculada se vea igual en Inicio, Cobros y Alumnos (evita la carrera).
         transaccionesCache = await cargarTransacciones();
+        ledgerMap = await cargarLedger();
         await Promise.all([renderCobros(), renderAlumnos(), renderInicio()]);
 
         // Siempre: mostrar el recibo visual

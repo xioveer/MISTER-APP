@@ -1140,6 +1140,19 @@
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
+            <div class="mb-md">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="font-label-sm text-label-sm text-on-surface-variant" id="recordatorios-progreso-texto">Recordados 0 de 0 en esta ronda</span>
+                    <span class="font-label-sm text-label-sm text-error font-bold" id="recordatorios-deuda-total">$0</span>
+                </div>
+                <div class="w-full bg-surface-variant rounded-full h-2">
+                    <div id="recordatorios-progreso-bar" class="bg-primary h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+                </div>
+            </div>
+            <button id="btn-recordar-faltantes" onclick="recordarSiguientePendiente()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mb-md disabled:opacity-50">
+                <span class="material-symbols-outlined">forum</span>
+                <span id="btn-recordar-faltantes-label">Recordar a los que faltan</span>
+            </button>
             <div id="recordatorios-list" class="flex flex-col gap-sm">
                 <!-- Populated by JS -->
             </div>
@@ -1693,6 +1706,14 @@ function updateNotifBadge() {
     });
 }
 
+// El subtitle de "recordatorio enviado" lleva un marcador oculto
+// "·id:<alumno_id>" para poder saber quién ya fue recordado en la ronda
+// actual (ver yaFueRecordadoEnRonda). Se oculta al mostrarlo en cualquier
+// lista de actividad/notificaciones — el texto visible queda limpio.
+function subtitleVisible(subtitle) {
+    return (subtitle || '').replace(/·id:[0-9a-fA-F-]+$/, '');
+}
+
 function activityItemHtml(a) {
     const time = a.created_at ? timeAgo(a.created_at) : '';
     return `
@@ -1703,7 +1724,7 @@ function activityItemHtml(a) {
             </div>
             <div class="flex flex-col gap-0.5 flex-1">
                 <p class="font-body-md text-body-md text-on-surface font-semibold">${a.title}</p>
-                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.subtitle || ''}</p>
+                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${subtitleVisible(a.subtitle)}</p>
                 <span class="font-label-sm text-label-sm text-outline mt-1">${time}</span>
             </div>
         </li>`;
@@ -2589,6 +2610,27 @@ function sendWhatsApp(tel, nombre) {
     window.open(`https://wa.me/${normalizePhone(tel)}?text=${msg}`, '_blank');
 }
 
+// ===========================
+// RONDA DE RECORDATORIOS (control de quién ya fue recordado)
+// Una "ronda" es la ventana de 5 días que empieza en el último día de
+// DIAS_RECORDATORIO que ya pasó (o es hoy). No requiere tabla nueva: se
+// lee de activity_log, que ya sincroniza entre dispositivos por Supabase.
+// ===========================
+function inicioRondaRecordatorio() {
+    const hoy = new Date();
+    const dia = hoy.getDate();
+    const dias = DIAS_RECORDATORIO.filter(d => d <= dia);
+    const diaInicio = dias.length ? Math.max(...dias) : 1;
+    return new Date(hoy.getFullYear(), hoy.getMonth(), diaInicio, 0, 0, 0);
+}
+
+function yaFueRecordadoEnRonda(alumnoId) {
+    const inicio = inicioRondaRecordatorio();
+    return activityCache.some(a =>
+        a.subtitle && a.subtitle.includes(`id:${alumnoId}`) && new Date(a.created_at) >= inicio
+    );
+}
+
 async function sendReminders() {
     const pendientes = alumnosCache.filter(a => !estaAlDia(a));
     if (pendientes.length === 0) {
@@ -2597,32 +2639,9 @@ async function sendReminders() {
     }
     const list = document.getElementById('recordatorios-list');
     if (list) {
-        list.innerHTML = pendientes.map(a => {
-            const mensaje = buildReminderMessage({
-                padre: a.acudiente,
-                alumno: a.nombre,
-                deuda: formatMoney(getDeudaTotal(a)),
-                meses: getPendingMonths(a).length
-            });
-            return `
-            <div class="bg-surface-container-lowest rounded-xl p-sm flex items-center justify-between border border-surface-variant">
-                <div>
-                    <h4 class="font-body-lg text-body-lg font-semibold text-on-surface">${a.nombre}</h4>
-                    <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.acudiente} · Cat. ${a.categoria} · Debe ${getPendingMonths(a).length} mes(es)</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="https://wa.me/${normalizePhone(a.telefono)}?text=${encodeURIComponent(mensaje)}" target="_blank" onclick="markRecordatorioEnviado('${a.id}')" class="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center active:scale-95 transition-transform" title="Enviar texto por WhatsApp">
-                        <span class="material-symbols-outlined text-[18px]">forum</span>
-                    </a>
-                    <button onclick="enviarBolanteImagen('${a.id}')" class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95 transition-transform" title="Enviar bolante como imagen">
-                        <span class="material-symbols-outlined text-[18px]">receipt_long</span>
-                    </button>
-                    <button onclick="descargarBolanteImagen('${a.id}')" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center active:scale-95 transition-transform" title="Descargar bolante como imagen">
-                        <span class="material-symbols-outlined text-[18px]">download</span>
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
+        // Refresca la actividad por si otro dispositivo ya recordó a alguien en esta ronda.
+        activityCache = await cargarActivity();
+        renderRecordatoriosList();
         document.getElementById('modal-recordatorios').classList.remove('hidden');
         return;
     }
@@ -2632,10 +2651,114 @@ async function sendReminders() {
     window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
+function renderRecordatoriosList() {
+    const list = document.getElementById('recordatorios-list');
+    if (!list) return;
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a));
+
+    const recordadosCount = pendientes.filter(a => yaFueRecordadoEnRonda(a.id)).length;
+    const totalCount = pendientes.length;
+    const faltan = totalCount - recordadosCount;
+    const deudaTotal = pendientes.reduce((s, a) => s + getDeudaTotal(a), 0);
+
+    const progresoTexto = document.getElementById('recordatorios-progreso-texto');
+    if (progresoTexto) progresoTexto.textContent = `Recordados ${recordadosCount} de ${totalCount} en esta ronda`;
+    const progresoBar = document.getElementById('recordatorios-progreso-bar');
+    if (progresoBar) progresoBar.style.width = `${totalCount ? Math.round((recordadosCount / totalCount) * 100) : 0}%`;
+    const deudaEl = document.getElementById('recordatorios-deuda-total');
+    if (deudaEl) deudaEl.textContent = formatMoney(deudaTotal);
+
+    const btnFaltantes = document.getElementById('btn-recordar-faltantes');
+    const btnFaltantesLabel = document.getElementById('btn-recordar-faltantes-label');
+    if (btnFaltantes) btnFaltantes.disabled = faltan === 0;
+    if (btnFaltantesLabel) btnFaltantesLabel.textContent = faltan === 0 ? 'Ya recordaste a todos ✓' : `Recordar al siguiente que falta (${faltan})`;
+
+    list.innerHTML = pendientes.map(a => {
+        const recordado = yaFueRecordadoEnRonda(a.id);
+        if (recordado) {
+            return `
+            <div data-recordatorio-row="${a.id}" class="bg-surface-container-lowest rounded-xl p-sm flex items-center justify-between border border-surface-variant opacity-60 transition-opacity">
+                <div>
+                    <h4 class="font-body-lg text-body-lg font-semibold text-on-surface">${a.nombre}</h4>
+                    <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.acudiente} · Cat. ${a.categoria} · Debe ${getPendingMonths(a).length} mes(es)</p>
+                    <span class="inline-flex items-center gap-1 mt-1 font-label-sm text-label-sm text-primary font-semibold"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>Recordado</span>
+                </div>
+                <button onclick="reenviarRecordatorio('${a.id}')" class="h-8 px-sm rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 active:scale-95 transition-transform flex-shrink-0" title="Recordar de nuevo">
+                    <span class="material-symbols-outlined text-[16px]">replay</span>
+                </button>
+            </div>`;
+        }
+        const mensaje = buildReminderMessage({
+            padre: a.acudiente,
+            alumno: a.nombre,
+            deuda: formatMoney(getDeudaTotal(a)),
+            meses: getPendingMonths(a).length
+        });
+        return `
+        <div data-recordatorio-row="${a.id}" class="bg-surface-container-lowest rounded-xl p-sm flex items-center justify-between border border-surface-variant transition-all">
+            <div>
+                <h4 class="font-body-lg text-body-lg font-semibold text-on-surface">${a.nombre}</h4>
+                <p class="font-body-md text-body-md text-on-surface-variant text-sm">${a.acudiente} · Cat. ${a.categoria} · Debe ${getPendingMonths(a).length} mes(es)</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="https://wa.me/${normalizePhone(a.telefono)}?text=${encodeURIComponent(mensaje)}" target="_blank" onclick="markRecordatorioEnviado('${a.id}')" class="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center active:scale-95 transition-transform" title="Enviar texto por WhatsApp">
+                    <span class="material-symbols-outlined text-[18px]">forum</span>
+                </a>
+                <button onclick="enviarBolanteImagen('${a.id}')" class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95 transition-transform" title="Enviar bolante como imagen">
+                    <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                </button>
+                <button onclick="descargarBolanteImagen('${a.id}')" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center active:scale-95 transition-transform" title="Descargar bolante como imagen">
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Resalta y hace scroll hasta el siguiente moroso sin recordar en esta
+// ronda. Es la variante robusta para WebView de celular: nunca abre más
+// de una pestaña de WhatsApp por toque real del Mister (los navegadores
+// móviles bloquean aperturas automáticas encadenadas), así que en vez de
+// recorrer la lista sola, guía al Mister al siguiente con el mínimo de
+// toques — un toque aquí para ubicar, un toque en su botón de WhatsApp
+// para enviar, y este botón vuelve a avanzar solo tras cada envío.
+function recordarSiguientePendiente() {
+    const pendientes = alumnosCache.filter(a => !estaAlDia(a));
+    const siguiente = pendientes.find(a => !yaFueRecordadoEnRonda(a.id));
+    if (!siguiente) {
+        showToast('¡Ya recordaste a todos en esta ronda! 🎉', 'celebration');
+        return;
+    }
+    const row = document.querySelector(`[data-recordatorio-row="${siguiente.id}"]`);
+    if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+        setTimeout(() => row.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'), 1800);
+    }
+}
+
 async function markRecordatorioEnviado(alumnoId) {
     const a = alumnosCache.find(al => al.id === alumnoId);
     if (!a) return;
-    await addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})`);
+    // El sufijo "·id:<alumno_id>" queda oculto en pantalla (ver subtitleVisible)
+    // pero permite saber con certeza quién ya fue recordado en esta ronda.
+    await addActivity('forward_to_inbox', `Recordatorio individual enviado — ${a.acudiente || a.nombre}`, `(${a.categoria})·id:${alumnoId}`);
+    if (!document.getElementById('modal-recordatorios').classList.contains('hidden')) {
+        renderRecordatoriosList();
+    }
+}
+
+async function reenviarRecordatorio(alumnoId) {
+    const a = alumnosCache.find(al => al.id === alumnoId);
+    if (!a) return;
+    const mensaje = buildReminderMessage({
+        padre: a.acudiente,
+        alumno: a.nombre,
+        deuda: formatMoney(getDeudaTotal(a)),
+        meses: getPendingMonths(a).length
+    });
+    window.open(`https://wa.me/${normalizePhone(a.telefono)}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    await markRecordatorioEnviado(alumnoId);
 }
 
 // ===========================

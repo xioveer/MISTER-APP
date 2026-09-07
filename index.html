@@ -576,20 +576,6 @@
                 <div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
                     <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
                         <div class="flex items-center gap-md">
-                            <span class="material-symbols-outlined text-on-surface-variant">attach_money</span>
-                            <span class="font-body-md text-body-md">Valor de mensualidad</span>
-                        </div>
-                        <span class="font-body-md text-body-md font-semibold">$80.000</span>
-                    </div>
-                    <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
-                        <div class="flex items-center gap-md">
-                            <span class="material-symbols-outlined text-on-surface-variant">event</span>
-                            <span class="font-body-md text-body-md">Fecha de corte</span>
-                        </div>
-                        <span class="font-body-md text-body-md font-semibold">Día 29</span>
-                    </div>
-                    <div class="w-full min-h-[48px] flex items-center justify-between px-md py-sm border-b border-surface-variant">
-                        <div class="flex items-center gap-md">
                             <span class="material-symbols-outlined text-on-surface-variant">sell</span>
                             <span class="font-body-md text-body-md">Categorías</span>
                         </div>
@@ -603,6 +589,30 @@
                         <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
                     </button>
                 </div>
+            </section>
+
+            <!-- Configuración de Cobros (día de corte y mensualidad, editables) -->
+            <section class="flex flex-col gap-sm">
+                <div class="flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-primary text-2xl">payments</span>
+                    <h2 class="font-headline-md text-headline-md text-on-surface">Configuración de cobros</h2>
+                </div>
+                <form onsubmit="guardarConfigCobros(event)" class="bg-surface-container-lowest rounded-xl border border-surface-variant p-md flex flex-col gap-md">
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Día de corte</label>
+                        <input id="inp-config-fecha-corte" required type="number" min="1" max="31" step="1" class="w-full h-touch-target-min bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md"/>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Después de este día, el mes cuenta como mora. Puedes cambiarlo cuando quieras.</p>
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Valor de la mensualidad</label>
+                        <input id="inp-config-mensualidad" required type="number" min="1" step="1" class="w-full h-touch-target-min bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md"/>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Se aplica a los cobros nuevos.</p>
+                    </div>
+                    <button type="submit" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+                        <span class="material-symbols-outlined">save</span>
+                        Guardar configuración
+                    </button>
+                </form>
             </section>
 
             <!-- Inventario de Uniformes -->
@@ -1278,7 +1288,7 @@ supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // CONSTANTS
 // ===========================
 let MENSUALIDAD = 80000;
-let FECHA_CORTE = 29; // TEMP: prueba de ciclo de mora — ver CLAUDE.md (regla estricta: 30)
+let FECHA_CORTE = 30; // editable desde Ajustes → Configuración de cobros
 const DIAS_RECORDATORIO = [5, 10, 15, 20, 25, 30]; // cada 5 días
 // Categorías individuales por año de nacimiento (ver CLAUDE.md)
 const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'];
@@ -1340,7 +1350,7 @@ async function cargarAjustes() {
     if (error) { dbError(error, 'Error al cargar ajustes'); return; }
     if (data) {
         MENSUALIDAD = Number(data.mensualidad) || 80000;
-        FECHA_CORTE = data.fecha_corte || 29;
+        FECHA_CORTE = data.fecha_corte || 30;
         reminderTemplate = data.reminder_template || DEFAULT_REMINDER_TEMPLATE;
         webhookUrl = data.webhook_url || '';
     }
@@ -2874,6 +2884,8 @@ async function addPartido(e) {
 // ===========================
 async function renderMas() {
     document.getElementById('config-num-categorias').textContent = `${CATEGORIAS.length} categorías`;
+    document.getElementById('inp-config-fecha-corte').value = FECHA_CORTE;
+    document.getElementById('inp-config-mensualidad').value = MENSUALIDAD;
     document.getElementById('inventario-cards').innerHTML = spinnerBlock();
     document.getElementById('conceptos-list').innerHTML = spinnerBlock();
     document.getElementById('respuestas-list').innerHTML = spinnerBlock();
@@ -3114,6 +3126,42 @@ function buildReminderMessage(vars) {
         .replace(/\{corte\}/g, vars.corte ?? FECHA_CORTE)
         .replace(/\{mensualidad\}/g, vars.mensualidad || formatMoney(MENSUALIDAD))
         .replace(/\{mes\}/g, vars.mes || `${MESES[currentMonth]} ${currentYear}`);
+}
+
+// ===========================
+// CONFIGURACIÓN DE COBROS (día de corte y mensualidad, editables)
+// ===========================
+async function guardarConfigCobros(e) {
+    e.preventDefault();
+    const nuevoCorte = parseInt(document.getElementById('inp-config-fecha-corte').value, 10);
+    const nuevaMensualidad = Number(document.getElementById('inp-config-mensualidad').value);
+
+    const corteValido = Number.isInteger(nuevoCorte) && nuevoCorte >= 1 && nuevoCorte <= 31;
+    const mensualidadValida = Number.isFinite(nuevaMensualidad) && nuevaMensualidad > 0;
+    if (!corteValido || !mensualidadValida) {
+        showToast('Revisa los valores', 'error');
+        return;
+    }
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+        const { error } = await supabase.from('ajustes').update({ fecha_corte: nuevoCorte, mensualidad: nuevaMensualidad }).eq('id', 1);
+        if (error) { dbError(error, 'Error al guardar la configuración'); return; }
+
+        FECHA_CORTE = nuevoCorte;
+        MENSUALIDAD = nuevaMensualidad;
+        showToast('Configuración guardada ✓');
+
+        // Recalcula la mora y los totales de inmediato, sin recargar la página.
+        ledgerMap = await cargarLedger();
+        await Promise.all([renderInicio(), renderCobros(), renderAlumnos()]);
+    } catch (err) {
+        console.error('Error al guardar configuración de cobros:', err);
+        showToast('Error al guardar la configuración', 'error');
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 function renderTemplateEditor() {

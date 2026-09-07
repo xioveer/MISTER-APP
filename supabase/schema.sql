@@ -159,7 +159,7 @@ create table if not exists activity_log (
 create table if not exists ajustes (
     id int primary key default 1,
     mensualidad numeric not null default 80000,
-    fecha_corte int not null default 29, -- TEMP: prueba de ciclo de mora (regla estricta original: 30)
+    fecha_corte int not null default 30, -- editable desde Ajustes → Configuración de cobros
     reminder_template text,
     webhook_url text,
     constraint ajustes_single_row check (id = 1)
@@ -315,7 +315,7 @@ alter table activity_log
 
 alter table ajustes
     add column if not exists mensualidad numeric default 80000,
-    add column if not exists fecha_corte int default 29,
+    add column if not exists fecha_corte int default 30,
     add column if not exists reminder_template text,
     add column if not exists webhook_url text;
 
@@ -405,7 +405,7 @@ on conflict (categoria, tipo) do nothing;
 
 insert into respuestas_rapidas (titulo, texto, orden) values
     ('Información general', '¡Hola! Gracias por tu interés en Cancha Directa. Somos una escuela de fútbol ubicada en Barranquilla con categorías desde los 7 hasta los 14 años. Los entrenamientos son de lunes a viernes.', 1),
-    ('Costos y mensualidad', 'La mensualidad es de $80.000 con fecha de corte el 29 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.', 2),
+    ('Costos y mensualidad', 'La mensualidad es de $80.000 con fecha de corte el 30 de cada mes. Incluye entrenamiento 5 días a la semana, hidratación y seguro deportivo.', 2),
     ('Horarios de entrenamiento', 'Los horarios por categoría son: 2016-2018 (Sub-7/9): 3:00-4:30 PM | 2014-2015 (Sub-10/11): 4:30-6:00 PM | 2011-2013 (Sub-12/14): 6:00-7:30 PM', 3),
     ('Requisitos de inscripción', 'Para inscribir a tu hijo necesitas: documento de identidad del niño, EPS vigente, foto reciente tamaño 3x4 y el formulario de inscripción diligenciado.', 4)
 on conflict do nothing;

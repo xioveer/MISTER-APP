@@ -373,7 +373,7 @@ end $$;
 -- ------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('perfil', 'perfil', true)
-on conflict (id) do nothing;
+on conflict (id) do update set public = true;
 
 drop policy if exists "perfil_escritura_autenticada" on storage.objects;
 drop policy if exists "perfil_actualizacion_autenticada" on storage.objects;

@@ -505,10 +505,7 @@
                         <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre del míster</label>
                         <input id="inp-mister-nombre" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Profesor Carlos"/>
                     </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nombre de la escuela</label>
-                        <input id="inp-mister-escuela" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Cancha Directa Barranquilla"/>
-                    </div>
+                    <p class="font-label-sm text-label-sm text-on-surface-variant -mt-1">El nombre y el logo de la escuela se editan abajo, en la tarjeta con el ícono de lápiz.</p>
                     <div>
                         <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Teléfono WhatsApp del míster</label>
                         <input id="inp-mister-telefono" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="tel" placeholder="Ej: 311 234 5678"/>
@@ -835,7 +832,7 @@
     <div style="position:fixed; left:-9999px; top:0; width:380px;" aria-hidden="true">
         <div id="bolante-card" class="bg-surface-container-lowest rounded-xl shadow-lg w-full overflow-hidden">
             <div class="bg-surface p-md border-b border-surface-variant flex flex-col items-center text-center zigzag-bottom">
-                <div class="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center mb-sm shadow-sm border-2 border-white overflow-hidden">
+                <div id="bolante-logo" class="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center mb-sm shadow-sm border-2 border-white overflow-hidden">
                     <svg viewBox="0 0 100 100" width="60" height="60" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="50" cy="50" r="48" fill="#16a34a" stroke="#15803d" stroke-width="2"/>
                       <g fill="white" opacity="0.9">
@@ -1368,7 +1365,7 @@ function aplicarPerfilEnUI() {
     document.documentElement.style.setProperty('--color-primary', perfilCache.color_primario || '#0d631b');
     document.documentElement.style.setProperty('--color-primary-container', perfilCache.color_primario_container || '#2e7d32');
 
-    const nombre = perfilMister.nombreEscuela || perfilCache.nombre_escuela || 'Cancha Directa';
+    const nombre = perfilCache.nombre_escuela || 'Cancha Directa';
     const ciudad = perfilCache.ciudad || 'Barranquilla, Colombia';
     ['mas-escuela-nombre', 'recibo-escuela-nombre'].forEach(id => {
         const el = document.getElementById(id);
@@ -1378,7 +1375,7 @@ function aplicarPerfilEnUI() {
     if (ciudadEl) ciudadEl.textContent = ciudad;
 
     if (perfilCache.foto_url) {
-        document.querySelectorAll('#mas-escuela-avatar, #recibo-logo, #perfil-foto-preview').forEach(el => {
+        document.querySelectorAll('#mas-escuela-avatar, #recibo-logo, #bolante-logo, #perfil-foto-preview').forEach(el => {
             if (!el) return;
             el.innerHTML = `<img src="${perfilCache.foto_url}" alt="${escHtml(nombre)}" class="w-full h-full object-cover"/>`;
         });
@@ -1393,7 +1390,6 @@ function cargarPerfilMister() {
     }
     const campos = {
         'inp-mister-nombre': 'nombreMister',
-        'inp-mister-escuela': 'nombreEscuela',
         'inp-mister-telefono': 'telefono',
         'inp-mister-direccion': 'direccion',
         'inp-mister-horarios': 'horarios'
@@ -1409,7 +1405,6 @@ function guardarPerfilMister(e) {
     e.preventDefault();
     perfilMister = {
         nombreMister: document.getElementById('inp-mister-nombre').value.trim(),
-        nombreEscuela: document.getElementById('inp-mister-escuela').value.trim(),
         telefono: document.getElementById('inp-mister-telefono').value.trim(),
         direccion: document.getElementById('inp-mister-direccion').value.trim(),
         horarios: document.getElementById('inp-mister-horarios').value.trim()
@@ -1420,12 +1415,9 @@ function guardarPerfilMister(e) {
 }
 
 function aplicarPerfilMisterEnUI() {
-    if (perfilMister.nombreEscuela) {
-        ['mas-escuela-nombre', 'recibo-escuela-nombre'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = perfilMister.nombreEscuela;
-        });
-    }
+    // El nombre/logo de la escuela los pinta aplicarPerfilEnUI() desde
+    // perfilCache (tabla `perfil`) — esta función solo maneja los datos
+    // personales del Míster (saludo, respuestas rápidas con {horarios} etc.).
     const greetingEl = document.getElementById('greeting-text');
     if (greetingEl) greetingEl.textContent = getGreeting();
     if (document.getElementById('respuestas-list') && respuestasCache && respuestasCache.length) renderRespuestasRapidas();
@@ -1437,7 +1429,7 @@ function aplicarPlaceholdersPerfil(texto) {
         .replace(/\{direccion\}/gi, perfilMister.direccion || '')
         .replace(/\{telefono_mister\}/gi, perfilMister.telefono || '')
         .replace(/\{nombre_mister\}/gi, perfilMister.nombreMister || '')
-        .replace(/\{nombre_escuela\}/gi, perfilMister.nombreEscuela || '');
+        .replace(/\{nombre_escuela\}/gi, perfilCache?.nombre_escuela || 'Cancha Directa');
 }
 
 function escHtml(str) {
@@ -2467,7 +2459,7 @@ async function shareWhatsApp() {
     if (!tx) return;
     const alumno = alumnosCache.find(a => a.id === tx.alumno_id);
     const telefono = alumno?.telefono ? normalizePhone(alumno.telefono) : '';
-    const nombreEscuela = perfilMister.nombreEscuela || 'Cancha Directa';
+    const nombreEscuela = perfilCache?.nombre_escuela || 'Cancha Directa';
     const caption = `✅ Recibo de pago — ${nombreEscuela}`;
     await enviarReciboComoImagen(document.getElementById('recibo-card'), telefono, caption);
 }
@@ -2572,7 +2564,7 @@ async function enviarReciboComoImagen(elementoRecibo, telefonoPadre, mensajeText
 // BOLANTE DE RECORDATORIO (imagen) — mismo enfoque que el recibo
 // ===========================
 function rellenarBolante(alumno) {
-    const nombreEscuela = perfilMister.nombreEscuela || 'Cancha Directa';
+    const nombreEscuela = perfilCache?.nombre_escuela || 'Cancha Directa';
     document.getElementById('bolante-escuela-nombre').textContent = nombreEscuela;
     document.getElementById('bolante-acudiente').textContent = alumno.acudiente || '—';
     document.getElementById('bolante-alumno').textContent = alumno.nombre;

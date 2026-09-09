@@ -1676,9 +1676,25 @@ function getActiveMonthKeys() {
     return keys;
 }
 
-function getPendingMonths(alumno) {
-    const ledger = ledgerMap[alumno.id] || {};
-    return getActiveMonthKeys().filter(k => !ledger[k]?.pagado);
+// Mes en que se inscribió el alumno ('YYYY-MM'), a partir de created_at.
+// Antes de ese mes no puede deber nada — todavía no existía en la escuela.
+function mesInscripcionAlumno(alumno) {
+    if (!alumno || !alumno.created_at) return null;
+    const d = new Date(alumno.created_at);
+    return getMonthKey(d.getFullYear(), d.getMonth());
+}
+
+// ledgerAlumno es opcional: por defecto usa el ledgerMap global ya cargado
+// (alumnosCache/renderCobros/etc.), pero acepta un snapshot propio para
+// quien necesite datos recién traídos de Supabase (ej. exportarReporteExcel),
+// sin duplicar la lógica de mora ni la del mes de inscripción.
+function getPendingMonths(alumno, ledgerAlumno) {
+    const ledger = ledgerAlumno || ledgerMap[alumno.id] || {};
+    const inscripcion = mesInscripcionAlumno(alumno);
+    return getActiveMonthKeys().filter(k => {
+        if (inscripcion && k < inscripcion) return false; // antes de inscribirse no debe nada
+        return !ledger[k]?.pagado;
+    });
 }
 
 function getDeudaTotal(alumno) {
@@ -3510,7 +3526,7 @@ async function exportarReporteExcel() {
         ]);
 
         const hojaAlumnos = alumnos.map(a => {
-            const pendientes = getActiveMonthKeys().filter(k => !ledger[a.id]?.[k]?.pagado);
+            const pendientes = getPendingMonths(a, ledger[a.id]);
             return {
                 'Acudiente': a.acudiente,
                 'Teléfono': a.telefono,

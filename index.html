@@ -264,16 +264,16 @@
                 <!-- Card 1: Cobrado -->
                 <article class="w-[calc(50%-6px)] min-w-[170px] bg-surface-container-lowest rounded-xl p-md flex flex-col gap-xs snap-center shadow-sm border border-surface-variant shrink-0">
                     <h2 class="font-body-md text-body-md text-on-surface-variant">Cobrado este mes</h2>
-                    <div class="font-data-display text-data-display text-primary" id="stat-cobrado">$2.450.000</div>
+                    <div class="font-data-display text-data-display text-primary" id="stat-cobrado">—</div>
                     <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
                         <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
-                        de <span id="stat-total-esperado">$0</span> esperado
+                        de <span id="stat-total-esperado">—</span> esperado
                     </div>
                 </article>
                 <!-- Card 2: Pendientes -->
                 <article class="w-[calc(50%-6px)] min-w-[170px] bg-surface-container-lowest rounded-xl p-md flex flex-col gap-xs snap-center shadow-sm border border-surface-variant shrink-0">
                     <h2 class="font-body-md text-body-md text-on-surface-variant">Pendientes</h2>
-                    <div class="font-data-display text-data-display text-error" id="stat-pendientes">12</div>
+                    <div class="font-data-display text-data-display text-error" id="stat-pendientes">—</div>
                     <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
                         <span class="material-symbols-outlined text-[16px] text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
                         alumnos deben mensualidad
@@ -282,7 +282,7 @@
                 <!-- Card 3: Próximo partido -->
                 <article class="w-[calc(50%-6px)] min-w-[170px] bg-surface-container-lowest rounded-xl p-md flex flex-col gap-xs snap-center shadow-sm border border-surface-variant shrink-0">
                     <h2 class="font-body-md text-body-md text-on-surface-variant">Próximo partido</h2>
-                    <div class="font-headline-lg text-headline-lg text-on-surface" id="stat-partido">Sáb 31 Ago</div>
+                    <div class="font-headline-lg text-headline-lg text-on-surface" id="stat-partido">—</div>
                     <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
                         <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
                         2015 vs Club Tiburón
@@ -1677,7 +1677,8 @@ function getActiveMonthKeys() {
 }
 
 // Mes en que se inscribió el alumno ('YYYY-MM'), a partir de created_at.
-// Antes de ese mes no puede deber nada — todavía no existía en la escuela.
+// Ni ese mes ni los anteriores se cobran: el mes de ingreso es de cortesía
+// y empieza a deber a partir del mes siguiente.
 function mesInscripcionAlumno(alumno) {
     if (!alumno || !alumno.created_at) return null;
     const d = new Date(alumno.created_at);
@@ -1692,7 +1693,7 @@ function getPendingMonths(alumno, ledgerAlumno) {
     const ledger = ledgerAlumno || ledgerMap[alumno.id] || {};
     const inscripcion = mesInscripcionAlumno(alumno);
     return getActiveMonthKeys().filter(k => {
-        if (inscripcion && k < inscripcion) return false; // antes de inscribirse no debe nada
+        if (inscripcion && k <= inscripcion) return false; // el mes de inscripción y los anteriores NO se cobran
         return !ledger[k]?.pagado;
     });
 }

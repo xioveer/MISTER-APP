@@ -1536,7 +1536,8 @@ async function eliminarConceptoDB(id) {
 
 async function ajustarStockConceptoDB(concepto, deltaTotal) {
     if (concepto.stock_total === null || concepto.stock_total === undefined) return;
-    const nuevoTotal = Math.max(0, concepto.stock_total + deltaTotal);
+    // El stock total nunca puede bajar de lo ya vendido (evita mostrar "vendidos" > "total").
+    const nuevoTotal = Math.max(concepto.stock_vendido || 0, concepto.stock_total + deltaTotal);
     const { data, error } = await supabase.from('conceptos').update({ stock_total: nuevoTotal }).eq('id', concepto.id).select().single();
     if (error) { dbError(error, 'Error al ajustar el stock'); throw error; }
     return data;
@@ -1602,11 +1603,15 @@ async function cargarInventario() {
 
 async function ajustarInventarioDB(categoria, tipo, campo, delta) {
     const fila = inventarioCache.find(i => i.categoria === categoria && i.tipo === tipo);
-    const actual = fila ? fila[campo] : 0;
-    const nuevoValor = Math.max(0, actual + delta);
+    const totalActual = fila ? fila.total : 0;
+    const entregadosActual = fila ? fila.entregados : 0;
+    // "entregados" nunca puede superar "total" (no se puede entregar lo que no hay en stock)
+    // ni "total" bajar de "entregados" (no se puede tener menos stock que lo ya entregado).
+    const nuevoTotal = campo === 'total' ? Math.max(entregadosActual, totalActual + delta) : totalActual;
+    const nuevoEntregados = campo === 'entregados' ? Math.max(0, Math.min(totalActual, entregadosActual + delta)) : entregadosActual;
     const { data, error } = await supabase
         .from('inventario_uniformes')
-        .upsert({ categoria, tipo, [campo]: nuevoValor, ...(fila ? {} : { total: campo === 'total' ? nuevoValor : 0, entregados: campo === 'entregados' ? nuevoValor : 0 }) }, { onConflict: 'categoria,tipo' })
+        .upsert({ categoria, tipo, total: nuevoTotal, entregados: nuevoEntregados }, { onConflict: 'categoria,tipo' })
         .select()
         .single();
     if (error) { dbError(error, 'Error al actualizar inventario'); throw error; }

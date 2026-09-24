@@ -633,6 +633,22 @@
                 </form>
             </section>
 
+            <!-- Sedes (arquitectura para operar más de un local) -->
+            <section class="flex flex-col gap-sm">
+                <div class="flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-primary text-2xl">store</span>
+                    <h2 class="font-headline-md text-headline-md text-on-surface">Sedes</h2>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant">Los alumnos, partidos y pagos nuevos quedan asociados a la primera sede de la lista. Con una sola sede, todo funciona igual que antes.</p>
+                <div id="sedes-list" class="flex flex-col gap-sm">
+                    <!-- Populated by JS -->
+                </div>
+                <form onsubmit="agregarSede(event)" class="flex gap-xs mt-xs">
+                    <input id="inp-nueva-sede" required class="flex-1 h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Nombre de la sede, ej: Sede Norte"/>
+                    <button type="submit" class="h-touch-target-min px-md bg-surface-variant text-on-surface rounded-lg font-label-sm text-label-sm active:scale-95 transition-transform">Agregar sede</button>
+                </form>
+            </section>
+
             <!-- Catálogo de Cobros (Conceptos, artículos y torneos dinámicos) -->
             <section class="flex flex-col gap-sm">
                 <div class="flex items-center gap-xs">
@@ -677,6 +693,10 @@
             <section class="flex flex-col gap-sm">
                 <h3 class="font-headline-md text-headline-md text-on-surface">Historial de Pagos</h3>
                 <p class="font-body-md text-body-md text-on-surface-variant"><span id="config-num-transacciones">0</span> transacciones registradas en total.</p>
+                <button onclick="abrirModalIngresos()" class="w-full h-touch-target-min bg-primary-container text-on-primary-container rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined">grid_on</span>
+                    Ver ingresos detallados (tabla)
+                </button>
                 <button onclick="exportarReporteExcel()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
                     <span class="material-symbols-outlined">table_view</span>
                     Exportar reporte completo (Excel)
@@ -695,7 +715,7 @@
                     <!-- Populated by JS -->
                 </div>
                 <div class="flex justify-center mt-sm">
-                    <button class="text-primary font-body-md text-body-md font-semibold hover:underline h-[48px] px-md">Editar plantillas</button>
+                    <button onclick="abrirModalPlantillas()" class="text-primary font-body-md text-body-md font-semibold hover:underline h-[48px] px-md">Editar plantillas</button>
                 </div>
             </section>
         </main>
@@ -1137,6 +1157,89 @@
         </div>
     </div>
 
+    <!-- ===== MODAL: Editor del Kit de Respuestas Rápidas ===== -->
+    <div id="modal-plantillas" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-plantillas').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[88vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Editar plantillas de respuesta</h2>
+                <button onclick="document.getElementById('modal-plantillas').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-md">Estos son los mensajes del Kit de Respuestas Rápidas. Puedes usar <code class="bg-surface-container-high px-1 rounded">{corte}</code> y <code class="bg-surface-container-high px-1 rounded">{mensualidad}</code> en el texto.</p>
+            <div id="plantillas-list" class="flex flex-col gap-sm mb-md">
+                <!-- Populated by JS -->
+            </div>
+            <form id="form-plantilla" onsubmit="submitRespuestaRapida(event)" class="flex flex-col gap-xs border-t border-surface-variant pt-md">
+                <input type="hidden" id="editing-plantilla-id" value=""/>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Título</label>
+                    <input required id="inp-plantilla-titulo" class="w-full h-touch-target-min bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-md" type="text" placeholder="Ej: Horarios de entrenamiento"/>
+                </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Mensaje</label>
+                    <textarea required id="inp-plantilla-texto" rows="4" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-sm text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all"></textarea>
+                </div>
+                <div class="flex gap-xs mt-xs">
+                    <button type="submit" id="btn-plantilla-submit" class="flex-1 h-touch-target-min bg-primary text-on-primary rounded-lg font-label-sm text-label-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                        <span class="material-symbols-outlined">add</span>
+                        <span id="btn-plantilla-submit-label">Agregar plantilla</span>
+                    </button>
+                    <button type="button" id="btn-plantilla-cancelar" onclick="cancelarEdicionRespuesta()" class="hidden h-touch-target-min px-md bg-surface-variant text-on-surface rounded-lg font-label-sm text-label-sm active:scale-95 transition-transform">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Ingresos Detallados (vista tipo Excel) ===== -->
+    <div id="modal-ingresos" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
+        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="document.getElementById('modal-ingresos').classList.add('hidden')"></div>
+        <div class="modal-content relative bg-surface rounded-t-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto p-lg pb-xl z-10">
+            <div class="flex justify-between items-center mb-md">
+                <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Ingresos detallados</h2>
+                <button onclick="document.getElementById('modal-ingresos').classList.add('hidden')" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="flex gap-xs mb-sm">
+                <select id="ingresos-filtro-categoria" onchange="renderIngresosTable()" class="flex-1 h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-2 text-on-surface font-body-md text-[13px]">
+                    <option value="todas">Todas las categorías</option>
+                </select>
+                <select id="ingresos-filtro-metodo" onchange="renderIngresosTable()" class="flex-1 h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-2 text-on-surface font-body-md text-[13px]">
+                    <option value="todos">Todos los métodos</option>
+                </select>
+            </div>
+            <div class="overflow-x-auto border border-outline-variant rounded-lg">
+                <table class="min-w-[640px] w-full text-[12px] border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-high text-on-surface-variant text-left">
+                            <th class="p-2 whitespace-nowrap">Recibo</th>
+                            <th class="p-2 whitespace-nowrap">Fecha</th>
+                            <th class="p-2 whitespace-nowrap">Acudiente</th>
+                            <th class="p-2 whitespace-nowrap">Alumno</th>
+                            <th class="p-2 whitespace-nowrap">Categoría</th>
+                            <th class="p-2 whitespace-nowrap">Concepto</th>
+                            <th class="p-2 whitespace-nowrap">Método</th>
+                            <th class="p-2 whitespace-nowrap text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ingresos-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center mt-sm px-1">
+                <span class="font-body-md text-body-md text-on-surface-variant"><span id="ingresos-count">0</span> transacciones</span>
+                <span class="font-body-lg text-body-lg font-bold text-primary">Total: <span id="ingresos-total">$0</span></span>
+            </div>
+            <button onclick="exportarReporteExcel()" class="w-full h-touch-target-min bg-primary text-on-primary rounded-xl font-label-sm text-label-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform mt-md">
+                <span class="material-symbols-outlined">download</span>
+                Exportar esta vista a Excel
+            </button>
+        </div>
+    </div>
+
     <!-- ===== MODAL: Recordatorios Masivos ===== -->
     <div id="modal-recordatorios" class="hidden fixed inset-0 z-[60] flex items-end justify-center">
         <div class="modal-overlay absolute inset-0 bg-black/40" onclick="this.parentElement.classList.add('hidden')"></div>
@@ -1288,13 +1391,28 @@ let MENSUALIDAD = 80000;
 let FECHA_CORTE = 30; // editable desde Ajustes → Configuración de cobros
 const DIAS_RECORDATORIO = [5, 10, 15, 20, 25, 30]; // cada 5 días
 // Categorías individuales por año de nacimiento (ver CLAUDE.md)
-const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'];
+const CATEGORIAS = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022'];
 const TALLAS_INFANTIL = ['6', '8', '10', '12', '14', '16'];
 const TALLAS_ADULTO = ['XS', 'S', 'M', 'L', 'XL'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
 const DIAS_NOMBRES = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const MESES_VENTANA_MORA = 4; // mes actual + 3 anteriores
+
+// Convierte 'YYYY-MM-DD' en una Date válida a mediodía (evita líos de zona horaria);
+// si la fecha viene vacía/indefinida/mal formada, devuelve null en vez de una Invalid
+// Date (que rompía .getMonth()/.substring() más abajo con "undefined").
+function fechaPartidoSegura(fechaStr) {
+    if (!fechaStr) return null;
+    const d = new Date(fechaStr + 'T12:00:00');
+    return isNaN(d.getTime()) ? null : d;
+}
+
+// Etiqueta corta "día mes" para un partido, a prueba de fecha faltante/inválida.
+function fechaPartidoLabel(fechaStr) {
+    const d = fechaPartidoSegura(fechaStr);
+    return d ? `${d.getDate()} ${MESES[d.getMonth()].substring(0, 3)}` : 'Sin fecha';
+}
 const DEFAULT_REMINDER_TEMPLATE = `⚽ *Cancha Directa — Recordatorio de Pago*\n\nHola {padre}, te recordamos que {alumno} tiene {meses} mensualidad(es) pendiente(s), por un total de {deuda}.\n\n💳 Fecha de corte: día {corte} de cada mes ({mes}).\n\n¡Gracias por confiar en nuestra escuela!`;
 
 let reminderTemplate = DEFAULT_REMINDER_TEMPLATE;
@@ -1325,6 +1443,7 @@ let activityCache = [];
 let transaccionesCache = [];
 let perfilCache = null;
 let perfilMister = {};
+let sedesCache = []; // arquitectura de sedes: por ahora todas las escuelas operan con 1 sede por defecto
 
 let appInitialized = false;
 
@@ -1346,11 +1465,37 @@ async function cargarAjustes() {
     const { data, error } = await supabase.from('ajustes').select('*').eq('id', 1).single();
     if (error) { dbError(error, 'Error al cargar ajustes'); return; }
     if (data) {
-        MENSUALIDAD = Number(data.mensualidad) || 80000;
+        MENSUALIDAD = Number(data.valor_mensualidad) || 80000;
         FECHA_CORTE = data.fecha_corte || 30;
         reminderTemplate = data.reminder_template || DEFAULT_REMINDER_TEMPLATE;
         webhookUrl = data.webhook_url || '';
     }
+}
+
+// ===========================
+// SEDES — arquitectura para segmentar por local/sede a futuro.
+// Hoy toda escuela opera con una sola sede ("Sede Principal", sembrada
+// por el SQL); esto solo carga el catálogo y etiqueta los registros
+// nuevos con su sede — todavía no hay selector/filtro por sede en las
+// vistas (ver nota en el commit).
+// ===========================
+async function cargarSedes() {
+    const { data, error } = await supabase.from('sedes').select('*').eq('activo', true).order('created_at');
+    if (error) { dbError(error, 'Error al cargar sedes'); return []; }
+    return data || [];
+}
+
+async function crearSedeDB(nombre, direccion) {
+    const { data, error } = await supabase.from('sedes').insert({ nombre, direccion: direccion || null, activo: true }).select().single();
+    if (error) { dbError(error, 'Error al crear la sede'); throw error; }
+    return data;
+}
+
+// Sede activa para etiquetar registros nuevos: por ahora siempre la
+// primera (única, en el caso normal); el día que haya selector de sede
+// esta función es el único lugar que hay que cambiar.
+function sedeActivaId() {
+    return sedesCache[0]?.id || null;
 }
 
 async function cargarPerfil() {
@@ -1628,6 +1773,24 @@ async function cargarRespuestasRapidas() {
     const { data, error } = await supabase.from('respuestas_rapidas').select('*').eq('activo', true).order('orden');
     if (error) { dbError(error, 'Error al cargar respuestas rápidas'); return []; }
     return data || [];
+}
+
+async function crearRespuestaRapidaDB(payload) {
+    const orden = respuestasCache.length ? Math.max(...respuestasCache.map(r => r.orden || 0)) + 1 : 1;
+    const { data, error } = await supabase.from('respuestas_rapidas').insert({ ...payload, orden, activo: true }).select().single();
+    if (error) { dbError(error, 'Error al crear la plantilla'); throw error; }
+    return data;
+}
+
+async function actualizarRespuestaRapidaDB(id, cambios) {
+    const { data, error } = await supabase.from('respuestas_rapidas').update(cambios).eq('id', id).select().single();
+    if (error) { dbError(error, 'Error al actualizar la plantilla'); throw error; }
+    return data;
+}
+
+async function eliminarRespuestaRapidaDB(id) {
+    const { error } = await supabase.from('respuestas_rapidas').update({ activo: false }).eq('id', id);
+    if (error) { dbError(error, 'Error al eliminar la plantilla'); throw error; }
 }
 
 async function cargarActivity() {
@@ -1959,9 +2122,9 @@ async function renderInicio() {
     const statPartido = document.getElementById('stat-partido');
     if (statPartido) {
         if (proximo) {
-            const pd = new Date(proximo.fecha + 'T12:00:00');
-            statPartido.textContent = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} ${MESES[pd.getMonth()].substring(0, 3)}`;
-            statPartido.nextElementSibling.lastChild.textContent = ` ${partidoCategoriasLabel(proximo)} vs ${proximo.rival}`;
+            const pd = fechaPartidoSegura(proximo.fecha);
+            statPartido.textContent = pd ? `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} ${MESES[pd.getMonth()].substring(0, 3)}` : 'Sin fecha';
+            statPartido.nextElementSibling.lastChild.textContent = ` ${partidoCategoriasLabel(proximo)} vs ${proximo.rival || 'rival por definir'}`;
         } else {
             statPartido.textContent = 'Sin partidos';
         }
@@ -2076,7 +2239,7 @@ async function addAlumno(e) {
 
     btn.disabled = true;
     try {
-        await crearAlumnoDB({ nombre, acudiente, telefono, categoria, talla, activo: true });
+        await crearAlumnoDB({ nombre, acudiente, telefono, categoria, talla, activo: true, sede_id: sedeActivaId() });
         document.getElementById('form-nuevo-alumno').reset();
         document.getElementById('modal-nuevo-alumno').classList.add('hidden');
         renderCategoryChips();
@@ -2387,6 +2550,7 @@ async function confirmarCobro() {
             metodo,
             meses: cobroMesesSeleccionados,
             conceptos: conceptosSeleccionados.map(c => ({ nombre: c.nombre, precio: c.precio })),
+            sede_id: sedeActivaId(),
             total,
             recibo_numero: receiptCounter
         });
@@ -2802,9 +2966,9 @@ async function renderCalendar() {
     const prevDays = new Date(d.getFullYear(), d.getMonth(), 0).getDate();
 
     const matchDates = partidosCache.filter(p => {
-        const pd = new Date(p.fecha + 'T12:00:00');
-        return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
-    }).map(p => new Date(p.fecha + 'T12:00:00').getDate());
+        const pd = fechaPartidoSegura(p.fecha);
+        return pd && pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+    }).map(p => fechaPartidoSegura(p.fecha).getDate());
 
     let html = DIAS_SEMANA.map(dia => `<div class="font-label-sm text-label-sm text-secondary py-1">${dia}</div>`).join('');
 
@@ -2836,17 +3000,17 @@ async function renderCalendar() {
         return;
     }
     list.innerHTML = sortedPartidos.map(p => {
-        const pd = new Date(p.fecha + 'T12:00:00');
+        const pd = fechaPartidoSegura(p.fecha);
         const nConvocados = (p.convocatorias || []).length;
         const costPerKid = nConvocados > 0 ? Math.round(p.arbitraje / nConvocados) : 0;
         return `
         <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30 flex gap-4 ${p.completado ? 'opacity-60' : ''}">
             <div class="flex flex-col items-center justify-center ${p.completado ? 'bg-surface-container-highest' : 'bg-primary'} rounded-lg p-2 min-w-[60px] h-fit">
-                <span class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-primary'}">${DIAS_NOMBRES[pd.getDay()]}</span>
-                <span class="font-headline-md text-headline-md font-bold ${p.completado ? 'text-secondary' : 'text-on-primary'} leading-none mt-1">${pd.getDate()}</span>
+                <span class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-primary'}">${pd ? DIAS_NOMBRES[pd.getDay()] : '—'}</span>
+                <span class="font-headline-md text-headline-md font-bold ${p.completado ? 'text-secondary' : 'text-on-primary'} leading-none mt-1">${pd ? pd.getDate() : '—'}</span>
             </div>
             <div class="flex flex-col flex-1 gap-1">
-                <h4 class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-surface'} font-bold">${partidoCategoriasLabel(p)} vs ${p.rival}</h4>
+                <h4 class="font-label-sm text-label-sm ${p.completado ? 'text-secondary' : 'text-on-surface'} font-bold">${partidoCategoriasLabel(p)} vs ${p.rival || 'rival por definir'}</h4>
                 ${p.completado
                     ? `<div class="flex items-center gap-1 mt-1 text-primary"><span class="material-symbols-outlined text-[16px]">check_circle</span><span class="font-body-md text-body-md text-[13px]">Completado</span></div>`
                     : `<p class="font-body-md text-body-md text-on-surface-variant text-[13px]">${p.cancha}, ${p.hora}</p>
@@ -2883,7 +3047,7 @@ async function addPartido(e) {
     }
 
     try {
-        await crearPartidoDB({ rival, fecha, hora, cancha, categorias, categoria: categorias[0], arbitraje, completado: false });
+        await crearPartidoDB({ rival, fecha, hora, cancha, categorias, categoria: categorias[0], arbitraje, completado: false, sede_id: sedeActivaId() });
         document.getElementById('modal-nuevo-partido').classList.add('hidden');
         showToast(`Partido vs ${rival} creado ⚽`);
         await addActivity('sports_soccer', `Partido creado — ${categorias.join(', ')}`, `vs ${rival}`);
@@ -2938,6 +3102,95 @@ function renderRespuestasRapidas() {
         </div>
     `;
     }).join('') : emptyState('Sin respuestas rápidas configuradas');
+}
+
+// ===========================
+// EDITOR DEL KIT DE RESPUESTAS RÁPIDAS (alta/edición/borrado)
+// ===========================
+function abrirModalPlantillas() {
+    cancelarEdicionRespuesta();
+    renderPlantillasEditor();
+    document.getElementById('modal-plantillas').classList.remove('hidden');
+}
+
+function renderPlantillasEditor() {
+    const container = document.getElementById('plantillas-list');
+    if (!container) return;
+    container.innerHTML = respuestasCache.length ? respuestasCache.map(r => `
+        <div class="flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm">
+            <div class="flex-1 pr-sm">
+                <p class="font-body-md text-body-md text-on-surface font-semibold">${r.titulo}</p>
+                <p class="font-label-sm text-label-sm text-on-surface-variant line-clamp-1">${r.texto}</p>
+            </div>
+            <div class="flex gap-1 flex-shrink-0">
+                <button onclick="editRespuestaRapida('${r.id}')" class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors" title="Editar">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+                <button onclick="deleteRespuestaRapida('${r.id}')" class="w-9 h-9 rounded-full bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition-colors" title="Eliminar">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+            </div>
+        </div>`).join('')
+        : `<p class="font-body-md text-body-md text-on-surface-variant">Sin plantillas todavía.</p>`;
+}
+
+async function submitRespuestaRapida(e) {
+    e.preventDefault();
+    const editingId = document.getElementById('editing-plantilla-id').value;
+    const titulo = document.getElementById('inp-plantilla-titulo').value.trim();
+    const texto = document.getElementById('inp-plantilla-texto').value.trim();
+    if (!titulo || !texto) return;
+
+    try {
+        if (editingId) {
+            await actualizarRespuestaRapidaDB(editingId, { titulo, texto });
+            showToast('Plantilla actualizada ✓');
+        } else {
+            await crearRespuestaRapidaDB({ titulo, texto });
+            showToast('Plantilla agregada ✓');
+        }
+        cancelarEdicionRespuesta();
+        respuestasCache = await cargarRespuestasRapidas();
+        renderPlantillasEditor();
+        renderRespuestasRapidas();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function editRespuestaRapida(id) {
+    const r = respuestasCache.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('editing-plantilla-id').value = r.id;
+    document.getElementById('inp-plantilla-titulo').value = r.titulo;
+    document.getElementById('inp-plantilla-texto').value = r.texto;
+    document.getElementById('btn-plantilla-submit-label').textContent = 'Guardar cambios';
+    document.getElementById('btn-plantilla-cancelar').classList.remove('hidden');
+    document.getElementById('form-plantilla').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarEdicionRespuesta() {
+    const form = document.getElementById('form-plantilla');
+    if (form) form.reset();
+    document.getElementById('editing-plantilla-id').value = '';
+    document.getElementById('btn-plantilla-submit-label').textContent = 'Agregar plantilla';
+    document.getElementById('btn-plantilla-cancelar').classList.add('hidden');
+}
+
+async function deleteRespuestaRapida(id) {
+    const r = respuestasCache.find(x => x.id === id);
+    if (!r) return;
+    if (!confirm(`¿Eliminar la plantilla "${r.titulo}"?`)) return;
+    try {
+        await eliminarRespuestaRapidaDB(id);
+        showToast(`"${r.titulo}" eliminada`);
+        if (document.getElementById('editing-plantilla-id').value === id) cancelarEdicionRespuesta();
+        respuestasCache = await cargarRespuestasRapidas();
+        renderPlantillasEditor();
+        renderRespuestasRapidas();
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 function renderInventarioCards() {
@@ -3021,6 +3274,39 @@ async function agregarCategoriaInventario(e) {
     }
 }
 
+function renderSedesList() {
+    const container = document.getElementById('sedes-list');
+    if (!container) return;
+    container.innerHTML = sedesCache.length ? sedesCache.map((s, i) => `
+        <div class="flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm">
+            <div class="flex items-center gap-sm">
+                <span class="material-symbols-outlined text-primary text-[20px]">${i === 0 ? 'star' : 'store'}</span>
+                <div>
+                    <p class="font-body-md text-body-md text-on-surface font-semibold">${s.nombre}</p>
+                    ${s.direccion ? `<p class="font-label-sm text-label-sm text-on-surface-variant">${s.direccion}</p>` : ''}
+                </div>
+            </div>
+            ${i === 0 ? `<span class="font-label-sm text-label-sm text-primary">Activa</span>` : ''}
+        </div>`).join('')
+        : emptyState('Sin sedes configuradas');
+}
+
+async function agregarSede(e) {
+    e.preventDefault();
+    const inp = document.getElementById('inp-nueva-sede');
+    const nombre = inp.value.trim();
+    if (!nombre) return;
+    try {
+        await crearSedeDB(nombre);
+        inp.value = '';
+        sedesCache = await cargarSedes();
+        renderSedesList();
+        showToast(`Sede "${nombre}" agregada`);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 function copyText(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast('Texto copiado al portapapeles', 'content_copy');
@@ -3038,8 +3324,7 @@ async function openConvocadosModal(partidoId) {
     currentConvocadosPartidoId = partidoId;
     tempConvocadosIds = (p.convocatorias || []).map(c => c.alumno_id);
     if (!alumnosCache.length) alumnosCache = await cargarAlumnos();
-    const pd = new Date(p.fecha + 'T12:00:00');
-    document.getElementById('convocados-partido-info').textContent = `${partidoCategoriasLabel(p)} vs ${p.rival} · ${pd.getDate()} ${MESES[pd.getMonth()].substring(0,3)}`;
+    document.getElementById('convocados-partido-info').textContent = `${partidoCategoriasLabel(p)} vs ${p.rival || 'rival por definir'} · ${fechaPartidoLabel(p.fecha)}`;
     renderConvocadosChecklist();
     document.getElementById('modal-convocados').classList.remove('hidden');
 }
@@ -3099,10 +3384,10 @@ async function guardarConvocados() {
 function openConvocatoriaMsg() {
     const p = partidosCache.find(pt => pt.id === currentConvocadosPartidoId);
     if (!p) return;
-    const pd = new Date(p.fecha + 'T12:00:00');
-    const fechaTexto = `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} de ${MESES[pd.getMonth()]}`;
+    const pd = fechaPartidoSegura(p.fecha);
+    const fechaTexto = pd ? `${DIAS_NOMBRES[pd.getDay()]} ${pd.getDate()} de ${MESES[pd.getMonth()]}` : 'Por confirmar';
     const convocados = alumnosCache.filter(a => tempConvocadosIds.includes(a.id));
-    const plantilla = `⚽ *Cancha Directa — Convocatoria*\n\n¡Hola! Tu hijo/a ha sido convocado/a para el partido:\n\n🆚 Rival: ${p.rival}\n📅 Fecha: ${fechaTexto}\n⏰ Hora: ${p.hora}\n📍 Lugar: ${p.cancha}\n\nPor favor llegar 30 minutos antes con el uniforme completo. ¡Vamos con toda! 💪`;
+    const plantilla = `⚽ *Cancha Directa — Convocatoria*\n\n¡Hola! Tu hijo/a ha sido convocado/a para el partido:\n\n🆚 Rival: ${p.rival || 'por definir'}\n📅 Fecha: ${fechaTexto}\n⏰ Hora: ${p.hora || 'por definir'}\n📍 Lugar: ${p.cancha || 'por definir'}\n\nPor favor llegar 30 minutos antes con el uniforme completo. ¡Vamos con toda! 💪`;
     document.getElementById('convocatoria-texto').value = plantilla;
 
     const sendList = document.getElementById('convocatoria-send-list');
@@ -3160,7 +3445,7 @@ async function guardarConfigCobros(e) {
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     try {
-        const { error } = await supabase.from('ajustes').update({ fecha_corte: nuevoCorte, mensualidad: nuevaMensualidad }).eq('id', 1);
+        const { error } = await supabase.from('ajustes').update({ fecha_corte: nuevoCorte, valor_mensualidad: nuevaMensualidad }).eq('id', 1);
         if (error) { dbError(error, 'Error al guardar la configuración'); return; }
 
         FECHA_CORTE = nuevoCorte;
@@ -3496,6 +3781,50 @@ async function guardarPerfil(e) {
 }
 
 // ===========================
+// VISTA DE INGRESOS DETALLADOS (tabla en pantalla, tipo Excel)
+// ===========================
+function abrirModalIngresos() {
+    const selCat = document.getElementById('ingresos-filtro-categoria');
+    const categoriasPresentes = [...new Set(transaccionesCache.map(t => t.categoria).filter(Boolean))].sort();
+    selCat.innerHTML = '<option value="todas">Todas las categorías</option>' + categoriasPresentes.map(c => `<option value="${c}">${c}</option>`).join('');
+    const selMetodo = document.getElementById('ingresos-filtro-metodo');
+    const metodosPresentes = [...new Set(transaccionesCache.map(t => t.metodo).filter(Boolean))].sort();
+    selMetodo.innerHTML = '<option value="todos">Todos los métodos</option>' + metodosPresentes.map(m => `<option value="${m}">${m}</option>`).join('');
+    renderIngresosTable();
+    document.getElementById('modal-ingresos').classList.remove('hidden');
+}
+
+function renderIngresosTable() {
+    const catFiltro = document.getElementById('ingresos-filtro-categoria').value;
+    const metodoFiltro = document.getElementById('ingresos-filtro-metodo').value;
+    const filas = transaccionesCache.filter(t =>
+        (catFiltro === 'todas' || t.categoria === catFiltro) &&
+        (metodoFiltro === 'todos' || t.metodo === metodoFiltro)
+    );
+    const tbody = document.getElementById('ingresos-table-body');
+    tbody.innerHTML = filas.length ? filas.map(t => {
+        const concepto = [
+            ...(t.meses || []).map(getMonthLabel),
+            ...(t.conceptos || []).map(c => c.nombre)
+        ].join(', ') || '—';
+        return `
+        <tr class="border-t border-outline-variant/50">
+            <td class="p-2 whitespace-nowrap">#${t.recibo_numero}</td>
+            <td class="p-2 whitespace-nowrap">${t.fecha}</td>
+            <td class="p-2 whitespace-nowrap">${t.acudiente || '—'}</td>
+            <td class="p-2 whitespace-nowrap">${t.alumno_nombre}</td>
+            <td class="p-2 whitespace-nowrap">${t.categoria || '—'}</td>
+            <td class="p-2">${concepto}</td>
+            <td class="p-2 whitespace-nowrap">${t.metodo}</td>
+            <td class="p-2 whitespace-nowrap text-right font-semibold">${formatMoney(t.total)}</td>
+        </tr>`;
+    }).join('') : `<tr><td colspan="8" class="p-4 text-center text-on-surface-variant">Sin transacciones para este filtro</td></tr>`;
+
+    document.getElementById('ingresos-count').textContent = filas.length;
+    document.getElementById('ingresos-total').textContent = formatMoney(filas.reduce((s, t) => s + Number(t.total || 0), 0));
+}
+
+// ===========================
 // EXPORTAR (CSV rápido y Excel completo con SheetJS)
 // ===========================
 function exportarHistorialCSV() {
@@ -3589,9 +3918,11 @@ async function exportarReporteExcel() {
 async function init() {
     cargarPerfilMister();
     await Promise.all([cargarAjustes(), cargarPerfil()]);
+    sedesCache = await cargarSedes();
     activityCache = await cargarActivity();
     renderCategoryChips();
     renderTallaSelects();
+    renderSedesList();
     await renderInicio();
 }
 

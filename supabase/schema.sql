@@ -158,7 +158,7 @@ create table if not exists activity_log (
 -- ------------------------------------------------------------
 create table if not exists ajustes (
     id int primary key default 1,
-    mensualidad numeric not null default 80000,
+    valor_mensualidad numeric not null default 80000,
     fecha_corte int not null default 30, -- editable desde Ajustes → Configuración de cobros
     reminder_template text,
     webhook_url text,
@@ -313,8 +313,19 @@ alter table activity_log
     add column if not exists read boolean default false,
     add column if not exists created_at timestamptz default now();
 
+-- La columna se llama "valor_mensualidad" (no "mensualidad"): si alguna instalación
+-- vieja todavía tiene la columna con el nombre antiguo, se renombra sola aquí.
+do $$
+begin
+    if exists (select 1 from information_schema.columns where table_name = 'ajustes' and column_name = 'mensualidad')
+       and not exists (select 1 from information_schema.columns where table_name = 'ajustes' and column_name = 'valor_mensualidad')
+    then
+        alter table ajustes rename column mensualidad to valor_mensualidad;
+    end if;
+end $$;
+
 alter table ajustes
-    add column if not exists mensualidad numeric default 80000,
+    add column if not exists valor_mensualidad numeric default 80000,
     add column if not exists fecha_corte int default 30,
     add column if not exists reminder_template text,
     add column if not exists webhook_url text;
@@ -417,3 +428,40 @@ insert into conceptos (nombre, precio, tipo, plazo, stock_total, stock_vendido) 
     ('Torneo Sagrado Corazón', 50000, 'evento', '2026-09-15', 30, 0),
     ('Carné deportivo', 15000, 'otro', null, null, 0)
 on conflict do nothing;
+
+-- ------------------------------------------------------------
+-- SEDES (arquitectura lógica para operar más de una sede/local).
+-- Aditivo y no disruptivo: "sede_id" es nullable en todas las tablas
+-- y toda la data existente se backfillea a una "Sede Principal" única,
+-- así que una escuela con una sola sede sigue funcionando exactamente
+-- igual que antes. Habilita filtrar/segmentar por sede a futuro sin
+-- tener que migrar datos otra vez.
+-- ------------------------------------------------------------
+create table if not exists sedes (
+    id uuid primary key default gen_random_uuid(),
+    nombre text not null,
+    direccion text,
+    activo boolean not null default true,
+    created_at timestamptz not null default now()
+);
+
+insert into sedes (nombre)
+    select 'Sede Principal'
+    where not exists (select 1 from sedes);
+
+alter table alumnos add column if not exists sede_id uuid references sedes(id);
+alter table partidos add column if not exists sede_id uuid references sedes(id);
+alter table transacciones add column if not exists sede_id uuid references sedes(id);
+alter table inventario_uniformes add column if not exists sede_id uuid references sedes(id);
+
+-- Backfill: toda fila sin sede asignada queda en la primera sede existente
+-- (la "Sede Principal" sembrada arriba en una instalación nueva).
+do $$
+declare sede_default uuid;
+begin
+    select id into sede_default from sedes order by created_at asc limit 1;
+    update alumnos set sede_id = sede_default where sede_id is null;
+    update partidos set sede_id = sede_default where sede_id is null;
+    update transacciones set sede_id = sede_default where sede_id is null;
+    update inventario_uniformes set sede_id = sede_default where sede_id is null;
+end $$;

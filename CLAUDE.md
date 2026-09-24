@@ -10,8 +10,8 @@
 ## Reglas de Negocio Estrictas
 
 ### Categorías por Año de Nacimiento
-- Las categorías se manejan de forma **individual por año de nacimiento** (2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018), no por rangos agrupados.
-- Referencia orientativa de sub-categoría por edad: 2011-2013 ≈ Sub-12/Sub-14 · 2014-2015 ≈ Sub-10/Sub-11 · 2016-2018 ≈ Sub-7/Sub-9.
+- Las categorías se manejan de forma **individual por año de nacimiento** (2011 a 2022), no por rangos agrupados.
+- Referencia orientativa de sub-categoría por edad: 2011-2013 ≈ Sub-12/Sub-14 · 2014-2015 ≈ Sub-10/Sub-11 · 2016-2018 ≈ Sub-7/Sub-9 · 2019-2022 ≈ Sub-4/Sub-6.
 
 ### Lógica Financiera
 - Valor de mensualidad: **$80.000 COP** (editable por el Míster desde Ajustes → Configuración de cobros)

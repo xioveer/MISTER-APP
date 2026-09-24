@@ -277,7 +277,7 @@ alter table partidos
 -- Fix: en instalaciones creadas antes de categorias[], categoria era
 -- NOT NULL. Ahora la fuente de verdad es categorias[], así que se
 -- libera esa restricción para no romper los inserts que solo mandan
--- categorias (ver supabase/fix-partidos-categorias.sql para más detalle).
+-- categorias.
 alter table partidos
     alter column categoria drop not null;
 

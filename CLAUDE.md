@@ -16,6 +16,7 @@
 ### Lógica Financiera
 - Valor de mensualidad: **$80.000 COP** (editable por el Míster desde Ajustes → Configuración de cobros)
 - Fecha de corte: **30 de cada mes** por defecto (editable por el Míster desde Ajustes → Configuración de cobros)
+- La columna de Supabase para el valor de la mensualidad se llama **`valor_mensualidad`** (tabla `ajustes`), no `mensualidad`. Cualquier lectura/escritura de este valor debe usar ese nombre exacto — un desajuste aquí ya causó un error 400 al guardar y montos de cobro inconsistentes.
 - Estados de pago: `pagado` | `pendiente`
 - El sistema controla mora por mes individual: un acudiente puede deber varios meses a la vez, y se debe poder elegir manualmente qué mes(es) específico(s) cobrar, calculando el total acumulado.
 - Los recibos digitales deben poder compartirse por **WhatsApp**

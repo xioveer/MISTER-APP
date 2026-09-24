@@ -1866,8 +1866,10 @@ function getPendingMonths(alumno, ledgerAlumno) {
     });
 }
 
-function getDeudaTotal(alumno) {
-    return getPendingMonths(alumno).length * MENSUALIDAD;
+// ledgerAlumno es opcional, igual que en getPendingMonths (mismo motivo:
+// un snapshot propio para quien no quiera depender del ledgerMap global).
+function getDeudaTotal(alumno, ledgerAlumno) {
+    return getPendingMonths(alumno, ledgerAlumno).length * MENSUALIDAD;
 }
 
 function estaAlDia(alumno) {
@@ -2388,7 +2390,7 @@ async function abrirModalCobro(id) {
     document.getElementById('cobro-alumno-nombre').textContent = `${alumno.acudiente || 'Sin acudiente'} — Cat. ${alumno.categoria} — Jugador: ${alumno.nombre}`;
     const banner = document.getElementById('cobro-deuda-banner');
     if (pendientes.length > 0) {
-        banner.textContent = `Deuda acumulada: ${formatMoney(pendientes.length * MENSUALIDAD)} (${pendientes.length} mes${pendientes.length > 1 ? 'es' : ''})`;
+        banner.textContent = `Deuda acumulada: ${formatMoney(getDeudaTotal(alumno))} (${pendientes.length} mes${pendientes.length > 1 ? 'es' : ''})`;
         banner.classList.remove('hidden');
     } else {
         banner.classList.add('hidden');
@@ -2439,10 +2441,19 @@ function toggleCobroConcepto(id) {
     updateCobroTotal();
 }
 
-function updateCobroTotal() {
+// Única fuente de verdad para el total del modal de cobro (meses de
+// mensualidad seleccionados + conceptos seleccionados). Usada tanto para
+// la vista previa en vivo (updateCobroTotal) como para el cobro real
+// (confirmarCobro), para que nunca puedan quedar desincronizados.
+function calcularTotalCobro() {
     const totalMeses = cobroMesesSeleccionados.length * MENSUALIDAD;
-    const totalConceptos = conceptosCache.filter(c => cobroConceptosSeleccionados.includes(c.id)).reduce((s, c) => s + Number(c.precio), 0);
-    const total = totalMeses + totalConceptos;
+    const conceptosSeleccionados = conceptosCache.filter(c => cobroConceptosSeleccionados.includes(c.id));
+    const totalConceptos = conceptosSeleccionados.reduce((s, c) => s + Number(c.precio), 0);
+    return { totalMeses, totalConceptos, conceptosSeleccionados, total: totalMeses + totalConceptos };
+}
+
+function updateCobroTotal() {
+    const { total } = calcularTotalCobro();
     document.getElementById('cobro-monto').textContent = formatMoney(total);
     document.getElementById('btn-confirmar-cobro').disabled = total === 0;
 }
@@ -2530,10 +2541,7 @@ async function confirmarCobro() {
     const alumno = alumnosCache.find(a => a.id === pendingCobroId);
     if (!alumno) return;
     const metodo = document.querySelector('input[name="metodo-pago"]:checked').value;
-    const conceptosSeleccionados = conceptosCache.filter(c => cobroConceptosSeleccionados.includes(c.id));
-    const totalMeses = cobroMesesSeleccionados.length * MENSUALIDAD;
-    const totalConceptos = conceptosSeleccionados.reduce((s, c) => s + Number(c.precio), 0);
-    const total = totalMeses + totalConceptos;
+    const { conceptosSeleccionados, total } = calcularTotalCobro();
     if (total === 0) return;
 
     const btn = document.getElementById('btn-confirmar-cobro');
@@ -3870,7 +3878,7 @@ async function exportarReporteExcel() {
                 'Talla': a.talla,
                 'Estado': pendientes.length === 0 ? 'Al día' : `Debe ${pendientes.length} mes(es)`,
                 'Meses que debe': pendientes.map(getMonthLabel).join(', '),
-                'Deuda total': pendientes.length * MENSUALIDAD
+                'Deuda total': getDeudaTotal(a, ledger[a.id])
             };
         });
 

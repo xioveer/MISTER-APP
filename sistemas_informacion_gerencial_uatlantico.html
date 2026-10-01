@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clasificación de los Sistemas de Información - Adelaida Ojeda Beltrán | Universidad del Atlántico</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        uatlantico: {
+                            blue: '#1b3152',
+                            blueHover: '#14253e',
+                            orange: '#e65c00',
+                            orangeHover: '#cf5300',
+                            bg: '#f4f6f9',
+                            card: '#ffffff',
+                            text: '#2c3e50',
+                            border: '#d3d3d3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f9;
+            color: #2c3e50;
+            scroll-behavior: smooth;
+        }
+
+        /* Transiciones fluidas entre pestañas */
+        .module-content {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            display: none;
+        }
+
+        .module-content.active {
+            display: block !important;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Estilos drag and drop */
+        .draggable-item {
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+            opacity: 0.75;
+            transform: scale(0.98);
+        }
+        .drop-zone {
+            transition: all 0.25s ease;
+        }
+        .drop-zone.drag-over {
+            border-color: #e65c00 !important;
+            background-color: #fff3eb !important;
+            transform: scale(1.01);
+        }
+
+        /* Personalización de la barra de desplazamiento */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #101e33;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #e65c00;
+            border-radius: 3px;
+        }
+
+        /* Efectos de pulso y glow */
+        .glow-orange {
+            box-shadow: 0 0 15px rgba(230, 92, 0, 0.35);
+        }
+    </style>
+</head>
+<body class="bg-uatlantico-bg text-uatlantico-text min-h-screen flex flex-col">
+
+    <!-- CABECERA INSTITUCIONAL UNIVERSIDAD DEL ATLÁNTICO / MOODLE SICVI-567 -->
+    <header class="w-full bg-uatlantico-blue text-white border-b-4 border-uatlantico-orange shadow-lg sticky top-0 z-50">
+        <!-- Barra de Utilidades Superior -->
+        <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between text-xs border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1.5 font-bold text-uatlantico-orange bg-black/20 px-2.5 py-1 rounded">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-2.75-1.435A1 1 0 011 11.855V9.838a1 1 0 01.31-.73l1.999.29zM16.69 9.397L15 10.12v4.102a8.969 8.969 0 012.75-1.435A1 1 0 0019 11.855V9.838a1 1 0 00-.31-.73l-1.999.29z"/></svg>
+                    SICVI-567 (Moodle Virtual)
+                </span>
+                <span class="hidden md:inline text-gray-300 font-medium">Universidad del Atlántico · Facultad de Ciencias Económicas</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="font-semibold text-gray-200 hidden sm:inline">PRESENTACIÓN: ADELAIDA OJEDA BELTRÁN</span>
+                <div class="w-8 h-8 rounded-full bg-uatlantico-orange text-white flex items-center justify-center font-extrabold text-xs shadow-md border border-white/20">
+                    AO
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Principal de la Asignatura -->
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white rounded-xl p-1.5 flex items-center justify-center shadow-lg border-2 border-uatlantico-orange">
+                    <!-- Logo Universidad del Atlántico -->
+                    <svg viewBox="0 0 100 100" class="w-full h-full" fill="currentColor">
+                        <path d="M20,15 L40,15 L40,70 Q40,85 50,85 Q60,85 60,70 L60,15 L80,15 L80,70 Q80,95 50,95 Q20,95 20,70 Z" fill="#1b3152"/>
+                        <path d="M10,25 L90,25 L50,55 Z" fill="#e65c00"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-xl font-extrabold tracking-tight text-white leading-tight">
+                        CLASIFICACIÓN DE LOS SISTEMAS DE INFORMACIÓN
+                    </h1>
+                    <p class="text-xs text-uatlantico-orange font-semibold">50225 SISTEMAS DE INFORMACION GERENCIAL GRUPO 11 (2026-2)</p>
+                </div>
+            </div>
+            <div class="text-xs bg-black/30 px-3 py-1.5 rounded-full border border-white/10 text-gray-200 flex items-center gap-2">
+                <span>Mis cursos</span> &gt; <span class="text-uatlantico-orange font-bold">Clasificación de Sistemas</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL INTERACTIVO -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- COLUMNA IZQUIERDA: NAVEGACIÓN DE MÓDULOS -->
+            <aside class="lg:col-span-4 xl:col-span-3">
+                <div class="bg-uatlantico-blue rounded-xl shadow-xl border border-gray-700 overflow-hidden sticky top-24">
+                    <div class="p-4 border-b border-gray-700 bg-black/20">
+                        <h2 class="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4 text-uatlantico-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            NAVEGACIÓN DEL CURSO
+                        </h2>
+                        <div class="w-12 h-1 bg-uatlantico-orange mt-2 rounded-full"></div>
+                    </div>
+                    
+                    <nav class="p-2 space-y-1 max-h-[calc(100vh-220px)] overflow-y-auto custom-scroll" id="module-menu">
+                        <button onclick="switchModule(1)" id="btn-mod-1" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-semibold transition-all duration-300 flex items-center justify-between bg-uatlantico-orange text-white shadow-md">
+                            <span>1. Tipos de Sistemas y Pirámide</span>
+                            <svg class="w-4 h-4 opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(2)" id="btn-mod-2" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>2. Sistemas Transaccionales (TPS)</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(3)" id="btn-mod-3" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>3. Software CRM (Clientes)</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(4)" id="btn-mod-4" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>4. Tipos de CRM (Operativo/Analítico)</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(5)" id="btn-mod-5" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>5. Gestión del Conocimiento (KM)</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(6)" id="btn-mod-6" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>6. Cadena de Valor KM & Tipos KMS</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(7)" id="btn-mod-7" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>7. Sistemas ERP Empresariales</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(8)" id="btn-mod-8" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>8. Sistemas de Gestión (MIS)</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(9)" id="btn-mod-9" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white">
+                            <span>9. Soporte a Decisiones (DSS/ESS)</span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+
+                        <button onclick="switchModule(10)" id="btn-mod-10" class="module-btn w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white border border-uatlantico-orange/30">
+                            <span class="flex items-center gap-1.5 font-bold text-uatlantico-orange">
+                                <svg class="w-4 h-4 text-uatlantico-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                10. Evaluación Evaluativa ICFES
+                            </span>
+                            <svg class="w-4 h-4 opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </nav>
+
+                    <div class="p-3 bg-black/30 text-center border-t border-gray-700">
+                        <p class="text-[11px] text-gray-400">Universidad del Atlántico · Adelaida Ojeda B.</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- COLUMNA DERECHA: ÁREA DE CONTENIDO DINÁMICO CON TRANSICIONES -->
+            <section class="lg:col-span-8 xl:col-span-9">
+                <div class="bg-white rounded-xl shadow-md border border-uatlantico-border p-6 md:p-8 min-h-[620px] relative overflow-hidden" id="content-container">
+
+                    <!-- MÓDULO 1: TIPOS DE SISTEMAS Y PIRÁMIDE -->
+                    <article id="mod-1" class="module-content active">
+                        <div class="border-b border-gray-200 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-uatlantico-blue">1. Tipos de Sistemas y Niveles Organizacionales</h2>
+                                <p class="text-xs text-gray-500 mt-1">Basado en la Diapositiva 2 · Presentación: Adelaida Ojeda Beltrán</p>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 bg-uatlantico-blue/10 text-uatlantico-blue rounded-full border border-uatlantico-blue/20">Diapositivas 1-2</span>
+                        </div>
+
+                        <div class="prose max-w-none text-sm leading-relaxed text-uatlantico-text space-y-4">
+                            <p>
+                                Las organizaciones modernas clasifican sus <strong>Sistemas de Información</strong> en cuatro niveles jerárquicos según los <strong>grupos de usuarios a los que sirven</strong> y el nivel de soporte que brindan:
+                            </p>
+
+                            <!-- Imagen Ilustrativa -->
+                            <div class="my-6 rounded-xl overflow-hidden shadow-md border border-gray-200">
+                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80" alt="Pirámide Organizacional de Sistemas" class="w-full h-52 object-cover">
+                                <div class="bg-gray-50 px-4 py-2 text-xs text-gray-500 text-center italic">
+                                    Jerarquía de Sistemas de Información y Niveles de Decisión Gerencial.
+                                </div>
+                            </div>
+
+                            <!-- PIRÁMIDE INTERACTIVA CLIQUEABLE -->
+                            <div class="mt-8 bg-slate-50 border border-gray-300 rounded-xl p-6 shadow-sm">
+                                <h3 class="text-base font-bold text-uatlantico-blue text-center mb-1">Pirámide Organizacional Interactiva (Haz clic en un nivel)</h3>
+                                <p class="text-xs text-gray-500 text-center mb-6">Selecciona una sección de la pirámide para consultar sus sistemas y grupos servidos:</p>
+
+                                <div class="max-w-lg mx-auto space-y-2 text-center text-xs font-bold text-white">
+                                    <div onclick="selectPyramidLevel('estrategico')" id="pyr-estrategico" class="cursor-pointer p-3 bg-red-600 rounded-t-xl hover:bg-red-700 transition-all shadow hover:scale-[1.01]">
+                                        NIVEL ESTRATÉGICO · ESS / BI
+                                    </div>
+                                    <div onclick="selectPyramidLevel('gestion')" id="pyr-gestion" class="cursor-pointer p-3 bg-lime-600 hover:bg-lime-700 transition-all shadow hover:scale-[1.01]">
+                                        NIVEL DE GESTIÓN Y ADMINISTRACIÓN · DSS / MIS
+                                    </div>
+                                    <div onclick="selectPyramidLevel('conocimiento')" id="pyr-conocimiento" class="cursor-pointer p-3 bg-purple-600 hover:bg-purple-700 transition-all shadow hover:scale-[1.01]">
+                                        NIVEL DEL CONOCIMIENTO · KWS / OfficeS
+                                    </div>
+                                    <div onclick="selectPyramidLevel('operativo')" id="pyr-operativo" class="cursor-pointer p-3 bg-cyan-500 rounded-b-xl hover:bg-cyan-600 transition-all shadow hover:scale-[1.01]">
+                                        NIVEL OPERATIVO · TPS
+                                    </div>
+                                </div>
+
+                                <div id="pyramid-info-panel" class="mt-6 p-4 bg-white rounded-lg border-l-4 border-uatlantico-orange text-xs text-gray-700 shadow-sm transition-all duration-300">
+                                    <div class="font-bold text-uatlantico-blue text-sm mb-1">Información de Nivel: Haga clic en un bloque de arriba</div>
+                                    <p>Descubre qué grupos gerenciales interactúan con cada tipo de software en la Universidad del Atlántico.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 2: SISTEMAS TRANSACCIONALES (TPS) -->
+                    <article id="mod-2" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-uatlantico-blue">2. Sistemas de Procesamiento de Transacciones (TPS)</h2>
+                                <p class="text-xs text-gray-500 mt-1">Basado en las Diapositivas 3, 4 y 5 · Docente: Adelaida Ojeda Beltrán</p>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 bg-uatlantico-blue/10 text-uatlantico-blue rounded-full border border-uatlantico-blue/20">Diapositivas 3-5</span>
+                        </div>
+
+                        <div class="prose max-w-none text-sm leading-relaxed text-uatlantico-text space-y-4">
+                            <div class="p-4 bg-blue-50 border-l-4 border-uatlantico-blue rounded-r-lg text-xs md:text-sm">
+                                <strong>Definición Oficial (Diapositiva 3):</strong> Un sistema de procesamiento de transacciones es un sistema computarizado que efectúa y registra las transacciones diarias de rutina necesarias para realizar negocios, como introducir pedidos de ventas, reservaciones de hoteles, nómina, registro de empleados y envíos.
+                            </div>
+
+                            <h3 class="text-base font-bold text-uatlantico-blue mt-6">Ventajas y Características Clave de los TPS (Diapositiva 4)</h3>
+                            <p class="text-xs text-gray-500">Haz clic en cada tarjeta para ampliar la explicación funcional:</p>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
+                                <div onclick="toggleTPSCard(this)" class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-uatlantico-orange cursor-pointer transition-all duration-300">
+                                    <div class="font-bold text-uatlantico-orange text-sm mb-1 flex items-center justify-between">
+                                        <span>1. Transacciones Múltiples</span>
+                                        <span class="text-xs bg-orange-100 text-uatlantico-orange px-2 py-0.5 rounded">Ver</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600">Controlar y administrar múltiples transacciones simultáneas sin pérdidas de datos.</p>
+                                    <div class="hidden-detail hidden mt-3 pt-2 border-t border-gray-100 text-[11px] text-gray-500">
+                                        Permite procesar miles de compras o registros bancarios al mismo tiempo garantizando la consistencia ACID.
+                                    </div>
+                                </div>
+
+                                <div onclick="toggleTPSCard(this)" class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-uatlantico-blue cursor-pointer transition-all duration-300">
+                                    <div class="font-bold text-uatlantico-blue text-sm mb-1 flex items-center justify-between">
+                                        <span>2. Consistencia de Datos</span>
+                                        <span class="text-xs bg-blue-100 text-uatlantico-blue px-2 py-0.5 rounded">Ver</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600">Mantener la integridad y consistencia permanente de la información empresarial.</p>
+                                    <div class="hidden-detail hidden mt-3 pt-2 border-t border-gray-100 text-[11px] text-gray-500">
+                                        Evita duplicados o discrepancias financieras entre cuentas y registros de inventario.
+                                    </div>
+                                </div>
+
+                                <div onclick="toggleTPSCard(this)" class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-emerald-600 cursor-pointer transition-all duration-300">
+                                    <div class="font-bold text-emerald-600 text-sm mb-1 flex items-center justify-between">
+                                        <span>3. Respuestas Rápidas</span>
+                                        <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Ver</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600">Ofrecer respuestas inmediatas en milisegundos para operaciones rutinarias.</p>
+                                    <div class="hidden-detail hidden mt-3 pt-2 border-t border-gray-100 text-[11px] text-gray-500">
+                                        Crucial para puntos de venta (POS), reservaciones aéreas y pagos en línea.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 3: SOFTWARE CRM -->
+                    <article id="mod-3" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-uatlantico-blue">3. CRM: Software de Administración de Clientes</h2>
+                                <p class="text-xs text-gray-500 mt-1">Basado en las Diapositivas 6 a 9 · Docente: Adelaida Ojeda Beltrán</p>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 bg-uatlantico-blue/10 text-uatlantico-blue rounded-full border border-uatlantico-blue/20">Diapositivas 6-9</span>
+                        </div>
+                        <div class="prose max-w-none text-sm leading-relaxed text-uatlantico-text space-y-4">
+                            <p>El <strong>CRM (Customer Relationship Management)</strong> integra las áreas de Servicio al Cliente, Marketing y Ventas para optimizar la relación corporativa (Diapositiva 6).</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 4: TIPOS DE CRM -->
+                    <article id="mod-4" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-uatlantico-blue">4. Clasificación de Tipos de CRM</h2>
+                                <p class="text-xs text-gray-500 mt-1">Basado en las Diapositivas 7, 8 y 9</p>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 bg-uatlantico-blue/10 text-uatlantico-blue rounded-full border border-uatlantico-blue/20">Diapositivas 7-9</span>
+                        </div>
+                        <div class="prose max-w-none text-sm leading-relaxed text-uatlantico-text space-y-4">
+                            <p>Conoce las diferencias fundamentales entre el CRM Operativo, Analítico y Colaborativo según el material de estudio.</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 5: GESTIÓN DEL CONOCIMIENTO (KM) -->
+                    <article id="mod-5" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6">
+                            <h2 class="text-2xl font-extrabold text-uatlantico-blue">5. Gestión del Conocimiento (KM)</h2>
+                            <p class="text-xs text-gray-500 mt-1">Sistemas orientados al capital intelectual de la organización.</p>
+                        </div>
+                        <div class="prose max-w-none text-sm text-uatlantico-text space-y-4">
+                            <p>La gestión del conocimiento recopila, almacena y distribuye el conocimiento experto dentro de la empresa para mejorar el desempeño y la toma de decisiones.</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 6: CADENA DE VALOR KM -->
+                    <article id="mod-6" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6">
+                            <h2 class="text-2xl font-extrabold text-uatlantico-blue">6. Cadena de Valor KM & Tipos KMS</h2>
+                            <p class="text-xs text-gray-500 mt-1">Procesos de adquisición, almacenamiento, difusión y aplicación del conocimiento.</p>
+                        </div>
+                        <div class="prose max-w-none text-sm text-uatlantico-text space-y-4">
+                            <p>Estudio de las fases del conocimiento corporativo y herramientas asociadas.</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 7: SISTEMAS ERP EMPRESARIALES -->
+                    <article id="mod-7" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6">
+                            <h2 class="text-2xl font-extrabold text-uatlantico-blue">7. Sistemas ERP Empresariales</h2>
+                            <p class="text-xs text-gray-500 mt-1">Enterprise Resource Planning</p>
+                        </div>
+                        <div class="prose max-w-none text-sm text-uatlantico-text space-y-4">
+                            <p>Sistemas integrados que centralizan la información de todas las áreas funcionales de la empresa (finanzas, recursos humanos, producción, logística).</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 8: SISTEMAS DE GESTIÓN (MIS) -->
+                    <article id="mod-8" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6">
+                            <h2 class="text-2xl font-extrabold text-uatlantico-blue">8. Sistemas de Gestión (MIS)</h2>
+                            <p class="text-xs text-gray-500 mt-1">Management Information Systems</p>
+                        </div>
+                        <div class="prose max-w-none text-sm text-uatlantico-text space-y-4">
+                            <p>Proveen reportes y resúmenes periódicos para la gerencia de nivel medio orientados al control y seguimiento operativo.</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 9: SOPORTE A DECISIONES (DSS/ESS) -->
+                    <article id="mod-9" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6">
+                            <h2 class="text-2xl font-extrabold text-uatlantico-blue">9. Soporte a Decisiones (DSS/ESS)</h2>
+                            <p class="text-xs text-gray-500 mt-1">Decision Support Systems & Executive Support Systems</p>
+                        </div>
+                        <div class="prose max-w-none text-sm text-uatlantico-text space-y-4">
+                            <p>Herramientas analíticas avanzadas para la alta gerencia y la resolución de problemas semiestructurados o no estructurados.</p>
+                        </div>
+                    </article>
+
+                    <!-- MÓDULO 10: EVALUACIÓN EVALUATIVA ICFES -->
+                    <article id="mod-10" class="module-content">
+                        <div class="border-b border-gray-200 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-uatlantico-blue">10. Evaluación Práctica Estilo ICFES</h2>
+                                <p class="text-xs text-gray-500 mt-1">Preguntas de selección múltiple con única respuesta · Asignatura: Sistemas de Información Gerencial</p>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 bg-uatlantico-orange/15 text-uatlantico-orange rounded-full border border-uatlantico-orange/35">Simulacro Oficial</span>
+                        </div>
+
+                        <div class="space-y-6 text-sm text-uatlantico-text">
+                            <div class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg text-xs">
+                                <strong>Instrucciones:</strong> Responde cada una de las siguientes preguntas tipo ICFES basadas en los conceptos vistos en clase con la docente Adelaida Ojeda Beltrán. Al finalizar, haz clic en el botón inferior para calcular tu puntaje y recibir retroalimentación.
+                            </div>
+
+                            <!-- Pregunta 1 -->
+                            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl space-y-3">
+                                <div class="font-bold text-uatlantico-blue text-xs flex justify-between">
+                                    <span>PREGUNTA 1 DE 3</span>
+                                    <span class="text-uatlantico-orange">Nivel Operativo (TPS)</span>
+                                </div>
+                                <p class="text-xs md:text-sm font-medium">Una empresa del sector retail en Barranquilla necesita registrar diariamente las miles de ventas en caja, asegurando que el inventario se descuente de forma inmediata y sin errores de duplicidad. ¿Qué tipo de Sistema de Información debe implementar obligatoriamente?</p>
+                                <div class="space-y-2 text-xs">
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p1" value="a"> A) Un Sistema de Información Ejecutiva (ESS) para la alta gerencia.
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p1" value="b"> B) Un Sistema de Procesamiento de Transacciones (TPS).
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p1" value="c"> C) Un Sistema de Gestión del Conocimiento (KMS).
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Pregunta 2 -->
+                            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl space-y-3">
+                                <div class="font-bold text-uatlantico-blue text-xs flex justify-between">
+                                    <span>PREGUNTA 2 DE 3</span>
+                                    <span class="text-uatlantico-orange">Gestión de Clientes (CRM)</span>
+                                </div>
+                                <p class="text-xs md:text-sm font-medium">Si una compañía busca analizar el comportamiento de compra histórico de sus compradores para diseñar campañas de marketing hiper-segmentadas y detectar patrones ocultos de consumo, ¿cuál componente del CRM debe utilizar principalmente?</p>
+                                <div class="space-y-2 text-xs">
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p2" value="a"> A) CRM Operativo, para registrar llamadas y tickets de soporte.
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p2" value="b"> B) CRM Analítico, para procesar datos de clientes y extraer inteligencia de negocios.
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p2" value="c"> C) Un Sistema TPS de transacciones puras.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Pregunta 3 -->
+                            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl space-y-3">
+                                <div class="font-bold text-uatlantico-blue text-xs flex justify-between">
+                                    <span>PREGUNTA 3 DE 3</span>
+                                    <span class="text-uatlantico-orange">Pirámide Organizacional</span>
+                                </div>
+                                <p class="text-xs md:text-sm font-medium">¿Cuál de los siguientes sistemas de información apoya primordialmente a los directivos de nivel estratégico en la toma de decisiones a largo plazo y la visualización de indicadores globales?</p>
+                                <div class="space-y-2 text-xs">
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p3" value="a"> A) Sistemas de Información Ejecutiva (ESS / BI).
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p3" value="b"> B) Sistemas de procesamiento de transacciones operativas diarias.
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                        <input type="radio" name="p3" value="c"> C) Procesadores de texto de oficina.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Botón de Calificación -->
+                            <div class="pt-4 text-center">
+                                <button onclick="calculateFinalScore()" class="px-6 py-3 bg-uatlantico-orange text-white font-bold rounded-xl shadow-lg hover:bg-uatlantico-orangeHover transition-all text-sm">
+                                    Evaluar Mis Respuestas
+                                </button>
+                                <div id="score-result" class="mt-4 text-sm font-bold"></div>
+                            </div>
+                        </div>
+                    </article>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- SCRIPTS DE INTERACTIVIDAD -->
+    <script>
+        function switchModule(modNum) {
+            // Ocultar todos los artículos
+            document.querySelectorAll('.module-content').forEach(article => {
+                article.classList.remove('active');
+            });
+
+            // Mostrar el módulo seleccionado
+            const target = document.getElementById(`mod-${modNum}`);
+            if (target) {
+                target.classList.add('active');
+            }
+
+            // Actualizar botones del menú lateral
+            document.querySelectorAll('.module-btn').forEach(btn => {
+                btn.classList.remove('bg-uatlantico-orange', 'text-white', 'shadow-md');
+                btn.classList.add('text-gray-300', 'hover:bg-white/10', 'hover:text-white');
+                const svg = btn.querySelector('svg');
+                if (svg) svg.style.opacity = '0';
+            });
+
+            const activeBtn = document.getElementById(`btn-mod-${modNum}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-300', 'hover:bg-white/10', 'hover:text-white');
+                activeBtn.classList.add('bg-uatlantico-orange', 'text-white', 'shadow-md');
+                const activeSvg = activeBtn.querySelector('svg');
+                if (activeSvg) activeSvg.style.opacity = '1';
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function selectPyramidLevel(level) {
+            const panel = document.getElementById('pyramid-info-panel');
+            let htmlContent = '';
+
+            if (level === 'estrategico') {
+                htmlContent = `<div class="font-bold text-red-600 text-sm mb-1">Nivel Estratégico (ESS / BI)</div>
+                <p><strong>Usuarios:</strong> Alta Gerencia y Directivos (Presidentes, Vicerrectores).</p>
+                <p class="mt-1"><strong>Propósito:</strong> Tomar decisiones a largo plazo con gráficos avanzados, proyecciones financieras y tableros de control ejecutivos.</p>`;
+            } else if (level === 'gestion') {
+                htmlContent = `<div class="font-bold text-lime-600 text-sm mb-1">Nivel de Gestión y Administración (MIS / DSS)</div>
+                <p><strong>Usuarios:</strong> Gerentes de departamento, Jefes de área y supervisores.</p>
+                <p class="mt-1"><strong>Propósito:</strong> Monitorear el rendimiento operativo mediante reportes periódicos y análisis de escenarios flexibles.</p>`;
+            } else if (level === 'conocimiento') {
+                htmlContent = `<div class="font-bold text-purple-600 text-sm mb-1">Nivel del Conocimiento (KWS / OfficeS)</div>
+                <p><strong>Usuarios:</strong> Trabajadores del conocimiento y científicos de datos (Ingenieros, Investigadores).</p>
+                <p class="mt-1"><strong>Propósito:</strong> Integrar nuevos conocimientos a la organización y gestionar estaciones de diseño técnico.</p>`;
+            } else if (level === 'operativo') {
+                htmlContent = `<div class="font-bold text-cyan-600 text-sm mb-1">Nivel Operativo (TPS)</div>
+                <p><strong>Usuarios:</strong> Operarios, cajeros, personal de atención directa y asistentes.</p>
+                <p class="mt-1"><strong>Propósito:</strong> Registrar las transacciones cotidianas y rutinarias de la compañía en tiempo real.</p>`;
+            }
+
+            panel.innerHTML = htmlContent;
+        }
+
+        function toggleTPSCard(card) {
+            const detail = card.querySelector('.hidden-detail');
+            if (detail) {
+                detail.classList.toggle('hidden');
+            }
+        }
+
+        function calculateFinalScore() {
+            let score = 0;
+            let total = 3;
+
+            const p1 = document.querySelector('input[name="p1"]:checked');
+            const p2 = document.querySelector('input[name="p2"]:checked');
+            const p3 = document.querySelector('input[name="p3"]:checked');
+
+            if (p1 && p1.value === 'b') score++;
+            if (p2 && p2.value === 'b') score++;
+            if (p3 && p3.value === 'a') score++;
+
+            const percent = (score / total) * 100;
+            const badge = document.getElementById('score-result');
+
+            let colorClass = 'text-red-600';
+            let label = 'Repasa las diapositivas del curso (Menos del 60%)';
+            if (percent >= 80) {
+                colorClass = 'text-emerald-600';
+                label = '¡Excelente resultado! Dominio óptimo de los sistemas de información.';
+            } else if (percent >= 60) {
+                colorClass = 'text-amber-600';
+                label = 'Buen resultado, pero puedes repasar algunos conceptos clave.';
+            }
+
+            badge.innerHTML = `Puntaje Final: <span class="${colorClass}">${score} de ${total} (${percent.toFixed(0)}%)</span><br><span class="text-xs font-normal text-gray-600">${label}</span>`;
+        }
+    </script>
+</body>
+</html>
